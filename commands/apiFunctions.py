@@ -20,9 +20,9 @@ async def GetBestdoriCutoffAPI(tier: int):
         from commands.formatting.EventCommands import GetCurrentEventID
         eventId = await GetCurrentEventID('en')
         if tier == 100:
-            api = 'https://bestdori.com/api/tracker/data.php?event=%s&server=1&tier=0' %str(eventId)
+            api = 'https://bestdori.com/api/tracker/data?server=1&event=%s&tier=0' %str(eventId)
         else:
-            api = 'https://bestdori.com/api/tracker/data.php?event=%s&server=1&tier=1' %str(eventId)
+            api = 'https://bestdori.com/api/tracker/data?server=1&event=%s&tier=1' %str(eventId)
         async with session.get(api) as r:
             return await r.json()
 

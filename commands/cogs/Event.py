@@ -111,7 +111,7 @@ class Event(commands.Cog):
     with open("config.json") as file:
         config_json = json.load(file)
         driverPath = config_json["chromeDriverPath"]
-    
+        
     options = webdriver.ChromeOptions()
     options.add_argument('--ignore-certificate-errors')
     options.add_argument('--ignore-ssl-errors')
@@ -121,7 +121,6 @@ class Event(commands.Cog):
     jpDriver = webdriver.Chrome(options=options,executable_path=driverPath)
     jpDriver.get('https://bestdori.com/tool/eventtracker/jp/t100')
     jpDriver.find_element_by_xpath('/html/body/div/div[3]/div[2]/div[3]/a/span[2]').click()
-    
     
     @commands.command(name='refresh',
                        aliases=['r'],

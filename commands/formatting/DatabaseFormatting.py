@@ -85,7 +85,7 @@ def removeChannelFromDatabase(channel: TextChannel, interval: int, server: str):
         success = False
 
     if success:
-        text = "Channel " + channel + " removed from receiving %s %s t10 updates" %(interval,server)
+        text = "Channel " + channel.name + " removed from receiving %s %s t10 updates" %(interval,server)
     else:
         text = "Failed removing " + channel.name + " from receiving %s %s t10 updates" %(interval,server)
     return text
@@ -225,17 +225,17 @@ def getChannelsToPost(interval: int, server: str):
     ids = list()
     if server == 'en':
         if(interval == 2):
-                db = TinyDB(eventCheckDb2min)
+            db = TinyDB(eventCheckDb2min)
         if(interval == 1):
-                db = TinyDB(eventCheckDb1min)
+            db = TinyDB(eventCheckDb1min)
         if(interval == 3600):
-                db = TinyDB(eventCheckDb1hr)
-                interval = '1 hour'
+            db = TinyDB(eventCheckDb1hr)
+            interval = '1 hour'
     else:
         if(interval == 2):
-                db = TinyDB(jp2MinuteTracking)
+            db = TinyDB(jp2MinuteTracking)
         if(interval == 3600):
-                db = TinyDB(jp1HourTracking)
+            db = TinyDB(jp1HourTracking)
     try:
         saved = db.all()
         for i in saved:

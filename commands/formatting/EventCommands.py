@@ -51,7 +51,7 @@ async def GetCurrentEventID(server: str):
         if api[event]['startAt'][TimeKey]:
             if float(api[event]['startAt'][TimeKey]) < currentTime < float(api[event]['endAt'][TimeKey]):
                 CurrentEventID = event
-                print('The current event ID is: %s' %(event)) 
+                #print('The current event ID is: %s' %(event)) 
     if CurrentEventID:
         return CurrentEventID
     

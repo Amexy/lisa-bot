@@ -1,0 +1,14 @@
+
+chibis/
+*.pyc
+config.json
+t10archives/
+databases/
+protodefs/
+serverlogs/
+startup/login.py
+commands/oldstuff
+commands/cogs/seiyuu.py
+commands/cogs/admin.py
+.gitattributes
+debug.log
