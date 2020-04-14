@@ -1,4 +1,5 @@
 from discord.ext import commands
+from discord.ext.commands import CommandNotFound
 from tinydb import TinyDB, where
 from jsondiff import diff
 from datetime import datetime
@@ -329,10 +330,13 @@ async def on_ready():
 async def on_message(message):
     ctx = await bot.get_context(message)
     await bot.invoke(ctx)
-
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, CommandNotFound):
+        return
+    raise error
 @bot.event
 async def on_guild_join(guild):
-    user = bot.get_user(158699060893581313)
     general = find(lambda x: x.name == 'general',  guild.text_channels)
     if general and general.permissions_for(guild.me).send_messages:
         await general.send("Thanks for inviting me! You can get started by typing .help to find the current command list and change the command prefix by typing .setprefix followed by the desired prefix e.g. !.\nSource Code: https://github.com/Amexy/lisa-bot\nSupport: https://ko-fi.com/lisabot\nIf you have any feedback or requests, please dm Josh#1373 or join discord.gg/wDu5CAA.")
@@ -355,7 +359,5 @@ bot.load_extension("commands.cogs.Misc")
 bot.load_extension("commands.cogs.Admin")
 bot.load_extension("commands.cogs.Event")
 bot.load_extension("commands.cogs.Updates")
-
-#bot.load_extension("commands.cogs.Seiyuu")
 
 bot.run(TOKEN) 

@@ -21,9 +21,16 @@ def getICEObject(server: str):
 async def GetEventName(server: str, eventid: int):
     from commands.apiFunctions import GetBestdoriEventAPI
     if server == 'en':
-        Key = 1 # en
-    else: 
-        Key = 0 # jp 
+        Key = 1 
+    elif server == 'jp':
+        Key = 0 
+    elif server == 'tw':
+        Key = 2
+    elif server == 'cn':
+        Key = 3
+    elif server == 'kr':
+        Key = 4
+
     api = await GetBestdoriEventAPI(eventid)  
     EventName = api['eventName'][Key]
     return EventName
@@ -36,14 +43,21 @@ async def GetEventAttribute(eventid: int):
     return EventAttribute
     
 async def GetCurrentEventID(server: str):
-    from commands.apiFunctions import GetBestdoriAllEventsAPI
+    from commands.apiFunctions import GetBestdoriAllEventsAPI, getBandoriGAAPI
     
     currentTime = time.time() * 1000
     CurrentEventID = ''
     if server == 'en':
-        TimeKey = 1 # en
-    else: 
-        TimeKey = 0 # jp
+        TimeKey = 1 
+    elif server == 'jp':
+        TimeKey = 0 
+    elif server == 'tw':
+        TimeKey = 2
+    elif server == 'cn':
+        TimeKey = 3
+    elif server == 'kr':
+        TimeKey = 4
+
     api = await GetBestdoriAllEventsAPI()
     for event in api:
         if CurrentEventID:
@@ -51,8 +65,12 @@ async def GetCurrentEventID(server: str):
         if api[event]['startAt'][TimeKey]:
             if float(api[event]['startAt'][TimeKey]) < currentTime < float(api[event]['endAt'][TimeKey]):
                 CurrentEventID = event
-                #print('The current event ID is: %s' %(event)) 
-    if CurrentEventID:
+    if not CurrentEventID:
+        api = await getBandoriGAAPI(server)
+        CurrentEventID = api['eventId']
+        if CurrentEventID:
+            return CurrentEventID
+    else:
         return CurrentEventID
     
 async def GetCutoffFormatting(driver, server: str, tier: int):
@@ -69,10 +87,22 @@ async def GetCutoffFormatting(driver, server: str, tier: int):
         if tier != 10:
             if tier == 100:
                 eventName = 'T100: ' + eventName
-                driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div/div[3]/div[5]/div[2]/div/div/div/a[2]').click()
-                await asyncio.sleep(.5)
-                driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div/div[3]/div[5]/div[2]/div/div/div/a[1]').click()
-                await asyncio.sleep(.5)
+                if server != 'kr' and server != 'tw':
+                    driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div/div[3]/div[5]/div[2]/div/div/div/a[2]').click()
+                    await asyncio.sleep(.5)
+                    driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div/div[3]/div[5]/div[2]/div/div/div/a[1]').click()
+                    await asyncio.sleep(.5)
+                else:
+                    if server == 'kr':
+                        driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div[1]/div[3]/div[4]/div[2]/div/div/div/a[3]').click()
+                        await asyncio.sleep(.5)
+                        driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div[1]/div[3]/div[4]/div[2]/div/div/div/a[5]').click()
+                        await asyncio.sleep(.5)
+                    else:
+                        driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div[1]/div[3]/div[4]/div[2]/div/div/div/a[5]').click()
+                        await asyncio.sleep(.5)
+                        driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div[1]/div[3]/div[4]/div[2]/div/div/div/a[3]').click()
+                        await asyncio.sleep(.5)
             elif tier == 1000:
                 eventName = 'T1000: ' + eventName
                 driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div/div[3]/div[5]/div[2]/div/div/div/a[1]').click()                

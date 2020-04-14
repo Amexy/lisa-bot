@@ -22,9 +22,15 @@ async def GetEventTimeLeftSeconds(server: str, eventid: int):
 async def GetEventEndTime(server: str, eventid: int):
     from commands.apiFunctions import GetBestdoriEventAPI
     if server == 'en':
-        TimeKey = 1 # en
-    else: 
-        TimeKey = 0 # jp 
+        TimeKey = 1 
+    elif server == 'jp':
+        TimeKey = 0 
+    elif server == 'tw':
+        TimeKey = 2
+    elif server == 'cn':
+        TimeKey = 3
+    elif server == 'kr':
+        TimeKey = 4
     api = await GetBestdoriEventAPI(eventid)  
     EventEndTime = api['endAt'][TimeKey]
     return float(EventEndTime)
@@ -32,9 +38,16 @@ async def GetEventEndTime(server: str, eventid: int):
 async def GetEventStartTime(server: str, eventid: int):
     from commands.apiFunctions import GetBestdoriEventAPI
     if server == 'en':
-        TimeKey = 1 # en
-    else: 
-        TimeKey = 0 # jp 
+        TimeKey = 1 
+    elif server == 'jp':
+        TimeKey = 0 
+    elif server == 'tw':
+        TimeKey = 2
+    elif server == 'cn':
+        TimeKey = 3
+    elif server == 'kr':
+        TimeKey = 4
+
     api = await GetBestdoriEventAPI(eventid)  
     EventStartTime = api['startAt'][TimeKey]
     return float(EventStartTime)

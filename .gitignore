@@ -12,3 +12,4 @@ commands/cogs/seiyuu.py
 commands/cogs/admin.py
 .gitattributes
 debug.log
+commands/cogs/Servers.py

@@ -108,20 +108,7 @@ class Event(commands.Cog):
     #######################
     
     #open website
-    with open("config.json") as file:
-        config_json = json.load(file)
-        driverPath = config_json["chromeDriverPath"]
-        
-    options = webdriver.ChromeOptions()
-    options.add_argument('--ignore-certificate-errors')
-    options.add_argument('--ignore-ssl-errors')
-    enDriver = webdriver.Chrome(options=options,executable_path=driverPath)
-    enDriver.get('https://bestdori.com/tool/eventtracker/en/t100')
-    enDriver.find_element_by_xpath('/html/body/div/div[3]/div[2]/div[3]/a/span[2]').click()
-    jpDriver = webdriver.Chrome(options=options,executable_path=driverPath)
-    jpDriver.get('https://bestdori.com/tool/eventtracker/jp/t100')
-    jpDriver.find_element_by_xpath('/html/body/div/div[3]/div[2]/div[3]/a/span[2]').click()
-    
+
     @commands.command(name='refresh',
                        aliases=['r'],
                        hidden=True)
@@ -129,36 +116,55 @@ class Event(commands.Cog):
         try:
             if server == 'en':
                 driver = self.enDriver
-            else:
+            elif server == 'jp':
                 driver = self.jpDriver
+            elif server == 'cn':
+                driver = self.cnDriver
+            else:
+                driver = self.twkrDriver
             driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div/div[3]/div[1]/div[2]/div/div[2]/a').click()
         except:
-            await ctx.send('Failed refreshing the event tracker page.')        
+            await ctx.send('Failed refreshing the event tracker page for %s.' %(server))        
     
 
         
     @commands.command(name='cutoff',
                      aliases=['t100','t1000','t2000'],
-                     brief="Cutoff estimate for t100 and t1000 (and t2000 if jp)",
-                     help="Cutoff estimate for t100 and t1000 (and t2000 if jp). Pass the cutoff you want and server (defaulted to en)\n\nCurrently using https://bestdoribeta.animepie.to/tool/eventtracker, all credit goes to Burrito\n\nExamples\n\n.cutoff 100\n.cutoff 1000 en\n.cutoff 2000 jp")
+                     brief="Cutoff estimate for t10, t100, t1000, and t2000",
+                     help="Cutoff estimate for t10, t100, t1000, and t2000. Pass the tier you want and server (defaulted to en)\n\nCurrently using https://bestdori.com/tool/eventtracker/, all credit goes to Burrito\n\nExamples\n\n.cutoff 100\n.cutoff 1000 en\n.cutoff 2000 jp")
     async def cutoff(self, ctx, tier: int = 100, server: str = 'en'):
+        from startup.login import enDriver, jpDriver, cnDriver, twkrDriver
+        server = server.lower()
+        ValidT2000 = ['jp','cn']
+        ValidT1000 = ['en','jp','cn']
+        ValidT10 = ['en','jp']
+        output = ''
         if 't1000' in ctx.invoked_with:
             tier = 1000
         elif 't100' in ctx.invoked_with:
             tier = 100
         elif 't2000' in ctx.invoked_with:
             tier = 2000
-            server = 'jp'
-        if(tier == 2000):
-            server = 'jp'
+        if tier == 10 and server not in ValidT10:
+            output = 'T10 is only valid for EN and JP'
+        if tier == 2000 and server not in ValidT2000:
+            output = 'T2000 is only valid for JP and CN'
+        if tier == 1000 and server not in ValidT1000:
+            output = 'T1000 is only valid for EN, JP, and CN'
+        if output:
+            await ctx.send(output)
         else:
-            server = server
-        if server == 'en':
-            driver = self.enDriver
-        else:
-            driver = self.jpDriver
-        output = await GetCutoffFormatting(driver, server, tier)
-        await ctx.send(embed=output)
+            if server == 'en':
+                driver = enDriver
+            elif server == 'jp':
+                driver = jpDriver
+            elif server == 'cn':
+                driver = cnDriver
+            else:
+                driver = twkrDriver
+            output = await GetCutoffFormatting(driver, server, tier)
+            await ctx.send(embed=output)
+
 
 
     @coasting.error
@@ -182,7 +188,7 @@ class Event(commands.Cog):
         if isinstance(error, commands.MissingRequiredArgument):
             await ctx.send("Missing argument, please check required arguments using `.help <command>`! Required arguments are enclosed in < >")
         if isinstance(error, commands.BadArgument):
-            await ctx.send("Missing argument, please check required arguments using `.help <command>`! Required arguments are enclosed in < >")
+            await ctx.send("Invalid argument, please check valid arguments using `.help <command>`! Required arguments are enclosed in < >")
         if isinstance(error, commands.errors.CommandInvokeError):
             print(str(error))
             await ctx.send("Failed getting cutoff data. Please let Josh#1373 know if this keeps happening. Old events cutoff data can been seen using the `event` command")
