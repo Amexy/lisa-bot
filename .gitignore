@@ -13,3 +13,4 @@ commands/cogs/admin.py
 .gitattributes
 debug.log
 commands/cogs/Servers.py
+geckodriver
