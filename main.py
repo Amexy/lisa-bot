@@ -130,98 +130,100 @@ async def postEventNotif(server: str):
 async def postEventT101hr():
     await bot.wait_until_ready()
     while not bot.is_closed():
+        timeStart = datetime.now()
+        timeFinish = (timeStart + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0).timestamp()            
+        timeStart = timeStart.timestamp()
+        await asyncio.sleep(timeFinish - timeStart)
+
         try:
-
-            timeStart = datetime.now()
-            timeFinish = (timeStart + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0).timestamp()            
-            timeStart = timeStart.timestamp()
-            await asyncio.sleep(timeFinish - timeStart)
-
             EnEventID = await GetCurrentEventID('en')
-            if EnEventID:
-                print('1 hour ' + str(EnEventID))
-                timeLeftEn = await GetEventTimeLeftSeconds('en', EnEventID)
-                if(timeLeftEn > 0):
-                    print('1 hour ' + str(timeLeftEn))
-                    EnMessage = await t10formatting('en', EnEventID, True)
-                    #await t10logging('en', EnEventID, False)
-                    #await t10logging('en', EnEventID, True)
-                    ids = getChannelsToPost(3600, 'en')
-                    for i in ids:
-                        channel = bot.get_channel(i)
-                        if channel != None:
-                            try:
-                                await channel.send(EnMessage)
-                            except: 
-                                channel2 = bot.get_channel(523339468229312555)
-                                await channel2.send('Removing 1 hour updates from channel: ' + str(channel.id))
-                                removeChannelFromDatabase(channel, 3600, 'en')
-            
-            JPEventID = await GetCurrentEventID('jp')
-            if JPEventID:
-                timeLeftJp = await GetEventTimeLeftSeconds('jp', JPEventID)
-                if(timeLeftJp > 0):
-                    JPMessage = await t10formatting('jp', JPEventID, True)
-                    ids = getChannelsToPost(3600, 'jp')
-                    for i in ids:
-                        channel = bot.get_channel(i)
-                        if channel != None:
-                            try:
-                                await channel.send(JPMessage)
-                            except: 
-                                channel2 = bot.get_channel(523339468229312555)
-                                await channel2.send('Removing 1 hour updates from channel: ' + str(channel.id))
-                                removeChannelFromDatabase(channel, 3600, 'jp')                  
         except Exception as e:
-            print('Failed posting 1 hour 10 data.\n'+ str(e))
+            print('Failed posting 2 minute data. Exception: ' + str(e))            
+
+
+        if EnEventID:
+            print('1 hour ' + str(EnEventID))
+            timeLeftEn = await GetEventTimeLeftSeconds('en', EnEventID)
+            if(timeLeftEn > 0):
+                print('1 hour ' + str(timeLeftEn))
+                EnMessage = await t10formatting('en', EnEventID, True)
+                #await t10logging('en', EnEventID, False)
+                #await t10logging('en', EnEventID, True)
+                ids = getChannelsToPost(3600, 'en')
+                for i in ids:
+                    channel = bot.get_channel(i)
+                    if channel != None:
+                        try:
+                            await channel.send(EnMessage)
+                        except: 
+                            channel2 = bot.get_channel(523339468229312555)
+                            await channel2.send('Removing 1 hour updates from channel: ' + str(channel.id))
+                            removeChannelFromDatabase(channel, 3600, 'en')
+        
+        JPEventID = await GetCurrentEventID('jp')
+        if JPEventID:
+            timeLeftJp = await GetEventTimeLeftSeconds('jp', JPEventID)
+            if(timeLeftJp > 0):
+                JPMessage = await t10formatting('jp', JPEventID, True)
+                ids = getChannelsToPost(3600, 'jp')
+                for i in ids:
+                    channel = bot.get_channel(i)
+                    if channel != None:
+                        try:
+                            await channel.send(JPMessage)
+                        except: 
+                            channel2 = bot.get_channel(523339468229312555)
+                            await channel2.send('Removing 1 hour updates from channel: ' + str(channel.id))
+                            removeChannelFromDatabase(channel, 3600, 'jp')                  
 
 async def postEventT102min():
     await bot.wait_until_ready()
     while not bot.is_closed():
-        try:
-            
-            timeStart = datetime.now()
+        timeStart = datetime.now()
+        if (timeStart.minute % 2) != 0: 
+            timeFinish = (timeStart + timedelta(minutes=1)).replace(second=0, microsecond=0).timestamp()
+        else:
             timeFinish = (timeStart + timedelta(minutes=2)).replace(second=0, microsecond=0).timestamp()
-            timeStart = timeStart.timestamp()
-            await asyncio.sleep(timeFinish - timeStart)
-            
-            EnEventID = await GetCurrentEventID('en')                
-            if EnEventID:
-                timeLeftEn = await GetEventTimeLeftSeconds('en', EnEventID)
-                if(timeLeftEn > 0):
-                    EnMessage = await t10formatting('en', EnEventID, True)
-                    await t10logging('en', EnEventID, False)
-                    await t10logging('en', EnEventID, True)
-                    ids = getChannelsToPost(2, 'en')
-                    for i in ids:
-                        channel = bot.get_channel(i)
-                        if channel != None:
-                            try:
-                                await channel.send(EnMessage)
-                            except: 
-                                channel2 = bot.get_channel(523339468229312555)
-                                await channel2.send('Removing 2 minute updates from channel: ' + str(channel.id))
-                                removeChannelFromDatabase(channel, 2, 'en')
-                                
-            JPEventID = await GetCurrentEventID('jp')
-            if JPEventID:
-                timeLeftJp = await GetEventTimeLeftSeconds('jp', JPEventID)
-                if(timeLeftJp > 0):
-                    JPMessage = await t10formatting('jp', JPEventID, True)
-                    ids = getChannelsToPost(2, 'jp')
-                    for i in ids:
-                        channel = bot.get_channel(i)
-                        if channel != None:
-                            try:
-                                await channel.send(JPMessage)
-                            except: 
-                                channel2 = bot.get_channel(523339468229312555)
-                                await channel2.send('Removing 2 minute updates from channel: ' + str(channel.id))
-                                removeChannelFromDatabase(channel, 2, 'jp')
-            
+        timeStart = timeStart.timestamp()
+        await asyncio.sleep(timeFinish - timeStart)
+        
+        try:
+            EnEventID = await GetCurrentEventID('en')
         except Exception as e:
-            await print('Failed posting 2 minute 10 data.\n'+ str(e))
-
+            print('Failed posting 2 minute data. Exception: ' + str(e))            
+        if EnEventID:
+            timeLeftEn = await GetEventTimeLeftSeconds('en', EnEventID)
+            if(timeLeftEn > 0):
+                EnMessage = await t10formatting('en', EnEventID, True)
+                await t10logging('en', EnEventID, False)
+                await t10logging('en', EnEventID, True)
+                ids = getChannelsToPost(2, 'en')
+                for i in ids:
+                    channel = bot.get_channel(i)
+                    if channel != None:
+                        try:
+                            await channel.send(EnMessage)
+                        except: 
+                            channel2 = bot.get_channel(523339468229312555)
+                            await channel2.send('Removing 2 minute updates from channel: ' + str(channel.id))
+                            removeChannelFromDatabase(channel, 2, 'en')
+                            
+        JPEventID = await GetCurrentEventID('jp')
+        if JPEventID:
+            timeLeftJp = await GetEventTimeLeftSeconds('jp', JPEventID)
+            if(timeLeftJp > 0):
+                JPMessage = await t10formatting('jp', JPEventID, True)
+                ids = getChannelsToPost(2, 'jp')
+                for i in ids:
+                    channel = bot.get_channel(i)
+                    if channel != None:
+                        try:
+                            await channel.send(JPMessage)
+                        except: 
+                            channel2 = bot.get_channel(523339468229312555)
+                            await channel2.send('Removing 2 minute updates from channel: ' + str(channel.id))
+                            removeChannelFromDatabase(channel, 2, 'jp')
+            
 async def postSongUpdates1min():
     await bot.wait_until_ready()
     while not bot.is_closed():
@@ -251,8 +253,8 @@ async def postSongUpdates1min():
         except Exception as e:
             print('Failed posting 1 minute song data.\n'+ str(e))
 
-initialT100Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=72&tier=0').json()
-initialT1000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=72&tier=1').json()
+initialT100Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=75&tier=0').json()
+initialT1000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=75&tier=1').json()
 async def postT100CutoffUpdates():
     await bot.wait_until_ready()
     while not bot.is_closed():
@@ -265,9 +267,8 @@ async def postT100CutoffUpdates():
                     global initialT100Cutoffs           
                     cutoffAPI = await GetBestdoriCutoffAPI(100)
                     if(sorted(initialT100Cutoffs.items()) != sorted(cutoffAPI.items())):
-                        EventClass = Event(bot)
-                        driver = EventClass.enDriver
-                        output = await GetCutoffFormatting(driver, 'en', 100)
+                        from startup.login import enDriver      
+                        output = await GetCutoffFormatting(enDriver, 'en', 100)
                         ids = getCutoffChannels(100)
                         for i in ids:
                             channel = bot.get_channel(i)
@@ -296,9 +297,8 @@ async def postT1000CutoffUpdates():
                     global initialT1000Cutoffs           
                     cutoffAPI = await GetBestdoriCutoffAPI(1000)
                     if(sorted(initialT1000Cutoffs.items()) != sorted(cutoffAPI.items())):
-                        EventClass = Event(bot)
-                        driver = EventClass.enDriver
-                        output = await GetCutoffFormatting(driver, 'en', 1000)
+                        from startup.login import enDriver
+                        output = await GetCutoffFormatting(enDriver, 'en', 1000)
                         ids = getCutoffChannels(1000)
                         for i in ids:
                             channel = bot.get_channel(i)
@@ -359,5 +359,6 @@ bot.load_extension("commands.cogs.Misc")
 bot.load_extension("commands.cogs.Admin")
 bot.load_extension("commands.cogs.Event")
 bot.load_extension("commands.cogs.Updates")
+bot.load_extension("commands.cogs.Moderation")
 
 bot.run(TOKEN) 

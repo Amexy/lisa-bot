@@ -1,4 +1,4 @@
-from tinydb import TinyDB, where
+from tinydb import TinyDB, where, Query
 from tabulate import tabulate
 from discord.channel import TextChannel
 from discord.guild import Guild
@@ -345,6 +345,70 @@ def getNewsChannelsToPost(server: str):
     except Exception as e:
         print(e)
     return ids
+
+
+##################
+#     Roles      #
+##################
+def CheckRoleForAssignability(RoleName: str, GuildID: int):
+    db = TinyDB('databases/selfassignableroles.json')
+    QueryBuilder = Query()
+    AllServerRoles = db.search(QueryBuilder.GuildID == GuildID)
+    RoleFound = bool
+
+    for x in AllServerRoles: 
+        if RoleFound == True:
+            break
+        if RoleName in x.values():
+            RoleFound = True
+        else:
+            RoleFound = False
+    return RoleFound
+    
+
+def RemoveRoleFromAssingability(RoleName: str, GuildID: int):
+    db = TinyDB('databases/selfassignableroles.json')
+    QueryBuilder = Query()
+    AllServerRoles = db.search(QueryBuilder.GuildID == GuildID)
+    RoleFound = bool
+    for x in AllServerRoles: 
+        if RoleFound == True:
+            break
+        if RoleName in x.values():
+            from tinydb.operations import delete
+            RoleFound = True
+            db.remove((QueryBuilder.RoleName == RoleName) & (QueryBuilder.GuildID == GuildID))
+        else:
+            RoleFound = False
+    return RoleFound
+
+def GetAllRoles(GuildID: int):
+    db = TinyDB('databases/selfassignableroles.json')
+    Roles = []
+    QueryBuilder = Query()
+    AllServerRoles = db.search(QueryBuilder.GuildID == GuildID)
+    for x in AllServerRoles:
+        Roles.append([x['RoleName']])
+    return Roles
+
+def AddRoleToDatabase(channel: TextChannel, server: str, role: str):
+    success = True
+    db = TinyDB('databases/selfassignableroles.json') 
+    try:
+        db.upsert({'GuildID': channel.guild.id,
+                'GuildName': channel.guild.name,
+                'RoleName' : role
+                }, where('id') == channel.guild.id)
+
+    except Exception as e:
+        print(e)
+        success = False
+
+    if success:
+        text = "Role %s successfully added to the self assignable roles for %s" %(role, server)
+    else:
+        text = "Failed adding role %s to the self assignable roles for %s" %(role, server)
+    return text
 
 
 ##################

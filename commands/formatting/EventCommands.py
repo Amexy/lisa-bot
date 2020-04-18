@@ -58,13 +58,16 @@ async def GetCurrentEventID(server: str):
     elif server == 'kr':
         TimeKey = 4
 
-    api = await GetBestdoriAllEventsAPI()
-    for event in api:
-        if CurrentEventID:
-            break
-        if api[event]['startAt'][TimeKey]:
-            if float(api[event]['startAt'][TimeKey]) < currentTime < float(api[event]['endAt'][TimeKey]):
-                CurrentEventID = event
+    try:
+        api = await GetBestdoriAllEventsAPI()
+        for event in api:
+            if CurrentEventID:
+                break
+            if api[event]['startAt'][TimeKey]:
+                if float(api[event]['startAt'][TimeKey]) < currentTime < float(api[event]['endAt'][TimeKey]):
+                    CurrentEventID = event
+    except Exception:
+        pass
     if not CurrentEventID:
         api = await getBandoriGAAPI(server)
         CurrentEventID = api['eventId']
