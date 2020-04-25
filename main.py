@@ -342,7 +342,7 @@ async def on_guild_join(guild):
         await general.send("Thanks for inviting me! You can get started by typing .help to find the current command list and change the command prefix by typing .setprefix followed by the desired prefix e.g. !.\nSource Code: https://github.com/Amexy/lisa-bot\nSupport: https://ko-fi.com/lisabot\nIf you have any feedback or requests, please dm Josh#1373 or join discord.gg/wDu5CAA.")
 
 
-
+"""
 #bot.loop.create_task(updateAPI()) #pretty sure this is unused, keeping for now just incase
 bot.loop.create_task(postEventNotif('en'))
 bot.loop.create_task(postEventNotif('jp'))
@@ -352,7 +352,7 @@ bot.loop.create_task(postT1000CutoffUpdates())
 bot.loop.create_task(postBestdoriNews())
 bot.loop.create_task(postT100CutoffUpdates())
 bot.loop.create_task(postEventT102min())
-
+"""
 bot.get_command('help').hidden=True
 bot.load_extension("commands.cogs.Game")
 bot.load_extension("commands.cogs.Misc")

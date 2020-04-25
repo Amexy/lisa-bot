@@ -1,6 +1,6 @@
 from discord.ext import commands
 from tabulate import tabulate
-
+from googletrans import Translator
 class Misc(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -11,8 +11,23 @@ class Misc(commands.Cog):
                       brief="Posts info about the bot",
                       help="Posts info about the bot")
     async def about(self, ctx):
-        await ctx.send("```" + "Developed by: Josh#1373\nDiscord:      discord.gg/wDu5CAA\nPlease DM or @ Josh if you have any feedback/suggestions!" + "```")
+        await ctx.send("```" + "Developed by: Josh#1373 (with help from many others)\nDiscord:      discord.gg/wDu5CAA\nPlease DM or @ Josh if you have any feedback/suggestions!" + "```")
+    
+    @commands.command(name='translate',
+                      aliases=['trans'],
+                      help='Translates the message given (source language is autodetected)')
+    async def translate(self, ctx, language, *message):
+        FullMessage = message[0]
+        for x in message:
+            if x == FullMessage:
+                continue
+            FullMessage += " %s" % x
+        translator = Translator()
+        TranslatedMessage = translator.translate(FullMessage)
+        await ctx.send(TranslatedMessage.text)
+        #await ctx.send("```" + "Developed by: Josh#1373\nDiscord:      discord.gg/wDu5CAA\nPlease DM or @ Josh if you have any feedback/suggestions!" + "```")
 
+    
     @commands.command(name='invite',
                       help='Posts the invite link for Lisabot',
                       brief='Posts the invite link for Lisabot',
