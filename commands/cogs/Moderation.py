@@ -5,7 +5,6 @@ from discord.channel import TextChannel
 from discord.utils import get
 from commands.formatting.DatabaseFormatting import GetAllRoles, CheckRoleForAssignability, AddRoleToDatabase, RemoveRoleFromAssingability
 import discord
-import webcolors
 from tinydb import TinyDB, where, Query
 from tabulate import tabulate
 class Servers(commands.Cog):

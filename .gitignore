@@ -14,3 +14,6 @@ commands/cogs/admin.py
 debug.log
 commands/cogs/Servers.py
 geckodriver
+.vscode/launch.json
+databases/prefixdb.json
+*.json

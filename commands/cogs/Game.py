@@ -291,17 +291,36 @@ class Game(commands.Cog):
         
     @commands.command(name='cards',
                       aliases=['card'],
-                      description="Provides bestdori link of the card ID(s) specified",
+                      description="Provides bestdori link of the card being searched",
                       brief="Bestdori card link",
-                      help="Enter the ID(s) of the card you want to search\n\nExamples:\n.card 100\n.card 100 200 300")
+                      help="Enter the title/name or ID(s) of the card you want to search\n\nExamples:\n.card crystal\n.card 100\n.card 100 200 300")
     async def cards(self, ctx, *args):
+
         output = []
         cardAPI = requests.get('https://bestdori.com/api/cards/all.0.json').json()
-        for x in args:
-            if(x not in cardAPI):
-                output.append('No card found with ID ' + str(x))
+        AllCardsAPI = requests.get('https://bestdori.com/api/cards/all.3.json').json()
+        if all(x.isnumeric() for x in args):
+            for x in args:
+                if(x not in cardAPI):
+                    output.append('Card with ID `%s` not found' %(x))
+                else:
+                    output.append('https://bestdori.com/info/cards/%s' %(x))    
+        else:
+            from langdetect import detect
+            CardTitle = args[0]
+            for x in args:
+                if x == CardTitle:
+                    continue
+                CardTitle += " %s" % x
+            if detect(CardTitle) == 'ja':
+                KeyValue = 0
             else:
-                output.append("https://bestdori.com/info/cards/" + str(x))
+                KeyValue = 1
+            for x in AllCardsAPI:
+                if AllCardsAPI[x]['prefix'][KeyValue]: # Not all cards have an english entry
+                    if CardTitle.lower() in AllCardsAPI[x]['prefix'][KeyValue].lower():
+                        output.append('https://bestdori.com/info/cards/%s' %(x))
+                            
         await ctx.send('\n'.join(output))
 
     @songinfo.error

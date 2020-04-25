@@ -7,7 +7,7 @@ import discord, asyncio, time
 
 def parseHTML(driver):
     html = driver.page_source
-    soup = BeautifulSoup(html)
+    soup = BeautifulSoup(html,features="html.parser")
     parsedHTML = soup.find_all("td")
     return parsedHTML
 

@@ -14,6 +14,7 @@ from tabulate import tabulate
 import asyncio
 import discord
 import json
+import selenium
 
 class Event(commands.Cog):
     def __init__(self, bot):
@@ -159,11 +160,16 @@ class Event(commands.Cog):
             elif server == 'jp':
                 driver = jpDriver
             elif server == 'cn':
-                driver = cnDriver
+                driver = cnDriver 
             else:
                 driver = twkrDriver
-            output = await GetCutoffFormatting(driver, server, tier)
-            await ctx.send(embed=output)
+            try:
+                output = await GetCutoffFormatting(driver, server, tier)
+                await ctx.send(embed=output)
+            except selenium.common.exceptions.WebDriverException:
+                await ctx.send("Failed getting cutoff data because Chrome likely crashed. Please wait a few seconds and run the command again")
+                from startup.login import LoadWebDrivers
+                LoadWebDrivers(server)
 
 
 
