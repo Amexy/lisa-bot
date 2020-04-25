@@ -25,7 +25,6 @@ class Misc(commands.Cog):
         translator = Translator()
         TranslatedMessage = translator.translate(FullMessage)
         await ctx.send(TranslatedMessage.text)
-        #await ctx.send("```" + "Developed by: Josh#1373\nDiscord:      discord.gg/wDu5CAA\nPlease DM or @ Josh if you have any feedback/suggestions!" + "```")
 
     
     @commands.command(name='invite',
