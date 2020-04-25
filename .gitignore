@@ -13,7 +13,7 @@ commands/cogs/admin.py
 .gitattributes
 debug.log
 commands/cogs/Servers.py
-geckodriver
 .vscode/launch.json
-databases/prefixdb.json
 *.json
+*.DS_STORE
+startup/google.py

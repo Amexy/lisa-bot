@@ -18,6 +18,14 @@ class Game(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.command(name='level',
+                    help='Given a current level, xp earned per song, and the amount of songs played, the end level will be provided')
+    async def level(self, ctx, CurrentLevel: int, XPPerSong: int, SongsPlayed: int):
+        from commands.formatting.GameCommands import GetLevelOutput
+        NewLevel = await GetLevelOutput(CurrentLevel, XPPerSong, SongsPlayed)
+        await ctx.send('New Level: %s' %(str(NewLevel)))
+
+
     @commands.command(name='gacha',
                       brief='Gives info on the current gachas',
                       help="Gives info on the current gachas available. Doesn't show the gachas that are always available (new player, 3+ ticket, etc)")

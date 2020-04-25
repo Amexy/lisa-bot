@@ -157,7 +157,7 @@ async def postEventT101hr():
                             await channel.send(EnMessage)
                         except: 
                             channel2 = bot.get_channel(523339468229312555)
-                            await channel2.send('Removing 1 hour updates from channel: ' + str(channel.id))
+                            await channel2.send('Removing 1 hour updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                             removeChannelFromDatabase(channel, 3600, 'en')
         
         JPEventID = await GetCurrentEventID('jp')
@@ -173,7 +173,7 @@ async def postEventT101hr():
                             await channel.send(JPMessage)
                         except: 
                             channel2 = bot.get_channel(523339468229312555)
-                            await channel2.send('Removing 1 hour updates from channel: ' + str(channel.id))
+                            await channel2.send('Removing 1 hour updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                             removeChannelFromDatabase(channel, 3600, 'jp')                  
 
 async def postEventT102min():
@@ -205,7 +205,7 @@ async def postEventT102min():
                             await channel.send(EnMessage)
                         except: 
                             channel2 = bot.get_channel(523339468229312555)
-                            await channel2.send('Removing 2 minute updates from channel: ' + str(channel.id))
+                            await channel2.send('Removing 2 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                             removeChannelFromDatabase(channel, 2, 'en')
                             
         JPEventID = await GetCurrentEventID('jp')
@@ -221,7 +221,7 @@ async def postEventT102min():
                             await channel.send(JPMessage)
                         except: 
                             channel2 = bot.get_channel(523339468229312555)
-                            await channel2.send('Removing 2 minute updates from channel: ' + str(channel.id))
+                            await channel2.send('Removing 2 minute updates from channel: ' + sstr(channel.name) + " in server: " + str(channel.guild.name))
                             removeChannelFromDatabase(channel, 2, 'jp')
             
 async def postSongUpdates1min():
@@ -248,7 +248,7 @@ async def postSongUpdates1min():
                             except Exception as e:
                                 print(e) 
                                 channel2 = bot.get_channel(523339468229312555)
-                                await channel2.send('Removing 1 minute updates from channel: ' + str(channel.id))
+                                await channel2.send('Removing 1 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                                 removeChannelFromDatabaseSongs(channel)
         except Exception as e:
             print('Failed posting 1 minute song data.\n'+ str(e))

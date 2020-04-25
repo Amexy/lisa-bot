@@ -11,6 +11,14 @@ from startup.login import enICEObject, jpICEObject
 from protodefs.ranks import t10ranks
 from google.protobuf.json_format import MessageToJson
 
+async def GetT10ArchiveFile(EventID: int):
+    from startup.google import CheckGoogleFile
+    import discord
+    if CheckGoogleFile(EventID):
+        file = str(EventID) + '.txt'
+        FileToAttach = discord.File('t10archives/en/%s/' %(str(EventID)) + file)
+        return FileToAttach
+
 
 async def t10logging(server: str, eventid: int, songs: bool = False):
     fmt = "%Y-%m-%d %H:%M:%S %Z%z"
