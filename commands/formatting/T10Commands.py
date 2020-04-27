@@ -11,12 +11,12 @@ from startup.login import enICEObject, jpICEObject
 from protodefs.ranks import t10ranks
 from google.protobuf.json_format import MessageToJson
 
-async def GetT10ArchiveFile(EventID: int):
+async def GetT10ArchiveFile(EventID: int, Server: str):
     from startup.google import CheckGoogleFile
     import discord
-    if CheckGoogleFile(EventID):
-        file = str(EventID) + '.txt'
-        FileToAttach = discord.File('t10archives/en/%s/' %(str(EventID)) + file)
+    if await CheckGoogleFile(EventID, Server):
+        file = 't10archives/%s/' %(Server) + Server + '_' + str(EventID) + '.txt'
+        FileToAttach = discord.File(file)
         return FileToAttach
 
 

@@ -17,3 +17,4 @@ commands/cogs/Servers.py
 *.json
 *.DS_STORE
 startup/google.py
+commands/cogs/Help.py

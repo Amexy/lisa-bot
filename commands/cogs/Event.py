@@ -23,17 +23,22 @@ class Event(commands.Cog):
 
     @commands.command(name='t10archives',
                 aliases=["t10a"],
-                help="(en only) Attaches a txt file (if found) containing 2 minute t10 updates for the specified event")
-    async def t10archives(self, ctx, eventid: int = 0):
+                help="Attaches a txt file (if found) containing 2 minute t10 updates for the specified event and server\n\nExamples:\n\n.t10a 76 (this defaults to en)\n.t10a 112 jp")
+    async def t10archives(self, ctx, eventid: int = 0, server: str = 'en'):
         try:
-            FileToAttach = await GetT10ArchiveFile(eventid)
-            if FileToAttach:
-                await ctx.send('File found, uploading..')
-                await ctx.send(file=FileToAttach)
+            ValidServers = ['en','jp']
+            if server not in ValidServers:
+                await ctx.send('This function only works for the EN and JP servers')
             else:
-                await ctx.send("No file found for the specified event.")
+                FileToAttach = await GetT10ArchiveFile(eventid, server)
+                if FileToAttach:
+                    await ctx.send('File found, uploading..')
+                    await ctx.send(file=FileToAttach)
+                else:
+                    await ctx.send("No file found for the specified event.")
 
         except Exception as e:
+            print(str(e))
             await ctx.send("No file found for the specified event.")
 
     @commands.command(name='t10',
