@@ -412,12 +412,13 @@ def generateImage(card: Card, palette: Palette) -> str:
     for _ in range(card.rarity.value):
         rarityText = rarityText + star
 
-    segoe28 = truetype('seguisym.ttf', 26)
+    # This font isn't installed by default on macOS. The name must entered exactly how it was installed as well
+    segoe28 = truetype('SEGUISYM.TTF', 26)
     imageDraw.text((290, 0), rarityText, font=segoe28, fill="white", stroke_width=1, stroke_fill="black")
 
-    segoe18 = truetype('seguisym.ttf', 18)
-    segoe16 = truetype('seguisym.ttf', 16)
-    segoe14 = truetype('seguisym.ttf', 14)
+    segoe18 = truetype('SEGUISYM.TTF', 18)
+    segoe16 = truetype('SEGUISYM.TTF', 16)
+    segoe14 = truetype('SEGUISYM.TTF', 14)
 
     imageDraw.text((290, 35), str(card.cardName), font=segoe14 if segoe18.getsize(card.cardName)[0] > 265 else segoe18, fill="white", stroke_width=1, stroke_fill="black")
 

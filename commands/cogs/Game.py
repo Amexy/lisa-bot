@@ -299,13 +299,47 @@ class Game(commands.Cog):
         Output = await GetLeaderboardsOutput(server, type, entries)
         await ctx.send(Output)
 
-        
     @commands.command(name='cards',
                       aliases=['card'],
-                      description="Provides image of card with specified filters",
-                      brief="Card image",
+                      description="Provides bestdori link of the card being searched",
+                      brief="Bestdori card link",
+                      help="Enter the title/name or ID(s) of the card you want to search\n\nExamples:\n.card crystal\n.card 100\n.card 100 200 300")
+    async def cards(self, ctx, *args):
+
+        output = []
+        cardAPI = requests.get('https://bestdori.com/api/cards/all.0.json').json()
+        AllCardsAPI = requests.get('https://bestdori.com/api/cards/all.3.json').json()
+        if all(x.isnumeric() for x in args):
+            for x in args:
+                if(x not in cardAPI):
+                    output.append('Card with ID `%s` not found' %(x))
+                else:
+                    output.append('https://bestdori.com/info/cards/%s' %(x))    
+        else:
+            from langdetect import detect
+            CardTitle = args[0]
+            for x in args:
+                if x == CardTitle:
+                    continue
+                CardTitle += " %s" % x
+            if detect(CardTitle) == 'ja':
+                KeyValue = 0
+            else:
+                KeyValue = 1
+            for x in AllCardsAPI:
+                if AllCardsAPI[x]['prefix'][KeyValue]: # Not all cards have an english entry
+                    if CardTitle.lower() in AllCardsAPI[x]['prefix'][KeyValue].lower():
+                        output.append('https://bestdori.com/info/cards/%s' %(x))
+                            
+        await ctx.send('\n'.join(output))
+
+
+    @commands.command(name='cardinfo',
+                      aliases=['ci'],
+                      description="Provides embedded image of card with specified filters",
+                      brief="Detailed Card Image",
                       help="Enter the character with optional filters to see card information\n\nExamples:\n.card kokoro 2 - Second Kokoro SSR\n.card lisa df - Lisa Dreamfes card\n.card moca last ssr - Last released SSR of Moca\n.card hina last sr happy - Last released happy SR of Hina")
-    async def cards(self, ctx: discord.abc.Messageable, *args):
+    async def cardinfo(self, ctx: discord.abc.Messageable, *args):
         resultFilteredArguments = filterArguments(*args)
         if resultFilteredArguments.failure:
             await ctx.send(resultFilteredArguments.failure)
@@ -316,7 +350,7 @@ class Game(commands.Cog):
         card: Card = resultCard.success
         palette = Palette(card.attribute)
         imagePath = generateImage(card, palette)
-        channel: discord.TextChannel = self.bot.get_channel(703367569150574653)
+        channel: discord.TextChannel = self.bot.get_channel(523339468229312555) # Change this channel to the channel you want the bot to send images to so it can grab a URL for the embed
         fileSend: discord.Message = await channel.send(file=discord.File(imagePath))
         embed = discord.Embed(colour=palette.primaryInt)
         embed.set_image(url=fileSend.attachments[0].url)
