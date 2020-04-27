@@ -1,7 +1,7 @@
 from discord.ext import commands
 from commands.formatting.GameCommands import GetCoastingOutput
 from commands.formatting.EventCommands import GetCutoffFormatting, GetCurrentEventID
-from commands.formatting.T10Commands import t10formatting, t10songsformatting, t10membersformatting
+from commands.formatting.T10Commands import t10formatting, t10songsformatting, t10membersformatting, GetT10ArchiveFile
 from commands.formatting.TimeCommands import GetTimeLeftCommandOutput, GetEventProgress
 from commands.apiFunctions import GetBestdoriAllEventsAPI, GetBestdoriBannersAPI, GetBestdoriPlayerLeaderboardsAPI
 from protodefs.ranks import t10ranks
@@ -14,10 +14,33 @@ from tabulate import tabulate
 import asyncio
 import discord
 import json
+import selenium
 
 class Event(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+
+    @commands.command(name='t10archives',
+                aliases=["t10a"],
+                help="Attaches a txt file (if found) containing 2 minute t10 updates for the specified event and server\n\nExamples:\n\n.t10a 76 (this defaults to en)\n.t10a 112 jp")
+    async def t10archives(self, ctx, eventid: int = 0, server: str = 'en'):
+        try:
+            ValidServers = ['en','jp']
+            if server not in ValidServers:
+                await ctx.send('This function only works for the EN and JP servers')
+            else:
+                FileToAttach = await GetT10ArchiveFile(eventid, server)
+                if FileToAttach:
+                    await ctx.send('File found, uploading..')
+                    await ctx.send(file=FileToAttach)
+                else:
+                    await ctx.send("No file found for the specified event.")
+
+        except Exception as e:
+            print(str(e))
+            await ctx.send("No file found for the specified event.")
+
     @commands.command(name='t10',
                 brief="t10 info",
                 help="Provides current or specified event t10 info. Can look on a per event/server level, you can also include the songs parameter to look at song info (CL or VS only). However, a lot of the old data has been made inacessible or deleted so the bot may throw an error when checking. You can find the eventIds for any event by going to https://bestdori.com/info/events\n\nExamples\n\n.t10 en\n.t10 en 30\n.t10 jp 78 songs")
@@ -159,11 +182,16 @@ class Event(commands.Cog):
             elif server == 'jp':
                 driver = jpDriver
             elif server == 'cn':
-                driver = cnDriver
+                driver = cnDriver 
             else:
                 driver = twkrDriver
-            output = await GetCutoffFormatting(driver, server, tier)
-            await ctx.send(embed=output)
+            try:
+                output = await GetCutoffFormatting(driver, server, tier)
+                await ctx.send(embed=output)
+            except selenium.common.exceptions.WebDriverException:
+                await ctx.send("Failed getting cutoff data because Chrome likely crashed. Please wait a few seconds and run the command again")
+                from startup.login import LoadWebDrivers
+                LoadWebDrivers(server)
 
 
 

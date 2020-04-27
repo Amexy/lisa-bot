@@ -7,7 +7,7 @@ import discord, asyncio, time
 
 def parseHTML(driver):
     html = driver.page_source
-    soup = BeautifulSoup(html)
+    soup = BeautifulSoup(html,features="html.parser")
     parsedHTML = soup.find_all("td")
     return parsedHTML
 
@@ -35,6 +35,28 @@ async def GetEventName(server: str, eventid: int):
     EventName = api['eventName'][Key]
     return EventName
 
+async def IsEventActive(server: str, eventid: int):
+    currentTime = time.time() * 1000
+    from commands.apiFunctions import GetBestdoriEventAPI
+    api = await GetBestdoriEventAPI(eventid)
+    if server == 'en':
+        TimeKey = 1 
+    elif server == 'jp':
+        TimeKey = 0 
+    elif server == 'tw':
+        TimeKey = 2
+    elif server == 'cn':
+        TimeKey = 3
+    elif server == 'kr':
+        TimeKey = 4
+    if api['startAt'][TimeKey]:
+        if float(api['startAt'][TimeKey]) < currentTime < float(api['endAt'][TimeKey]):
+            return True
+        else:
+            return False
+    else:
+        return False
+
 async def GetEventAttribute(eventid: int):
     from commands.apiFunctions import GetBestdoriEventAPI
 
@@ -58,13 +80,16 @@ async def GetCurrentEventID(server: str):
     elif server == 'kr':
         TimeKey = 4
 
-    api = await GetBestdoriAllEventsAPI()
-    for event in api:
-        if CurrentEventID:
-            break
-        if api[event]['startAt'][TimeKey]:
-            if float(api[event]['startAt'][TimeKey]) < currentTime < float(api[event]['endAt'][TimeKey]):
-                CurrentEventID = event
+    try:
+        api = await GetBestdoriAllEventsAPI()
+        for event in api:
+            if CurrentEventID:
+                break
+            if api[event]['startAt'][TimeKey]:
+                if float(api[event]['startAt'][TimeKey]) < currentTime < float(api[event]['endAt'][TimeKey]):
+                    CurrentEventID = event
+    except Exception:
+        pass
     if not CurrentEventID:
         api = await getBandoriGAAPI(server)
         CurrentEventID = api['eventId']

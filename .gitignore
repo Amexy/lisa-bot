@@ -16,3 +16,8 @@ commands/cogs/admin.py
 .gitattributes
 debug.log
 commands/cogs/Servers.py
+.vscode/launch.json
+*.json
+*.DS_STORE
+startup/google.py
+commands/cogs/Help.py

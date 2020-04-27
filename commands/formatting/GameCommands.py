@@ -15,7 +15,7 @@ import discord
 #######################
 def findRank(rank: int):
     xpTable = xpTableFnc()
-    xp = xpTable[rank-1]
+    xp = xpTable[rank]
     return xp
 
 def xpTableFnc():
@@ -311,6 +311,22 @@ async def characterOutput(character: str):
     embed.add_field(name='Interests', value='\n'.join(charaInterests), inline=True)
     embed.add_field(name='School', value='\n'.join(charaEdu), inline=True)
     return embed
+
+async def GetLevelOutput(CurrentLevel: int, XPPerSong: int, SongsPlayed: int):
+    from commands.formatting.GameCommands import findRank, xpTableFnc
+    CurrentXP = findRank(CurrentLevel)
+    NewXP = CurrentXP + (XPPerSong * SongsPlayed)
+    xpTable = xpTableFnc()
+    counter = 0
+    if NewXP < xpTable[-1]:
+        for xp in xpTable:
+            if xp < NewXP < xpTable[counter+1]:
+                NewLevel = counter
+                break
+            counter +=1  
+    else:
+        NewLevel = 300
+    return NewLevel
 
 async def GetLeaderboardsOutput(server: str = 'en', type: str = 'highscores', entries: int = 20):
     from commands.apiFunctions import GetBestdoriPlayerLeaderboardsAPI
