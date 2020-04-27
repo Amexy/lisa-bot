@@ -6,6 +6,9 @@ t10archives/
 databases/
 protodefs/
 serverlogs/
+venv/
+imgTmp/*.png
+.idea/
 startup/login.py
 commands/oldstuff
 commands/cogs/seiyuu.py

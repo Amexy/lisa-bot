@@ -1,3 +1,5 @@
+import os
+
 from commands.apiFunctions import GetSongAPI
 from tabulate import tabulate
 from discord.ext import commands
@@ -7,6 +9,7 @@ from operator import itemgetter
 from time import strftime
 from time import gmtime
 from commands.apiFunctions import GetBestdoriAllCharactersAPI, GetBestdoriAllEventsAPI, GetBestdoriBannersAPI, GetBestdoriEventArchivesAPI, GetBestdoriAllGachasAPI, GetBestdoriGachaAPI, GetBestdoriCardAPI, GetSongMetaAPI, GetBestdoriCharasAPI
+from commands.cogs.Cards import parseCards, generateImage, Palette, filterArguments, findCardFromArguments, Card
 from commands.formatting.GameCommands import GetStarsUsedOutput, GetEPGainOutput, characterOutput, GetSongInfo, GetSongMetaOutput, GetLeaderboardsOutput
 from commands.formatting.TimeCommands import GetCurrentTime
 import discord
@@ -291,18 +294,26 @@ class Game(commands.Cog):
         
     @commands.command(name='cards',
                       aliases=['card'],
-                      description="Provides bestdori link of the card ID(s) specified",
-                      brief="Bestdori card link",
-                      help="Enter the ID(s) of the card you want to search\n\nExamples:\n.card 100\n.card 100 200 300")
-    async def cards(self, ctx, *args):
-        output = []
-        cardAPI = requests.get('https://bestdori.com/api/cards/all.0.json').json()
-        for x in args:
-            if(x not in cardAPI):
-                output.append('No card found with ID ' + str(x))
-            else:
-                output.append("https://bestdori.com/info/cards/" + str(x))
-        await ctx.send('\n'.join(output))
+                      description="Provides image of card with specified filters",
+                      brief="Card image",
+                      help="Enter the character with optional filters to see card information\n\nExamples:\n.card kokoro 2 - Second Kokoro SSR\n.card lisa df - Lisa Dreamfes card\n.card moca last ssr - Last released SSR of Moca\n.card hina last sr happy - Last released happy SR of Hina")
+    async def cards(self, ctx: discord.abc.Messageable, *args):
+        resultFilteredArguments = filterArguments(*args)
+        if resultFilteredArguments.failure:
+            await ctx.send(resultFilteredArguments.failure)
+        cards = parseCards(requests.get('https://bestdori.com/api/cards/all.5.json').json(), requests.get('https://bestdori.com/api/skills/all.5.json').json())
+        resultCard = findCardFromArguments(cards, resultFilteredArguments.success)
+        if resultCard.failure:
+            await ctx.send(resultCard.failure)
+        card: Card = resultCard.success
+        palette = Palette(card.attribute)
+        imagePath = generateImage(card, palette)
+        channel: discord.TextChannel = self.bot.get_channel(703367569150574653)
+        fileSend: discord.Message = await channel.send(file=discord.File(imagePath))
+        embed = discord.Embed(colour=palette.primaryInt)
+        embed.set_image(url=fileSend.attachments[0].url)
+        os.remove(imagePath)
+        await ctx.send(embed=embed)
 
     @songinfo.error
     async def songinfo_error(self, ctx, error):
