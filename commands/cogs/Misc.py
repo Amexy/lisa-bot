@@ -1,9 +1,51 @@
 from discord.ext import commands
 from tabulate import tabulate
 from googletrans import Translator
+import discord, os, shutil, requests
+from discord import File
+
 class Misc(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.command(name='servericon',
+                    aliases=['sp','si','serverpic'],
+                    help="Uploads the server's icon")
+    async def servericon(self, ctx):
+        GuildInfo = self.bot.get_guild(ctx.message.guild.id)
+        GuildPicURL = GuildInfo.icon_url.BASE + GuildInfo.icon_url._url
+        if '.gif' in GuildInfo.icon_url._url:
+            FileExtension = '.gif'
+        else:
+            FileExtension = '.png'
+        SavedPicPath = 'imgTmp/' + str(ctx.message.guild.id) + FileExtension
+        response = requests.get(GuildPicURL, stream=True)
+        if os.path.exists(SavedPicPath):
+            os.remove(SavedPicPath)
+        with open(SavedPicPath, 'ab') as Out_file:
+            shutil.copyfileobj(response.raw, Out_file)
+            DiscordFileObject = File(SavedPicPath)
+        await ctx.send(file=DiscordFileObject)
+        del response
+    
+    @commands.command(name='avatar',
+                    aliases=['a'],
+                    help="Uploads the mentioned user's avatar")
+    async def getavatar(self, ctx, user: discord.Member):
+        UserPicUrl = user.avatar_url.BASE + user.avatar_url._url
+        if '.gif' in user.avatar_url._url:
+            FileExtension = '.gif'
+        else:
+            FileExtension = '.png'
+        SavedPicPath = 'imgTmp/' + str(user.id) + FileExtension
+        response = requests.get(UserPicUrl, stream=True)
+        if os.path.exists(SavedPicPath):
+            os.remove(SavedPicPath)
+        with open(SavedPicPath, 'ab') as Out_file:
+            shutil.copyfileobj(response.raw, Out_file)
+            DiscordFileObject = File(SavedPicPath)
+        await ctx.send(file=DiscordFileObject)
+        del response
 
     @commands.command(name='about',
                       aliases=['info'],
