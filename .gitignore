@@ -6,7 +6,7 @@ databases/
 protodefs/
 serverlogs/
 venv/
-imgTmp/*.png
+imgTmp/*
 .idea/
 startup/login.py
 commands/oldstuff
