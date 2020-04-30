@@ -337,7 +337,7 @@ class Game(commands.Cog):
     @commands.command(name='cardinfo',
                       aliases=['ci'],
                       description="Provides embedded image of card with specified filters",
-                      brief="Detailed Card Image",
+                      brief="Detailed card image",
                       help="Enter the character with optional filters to see card information\n\nExamples:\n.card kokoro 2 - Second Kokoro SSR\n.card lisa df - Lisa Dreamfes card\n.card moca last ssr - Last released SSR of Moca\n.card hina last sr happy - Last released happy SR of Hina")
     async def cardinfo(self, ctx: discord.abc.Messageable, *args):
         resultFilteredArguments = filterArguments(*args)
