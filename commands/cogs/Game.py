@@ -132,9 +132,9 @@ class Game(commands.Cog):
                 eventAPI = await GetBestdoriAllEventsAPI()
                 
                 if event:
-                    if isinstance(event, int):
-                        EventName = await GetEventName(server, event)
-                        EventID = event
+                    if event[0].isnumeric():
+                        EventName = await GetEventName(server, event[0])
+                        EventID = event[0]
                     else:
                         eventString = event[0]
                         for x in event:
@@ -205,52 +205,37 @@ class Game(commands.Cog):
                 #check to see if event requested is an active event or not
                 currentTime = int(round(time.time() * 1000))
                 
+                bannerAPI = await GetBestdoriBannersAPI(int(EventID))
+                bannerName = bannerAPI['assetBundleName']
+                eventUrl = 'https://bestdori.com/info/events/' + str(EventID)
+                thumbnail = 'https://bestdori.com/assets/%s/event/%s/images_rip/logo.png'  %(server,bannerName)
+                embed=discord.Embed(title=EventName, url=eventUrl, color=embedColor)
+                embed.set_thumbnail(url=thumbnail)
+                embed.add_field(name='Attribute', value=str(attribute).capitalize(), inline=True)
+                embed.add_field(name='Event Type', value=str(eventType).capitalize(), inline=True)
                 if(currentTime > int(endTime)):
-                    bannerAPI = await GetBestdoriBannersAPI(int(EventID))
                     archiveAPI = await GetBestdoriEventArchivesAPI()
-                    cutoffs = []
-                    if(server == 'en'):
-                        cutoffs = (archiveAPI[str(EventID)]['cutoff'][1]).items()
-                    elif(server == 'jp'):
-                        cutoffs = (archiveAPI[str(EventID)]['cutoff'][0]).items()
-                    elif(server == 'tw'):
-                        cutoffs = (archiveAPI[str(EventID)]['cutoff'][2]).items()
-                    elif(server == 'cn'):
-                        cutoffs = (archiveAPI[str(EventID)]['cutoff'][3]).items()
-                    bannerName = bannerAPI['assetBundleName']
-                    eventUrl = 'https://bestdori.com/info/events/' + str(EventID)
-                    thumbnail = 'https://bestdori.com/assets/%s/event/%s/images_rip/logo.png'  %(server,bannerName)
-                    embed=discord.Embed(title=EventName, url=eventUrl, color=embedColor)
-                    embed.set_thumbnail(url=thumbnail)
-                    embed.add_field(name='Attribute', value=str(attribute).capitalize(), inline=True)
-                    embed.add_field(name='Event Type', value=str(eventType).capitalize(), inline=True)
-                    if cutoffs:
-                        embed.add_field(name='Members', value='\n'.join(members), inline=True)
-                        embed.add_field(name='Cutoffs', value='\n'.join("{}: {}".format(k, "{:,}".format(v)) for k, v in cutoffs), inline=True)
-                    else:
-                        embed.add_field(name='Members', value='\n'.join(members), inline=False)
-                    embed.add_field(name='Start' , value=beginsString, inline=True)
-                    embed.add_field(name='End', value=endsString, inline=True)
-                    await ctx.send(embed=embed)
-                else:
-                    bannerAPI = await GetBestdoriBannersAPI(int(EventID))
-                    cutoffs = []
-                    bannerName = bannerAPI['assetBundleName']
-                    eventUrl = 'https://bestdori.com/info/events/' + str(EventID)
-                    thumbnail = 'https://bestdori.com/assets/%s/event/%s/images_rip/logo.png'  %(server,bannerName)
-                    embed=discord.Embed(title=EventName, url=eventUrl, color=embedColor)
-                    embed.set_thumbnail(url=thumbnail)
-                    embed.add_field(name='Attribute', value=str(attribute).capitalize(), inline=True)
-                    embed.add_field(name='Event Type', value=str(eventType).capitalize(), inline=True)
-                    embed.add_field(name='Members', value='\n'.join(members), inline=False)
-                    embed.add_field(name='Start' , value=beginsString, inline=True)
-                    embed.add_field(name='End', value=endsString, inline=True)
-                    await ctx.send(embed=embed)
+                    if str(EventID) in archiveAPI.keys():
+                        cutoffs = []
+                        if(server == 'en'):
+                            CutoffKey = 1
+                        elif(server == 'jp'):
+                            CutoffKey = 0
+                        elif(server == 'tw'):
+                            CutoffKey = 2
+                        elif(server == 'cn'):
+                            CutoffKey = 3
+                        if archiveAPI[str(EventID)]['cutoff'][CutoffKey]:
+                            cutoffs = (archiveAPI[str(EventID)]['cutoff'][CutoffKey]).items()
+                            embed.add_field(name='Cutoffs', value='\n'.join("{}: {}".format(k, "{:,}".format(v)) for k, v in cutoffs), inline=True)
+                embed.add_field(name='Members', value='\n'.join(members), inline=False)
+                embed.add_field(name='Start' , value=beginsString, inline=True)
+                embed.add_field(name='End', value=endsString, inline=True)
+                await ctx.send(embed=embed)
             else:
                 await ctx.send("Please enter a valid server (i.e. en, jp, tw, cn)")
-        except Exception as e:
-            print('Failed posting event data for event ' + str(event) + '\n' + str(e))
-            await ctx.send("Couldn't find the event entered. If using hiragana, try kana or vice versa (e.g. きみが doesn't work, but キミが does).")
+        except:
+            await ctx.send(f"No event information found for event `{EventID}` and server `{server}`. If using hiragana, try kana or vice versa (e.g. きみが doesn't work, but キミが does).")
 
     @commands.command(name='songinfo',
                       aliases=['song','songs'],

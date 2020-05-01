@@ -60,7 +60,7 @@ class Misc(commands.Cog):
 
     @commands.command(name='avatar',
                     aliases=['a'],
-                    help="Uploads the mentioned user's avatar\n\n.Examples:\n\n .avatar @Lisa#4081\n.a Lisa#4081")
+                    help="Uploads the mentioned user's avatar\n\n.Examples:\n\n.avatar @Lisa#4081\n.a Lisa#4081\n.a 523337807847227402\n.a Lisa (ths one may not always work)")
     async def getavatar(self, ctx, user: discord.Member):
         UserPicUrl = user.avatar_url.BASE + user.avatar_url._url
         if '.gif' in user.avatar_url._url:
