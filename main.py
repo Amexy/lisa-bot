@@ -14,6 +14,7 @@ from commands.formatting.EventCommands import GetCutoffFormatting, GetCurrentEve
 from commands.apiFunctions import GetBestdoriCutoffAPI
 from commands.cogs.Event import Event
 import json, requests, discord, asyncio, time
+import startup.OpenWebdrivers
 
 # checks prefix database for each message. could probably improve this 
 default_prefix = "."

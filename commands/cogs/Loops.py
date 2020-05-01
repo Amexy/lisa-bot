@@ -30,7 +30,6 @@ class Loops(commands.Cog):
             self.bot.loop.create_task(self.postT1000CutoffUpdates())
             self.bot.loop.create_task(self.postT100CutoffUpdates())
             self.bot.loop.create_task(self.postBestdoriNews())
-
         else:
             print('Not loading loops')
         print('Successfully loaded Loops cog')
