@@ -88,16 +88,19 @@ async def sendEventUpdates(message: str, server: str):
 async def postEventNotif(server: str):
     await bot.wait_until_ready()
     while not bot.is_closed():
-        from commands.apiFunctions import getBandoriGAAPI
-        eventAPI = await getBandoriGAAPI(server)
-        eventID = eventAPI['eventId']
-        eventName = await GetEventName(server, eventID)
+        from commands.apiFunctions import GetBestdoriEventAPI
+        from commands.formatting.EventCommands import GetCurrentEventID
+        EventID = await GetCurrentEventID(server)
+        eventAPI = await GetBestdoriEventAPI(EventID)
+        eventName = await GetEventName(server, EventID)
         currentTime = ((datetime.now().timestamp()) * 1000)
-        eventEnd = float(eventAPI['endAt'])
-        eventStart = float(eventAPI['publicStartAt'])
+        if server == 'en':
+            Key = 1 
+        elif server == 'jp':
+            Key = 0 
+        eventEnd = float(eventAPI['endAt'][Key])
+        eventStart = float(eventAPI['startAt'][Key])
         timeTilEventEnd = (int(eventEnd) - currentTime) / 1000
-
-        #check if event has started yet
         timeToStart = (eventStart - currentTime) / 1000
         if(timeToStart > 0):
             if (timeToStart > 3600):
@@ -142,10 +145,8 @@ async def postEventT101hr():
 
 
         if EnEventID:
-            print('1 hour ' + str(EnEventID))
             timeLeftEn = await GetEventTimeLeftSeconds('en', EnEventID)
             if(timeLeftEn > 0):
-                print('1 hour ' + str(timeLeftEn))
                 EnMessage = await t10formatting('en', EnEventID, True)
                 #await t10logging('en', EnEventID, False)
                 #await t10logging('en', EnEventID, True)
@@ -155,9 +156,9 @@ async def postEventT101hr():
                     if channel != None:
                         try:
                             await channel.send(EnMessage)
-                        except: 
-                            channel2 = bot.get_channel(523339468229312555)
-                            await channel2.send('Removing 1 hour updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
+                        except commands.BotMissingPermissions: 
+                            LoopRemovalUpdates = bot.get_channel(523339468229312555)
+                            await LoopRemovalUpdates.send('Removing 1 hour updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                             removeChannelFromDatabase(channel, 3600, 'en')
         
         JPEventID = await GetCurrentEventID('jp')
@@ -171,9 +172,9 @@ async def postEventT101hr():
                     if channel != None:
                         try:
                             await channel.send(JPMessage)
-                        except: 
-                            channel2 = bot.get_channel(523339468229312555)
-                            await channel2.send('Removing 1 hour updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
+                        except commands.BotMissingPermissions: 
+                            LoopRemovalUpdates = bot.get_channel(523339468229312555)
+                            await LoopRemovalUpdates.send('Removing 1 hour updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                             removeChannelFromDatabase(channel, 3600, 'jp')                  
 
 async def postEventT102min():
@@ -203,9 +204,9 @@ async def postEventT102min():
                     if channel != None:
                         try:
                             await channel.send(EnMessage)
-                        except: 
-                            channel2 = bot.get_channel(523339468229312555)
-                            await channel2.send('Removing 2 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
+                        except commands.BotMissingPermissions: 
+                            LoopRemovalUpdates = bot.get_channel(523339468229312555)
+                            await LoopRemovalUpdates.send('Removing 2 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                             removeChannelFromDatabase(channel, 2, 'en')
                             
         JPEventID = await GetCurrentEventID('jp')
@@ -219,9 +220,9 @@ async def postEventT102min():
                     if channel != None:
                         try:
                             await channel.send(JPMessage)
-                        except: 
-                            channel2 = bot.get_channel(523339468229312555)
-                            await channel2.send('Removing 2 minute updates from channel: ' + sstr(channel.name) + " in server: " + str(channel.guild.name))
+                        except commands.BotMissingPermissions: 
+                            LoopRemovalUpdates = bot.get_channel(523339468229312555)
+                            await LoopRemovalUpdates.send('Removing 2 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                             removeChannelFromDatabase(channel, 2, 'jp')
             
 async def postSongUpdates1min():
@@ -245,10 +246,9 @@ async def postSongUpdates1min():
                             try:
                                 for x in message:
                                     await channel.send(x)
-                            except Exception as e:
-                                print(e) 
-                                channel2 = bot.get_channel(523339468229312555)
-                                await channel2.send('Removing 1 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
+                            except commands.BotMissingPermissions: 
+                                LoopRemovalUpdates = bot.get_channel(523339468229312555)
+                                await LoopRemovalUpdates.send('Removing 1 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                                 removeChannelFromDatabaseSongs(channel)
         except Exception as e:
             print('Failed posting 1 minute song data.\n'+ str(e))
@@ -267,7 +267,7 @@ async def postT100CutoffUpdates():
                     global initialT100Cutoffs           
                     cutoffAPI = await GetBestdoriCutoffAPI(100)
                     if(sorted(initialT100Cutoffs.items()) != sorted(cutoffAPI.items())):
-                        from startup.login import enDriver      
+                        from startup.OpenWebdrivers import enDriver      
                         output = await GetCutoffFormatting(enDriver, 'en', 100)
                         ids = getCutoffChannels(100)
                         for i in ids:
@@ -276,8 +276,9 @@ async def postT100CutoffUpdates():
                                 try:
                                     await channel.send('T100 update found!')
                                     await channel.send(embed=output)
-                                except: 
-                                    print('Removing T100 Updates from channel: ' + str(channel.id))
+                                except commands.BotMissingPermissions: 
+                                    LoopRemovalUpdates = bot.get_channel(523339468229312555)
+                                    await LoopRemovalUpdates.send('Removing 1 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                                     rmChannelFromCutoffDatabase(channel, 100)
                         initialT100Cutoffs = cutoffAPI
                 await asyncio.sleep(60)
@@ -297,7 +298,7 @@ async def postT1000CutoffUpdates():
                     global initialT1000Cutoffs           
                     cutoffAPI = await GetBestdoriCutoffAPI(1000)
                     if(sorted(initialT1000Cutoffs.items()) != sorted(cutoffAPI.items())):
-                        from startup.login import enDriver
+                        from startup.OpenWebdrivers import enDriver      
                         output = await GetCutoffFormatting(enDriver, 'en', 1000)
                         ids = getCutoffChannels(1000)
                         for i in ids:
@@ -306,8 +307,9 @@ async def postT1000CutoffUpdates():
                                 try:
                                     await channel.send('T1000 update found!')
                                     await channel.send(embed=output)
-                                except: 
-                                    print('Removing T1000 Updates from channel: ' + str(channel.id))
+                                except commands.BotMissingPermissions: 
+                                    LoopRemovalUpdates = bot.get_channel(523339468229312555)
+                                    await LoopRemovalUpdates.send('Removing 1 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                                     rmChannelFromCutoffDatabase(channel, 1000)
                         initialT1000Cutoffs = cutoffAPI
                 await asyncio.sleep(60)
@@ -321,7 +323,7 @@ async def postT1000CutoffUpdates():
 async def on_ready():
     print("Connected..")
     CurrentGuildCount = 0
-    for guild in bot.guilds:
+    for _ in bot.guilds:
         CurrentGuildCount += 1
     print('Current Server Count: ' + str(CurrentGuildCount))
     await bot.change_presence(activity=discord.Game(name='.help | discord.gg/wDu5CAA'))
