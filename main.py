@@ -16,7 +16,7 @@ from commands.cogs.Event import Event
 import json, requests, discord, asyncio, time
 
 # checks prefix database for each message. could probably improve this 
-default_prefix = "!"
+default_prefix = "."
 def prefix(bot, message):
     prefixList = TinyDB('databases\prefixdb.json')
     results = prefixList.search(where('id') == message.guild.id)
