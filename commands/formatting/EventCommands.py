@@ -65,7 +65,7 @@ async def GetEventAttribute(eventid: int):
     return EventAttribute
     
 async def GetCurrentEventID(server: str):
-    from commands.apiFunctions import GetBestdoriAllEventsAPI, getBandoriGAAPI
+    from commands.apiFunctions import GetBestdoriAllEventsAPI
     
     currentTime = time.time() * 1000
     CurrentEventID = ''
@@ -80,23 +80,24 @@ async def GetCurrentEventID(server: str):
     elif server == 'kr':
         TimeKey = 4
 
-    try:
-        api = await GetBestdoriAllEventsAPI()
-        for event in api:
-            if CurrentEventID:
+    api = await GetBestdoriAllEventsAPI()
+    for event in api:
+        if api[event]['startAt'][TimeKey]:
+            if float(api[event]['startAt'][TimeKey]) < currentTime < float(api[event]['endAt'][TimeKey]):
+                CurrentEventID = event
                 break
-            if api[event]['startAt'][TimeKey]:
-                if float(api[event]['startAt'][TimeKey]) < currentTime < float(api[event]['endAt'][TimeKey]):
-                    CurrentEventID = event
-    except Exception:
-        pass
     if not CurrentEventID:
-        api = await getBandoriGAAPI(server)
-        CurrentEventID = api['eventId']
-        if CurrentEventID:
-            return CurrentEventID
-    else:
+        try:
+            for event in api:
+                if float(api[event]['endAt'][TimeKey]) < currentTime < float(api[str(int(event) + 1)]['endAt'][TimeKey]): #In jp's case, there may not be an entry for the next event yet
+                    CurrentEventID = event
+                    break
+        except KeyError:
+            CurrentEventID = list(api.keys())[-1]
+    if CurrentEventID:
         return CurrentEventID
+    else:
+        return 0
     
 async def GetCutoffFormatting(driver, server: str, tier: int):
     from commands.apiFunctions import GetBestdoriAllEventsAPI, GetBestdoriBannersAPI
