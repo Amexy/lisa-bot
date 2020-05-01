@@ -342,9 +342,7 @@ async def t10membersformatting(server: str, eventid: int, songs: bool):
                 str(x.main_team.card_5) + '(' + str(c5sl) + ')',
                 str(x.name)
             ])
-            #optimal.append([x.main_team.card_1,x.main_team.card_2,x.main_team.card_3,x.main_team.card_4,x.main_team.card_5])
             i += 1
-        print(type(now_time))
         songsOutput = ("```" + "  Time:  " + now_time.strftime(fmt) + "\n  Event: " + eventName + "\n\n" + tabulate(entries, tablefmt="plain", headers=["#", "Points", "Level", "ID","C1","C2","C3","C4","C5","Player"]) + "```")
     return songsOutput
 

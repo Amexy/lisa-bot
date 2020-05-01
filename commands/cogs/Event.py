@@ -19,16 +19,18 @@ import selenium
 class Event(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
+        
+    ValidT10Servers = ['en','jp']
 
     @commands.command(name='t10archives',
                 aliases=["t10a"],
                 help="Attaches a txt file (if found) containing 2 minute t10 updates for the specified event and server\n\nExamples:\n\n.t10a 76 (this defaults to en)\n.t10a 112 jp")
     async def t10archives(self, ctx, eventid: int = 0, server: str = 'en'):
+        if eventid.isstring():
+            raise commands.errors.BadArgument
         try:
-            ValidServers = ['en','jp']
-            if server not in ValidServers:
-                await ctx.send('This function only works for the EN and JP servers')
+            if server not in self.ValidT10Servers:
+                await ctx.send('This function only works for the `EN` and `JP` servers')
             else:
                 FileToAttach = await GetT10ArchiveFile(eventid, server)
                 if FileToAttach:
@@ -45,58 +47,81 @@ class Event(commands.Cog):
                 brief="t10 info",
                 help="Provides current or specified event t10 info. Can look on a per event/server level, you can also include the songs parameter to look at song info (CL or VS only). However, a lot of the old data has been made inacessible or deleted so the bot may throw an error when checking. You can find the eventIds for any event by going to https://bestdori.com/info/events\n\nExamples\n\n.t10 en\n.t10 en 30\n.t10 jp 78 songs")
     async def t10(self, ctx, server: str = 'en', eventid: int = 0, *songs):
-        try:
+        if server.isnumeric():
+            raise commands.errors.BadArgument
+        else:
             server = server.lower()
-            if(eventid == 0):
-                eventid = await GetCurrentEventID(server)
+            if server not in self.ValidT10Servers:
+                await ctx.send('This function only works for the `EN` and `JP` servers')
             else:
-                eventid = eventid
-            if(songs):
-                output = await t10songsformatting(server, eventid, False)
-                output = ''.join(output)
-            else:
-                output = await t10formatting(server, eventid, False)
-            await ctx.send(output)
-        except:
-            await ctx.send("No data found for the specified event. It probably hasn't started yet. If it has but this error is still being shown, please let Josh#1373 know.")
+                try:
+                    server = server.lower()
+                    if(eventid == 0):
+                        eventid = await GetCurrentEventID(server)
+                    else:
+                        eventid = eventid
+                    if(songs):
+                        output = await t10songsformatting(server, eventid, False)
+                        output = ''.join(output)
+                    else:
+                        output = await t10formatting(server, eventid, False)
+                    await ctx.send(output)
+                except:
+                    await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please let Josh#1373 know if this continues to happen")
 
     @commands.command(name='t10ids',
                 aliases=['t10i'],
                 brief="t10 info with user ids",
                 help="Provides current or specified event t10 info. Can look on a per event/server level, you can also include the songs parameter to look at song info (CL or VS only). However, a lot of the old data has been made inacessible or deleted so the bot may throw an error when checking. You can find the eventIds for any event by going to https://bestdori.com/info/events\n\nExamples\n\n.t10ids en\n.t10ids en 30\n.t10ids jp 78 songs")
     async def t10ids(self, ctx, server: str = 'en', eventid: int = 0, *songs):
-        try:
+        if server.isnumeric():
+            raise commands.errors.BadArgument
+        else:
             server = server.lower()
-            if(eventid == 0):
-                eventid = await GetCurrentEventID(server)
+            if server not in self.ValidT10Servers:
+                await ctx.send('This function only works for the `EN` and `JP` servers')
             else:
-                eventid = eventid
-            if(songs):
-                output = await t10songsformatting(server, eventid, True)
-                output = ''.join(output)
-            else:
-                output = await t10formatting(server, eventid, True)
-            await ctx.send(output)
-        except:
-            await ctx.send("No data found for the specified event. It probably hasn't started yet. If it has but this error is still being shown, please let Josh#1373 know.")
+                try:
+                    if(eventid == 0):
+                        eventid = await GetCurrentEventID(server)
+                    else:
+                        eventid = eventid
+                    if(songs):
+                        output = await t10songsformatting(server, eventid, True)
+                        output = ''.join(output)
+                    else:
+                        output = await t10formatting(server, eventid, True)
+                    await ctx.send(output)
+                except:
+                    await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please let Josh#1373 know if this continues to happen")
 
     @commands.command(name='t10members',
                 aliases=['t10m'],
                 help="Aliases: t10m\n\nPosts t10 info with each player's team in their profile along with skill level for each member",
                 brief='t10 info with member info ')
     async def t10members(self, ctx, server: str = 'en', eventid: int = 0, *songs):
-        if(eventid == 0):
-            eventid = await GetCurrentEventID(server)
+        if server.isnumeric():
+            raise commands.errors.BadArgument
         else:
-            eventid = eventid
-        if(songs):
-            output = await t10membersformatting(server, eventid, True)
-            #doing this because on a CL, the output is very likely >2000 characters bypassing discord's limit
-            for x in output:
-                await ctx.send(x)
-        else:
-            output = await t10membersformatting(server, eventid, False)
-            await ctx.send(output)
+            server = server.lower()
+            if server not in self.ValidT10Servers:
+                await ctx.send('This function only works for the `EN` and `JP` servers')
+            else:
+                try:
+                    if(eventid == 0):
+                        eventid = await GetCurrentEventID(server)
+                    else:
+                        eventid = eventid
+                    if(songs):
+                        output = await t10membersformatting(server, eventid, True)
+                        #doing this because on a CL, the output is very likely >2000 characters bypassing discord's limit
+                        for x in output:
+                            await ctx.send(x)
+                    else:
+                        output = await t10membersformatting(server, eventid, False)
+                        await ctx.send(output)
+                except:
+                    await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please let Josh#1373 know if this continues to happen")
 
     @commands.command(name='timeleft',
             aliases=['tl'],
@@ -118,8 +143,12 @@ class Event(commands.Cog):
                 description="Given an input of server, ep gained per song, and beginning EP, the bot provides how much EP you'll have at the end of the event if you natural flame for the rest of the event",
                 brief="EP at end of event via only natural flames")
     async def coasting(self, ctx, server: str, epPerSong: int, currentEP: int):
-        coastingTable = await GetCoastingOutput(server, epPerSong, currentEP)
-        await ctx.send(coastingTable)
+        ValidServers = ['en','jp','cn','tw','kr']
+        if server.lower() not in ValidServers:
+            await ctx.send('Please enter a valid server from one of the following: ' + str(ValidServers)[1:-1])
+        else:
+            coastingTable = await GetCoastingOutput(server, epPerSong, currentEP)
+            await ctx.send(coastingTable)
 
 
         
@@ -156,12 +185,13 @@ class Event(commands.Cog):
                      brief="Cutoff estimate for t10, t100, t1000, and t2000",
                      help="Cutoff estimate for t10, t100, t1000, and t2000. Pass the tier you want and server (defaulted to en)\n\nCurrently using https://bestdori.com/tool/eventtracker/, all credit goes to Burrito\n\nExamples\n\n.cutoff 100\n.cutoff 1000 en\n.cutoff 2000 jp")
     async def cutoff(self, ctx, tier: int = 100, server: str = 'en'):
-        from startup.login import enDriver, jpDriver, cnDriver, twkrDriver
+        from startup.OpenWebdrivers import enDriver, jpDriver, cnDriver, twkrDriver
         server = server.lower()
         ValidT2000 = ['jp','cn']
         ValidT1000 = ['en','jp','cn']
         ValidT10 = ['en','jp']
         output = ''
+        ctx.invoked_with = ctx.invoked_with.lower()
         if 't1000' in ctx.invoked_with:
             tier = 1000
         elif 't100' in ctx.invoked_with:
@@ -188,17 +218,25 @@ class Event(commands.Cog):
             try:
                 output = await GetCutoffFormatting(driver, server, tier)
                 await ctx.send(embed=output)
+            except IndexError:
+                await ctx.send('Failed getting cutoff data, there is likely no data available yet on Bestdori')
             except selenium.common.exceptions.WebDriverException:
                 await ctx.send("Failed getting cutoff data because Chrome likely crashed. Please wait a few seconds and run the command again")
-                from startup.login import LoadWebDrivers
+                from startup.OpenWebdrivers import LoadWebDrivers
                 LoadWebDrivers(server)
 
 
-
+    import sys
+    #sys.tracebacklimit = 0
     @coasting.error
     async def coasting_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Missing argument, please check required arguments using `.help <command>`! Required arguments are enclosed in < >")
+            await ctx.send("Missing argument, please check required arguments using `.help <command>`. Required arguments are enclosed in < >")
+        if isinstance(error, commands.BadArgument):
+            await ctx.send("Invalid argument, please check argument positioning using `.help coasting`")
+
+
+
 
     @timeLeftBotCommand.error 
     async def timeleft_error(self, ctx, error):
@@ -210,15 +248,30 @@ class Event(commands.Cog):
         if isinstance(error, commands.MissingRequiredArgument):
             if error.param.name == 'server':
                 await ctx.send("Missing argument, please check required arguments using `.help <command>`! Required arguments are enclosed in < >")
-
+        if isinstance(error, commands.BadArgument):
+            await ctx.send("Invalid argument, please check argument positioning using `.help t10`")
+    @t10ids.error 
+    async def t10ids_error(self, ctx, error):
+        if isinstance(error, commands.BadArgument):
+            await ctx.send("Invalid argument, please check argument positioning using `.help t10ids`")
+    @t10members.error 
+    async def t10members_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            if error.param.name == 'server':
+                await ctx.send("Missing argument, please check required arguments using `.help <command>`! Required arguments are enclosed in < >")
+        if isinstance(error, commands.BadArgument):
+            await ctx.send("Invalid argument, please check argument positioning using `.help t10members`")
+    @t10archives.error 
+    async def t10archives_error(self, ctx, error):
+        if isinstance(error, commands.BadArgument):
+            await ctx.send("Invalid argument, please check argument positioning using `.help t10archives`")
     @cutoff.error
     async def cutoff_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
             await ctx.send("Missing argument, please check required arguments using `.help <command>`! Required arguments are enclosed in < >")
-        if isinstance(error, commands.BadArgument):
+        if isinstance(error, commands.errors.BadArgument):
             await ctx.send("Invalid argument, please check valid arguments using `.help <command>`! Required arguments are enclosed in < >")
         if isinstance(error, commands.errors.CommandInvokeError):
-            print(str(error))
             await ctx.send("Failed getting cutoff data. Please let Josh#1373 know if this keeps happening. Old events cutoff data can been seen using the `event` command")
 
 def setup(bot):
