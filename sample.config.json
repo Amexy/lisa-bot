@@ -2,5 +2,7 @@
     "token": "token",
     "chromeDriverPath": "path",
     "webdrivers_enabled" : "false",
-    "pickle_path" : "path"
+    "pickle_path" : "path",
+    "loops_enabled" : "true"
+
 }
