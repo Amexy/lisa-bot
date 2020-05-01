@@ -28,6 +28,36 @@ class Misc(commands.Cog):
         await ctx.send(file=DiscordFileObject)
         del response
     
+    @commands.command(name='reload',
+                    help='In the event that the loops (in particular 2 minute/1hr t10 posting) stop working, run this command to restart that process. If you want access to this command, please use the .notify command')
+    async def reload(self, ctx):
+        ValidUsers = [158699060893581313, 202289392394436609, 102201838752784384, 358733607151599636, 229933911717707776, 181690542730641408, 154997108603224064]
+        if ctx.message.author.id not in ValidUsers:
+            await ctx.send("You are not authorized to use this command. If you'd like access, please use the .notify command requesting access")
+        else:
+            try:
+                self.bot.reload_extension("commands.cogs.Loops")
+                await ctx.send("Successfully reloaded the Loops cog")
+            except:
+                await ctx.send("Failed reloading the Loops cog. Please use the `.notify` command to let me know") 
+    
+
+    @commands.command(name='notify',
+                      aliases=['n'],
+                      help='Sends a notification about the bot to Josh#1373 (use this for things like 2min/1hr t10 tracking failing, or a command repeatedly fails')
+    async def notify(self, ctx, *notification):
+        if notification:
+            notificationString = notification[0]
+            for x in notification:
+                if x == notificationString:
+                    continue
+                notificationString += " %s" % x
+            channel = self.bot.get_channel(705596502277357620)
+            await channel.send(str(ctx.message.author.name) + "#" + str(ctx.message.author.discriminator) + " | " + str(ctx.message.guild.name) + ": " + notificationString)
+            await ctx.send("Notification sent")
+        else:
+            await ctx.send('Please enter your notification')
+
     @commands.command(name='avatar',
                     aliases=['a'],
                     help="Uploads the mentioned user's avatar\n\n.Examples:\n\n .avatar @Lisa#4081\n.a Lisa#4081")

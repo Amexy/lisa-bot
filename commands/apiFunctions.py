@@ -3,11 +3,13 @@ import json
 import time
 import aiohttp
 
+"""
 async def getBandoriGAAPI(server: str):
     async with aiohttp.ClientSession() as session:
         api = 'https://api.bandori.ga/v1/%s/event' %str(server)
         async with session.get(api) as BandoriGAAPI:
             return await BandoriGAAPI.json()
+"""
 
 async def GetBestdoriEventAPI(EventID: int):
     async with aiohttp.ClientSession() as session:

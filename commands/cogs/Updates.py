@@ -27,6 +27,7 @@ class Updates(commands.Cog):
             msg = "You must have administrator rights to run this command, {0.author.mention}".format(ctx.message)  
             await ctx.send(msg)
 
+    
     @commands.command(name='removepatchupdates',
                       help='(Admin) Removes channel from Bestdori game patch notes')
     async def removepatchtracking(self, ctx, server: str = 'all', channel: TextChannel = None):
@@ -115,6 +116,7 @@ class Updates(commands.Cog):
         else:
             msg = "You must have administrator rights to run this command, {0.author.mention}".format(ctx.message)  
             await ctx.send(msg)
+    
 
     @commands.command(name='removetracking',
                       description="Given a channel, interval (2min or 1hour), and server input, this channel will be removed from t10 tracking updates. Examples:\n\n.removetracking 523339468229312555 2\n.removetracking 523339468229312555 60 en\n.removetracking (this defaults to 1 hour and channel the command is ran in",
