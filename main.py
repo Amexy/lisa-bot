@@ -221,7 +221,7 @@ async def postEventT102min():
                             await channel.send(JPMessage)
                         except: 
                             channel2 = bot.get_channel(523339468229312555)
-                            await channel2.send('Removing 2 minute updates from channel: ' + sstr(channel.name) + " in server: " + str(channel.guild.name))
+                            await channel2.send('Removing 2 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                             removeChannelFromDatabase(channel, 2, 'jp')
             
 async def postSongUpdates1min():
