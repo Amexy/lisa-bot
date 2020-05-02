@@ -224,6 +224,11 @@ class Event(commands.Cog):
                 await ctx.send("Failed getting cutoff data because Chrome likely crashed. Please wait a few seconds and run the command again")
                 from startup.OpenWebdrivers import LoadWebDrivers
                 LoadWebDrivers(server)
+            except selenium.common.exceptions.ElementNotInteractableException:
+                await ctx.send("Failed getting cutoff data because Chrome likely crashed. Please wait a few seconds and run the command again")
+                from startup.OpenWebdrivers import LoadWebDrivers
+                LoadWebDrivers(server)
+
 
 
     import sys
