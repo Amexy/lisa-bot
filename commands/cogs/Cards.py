@@ -375,7 +375,7 @@ def findStringInList(find: str, collection: List[str]) -> bool:
 
 def findCardFromArguments(cardList: List[Card], arg: FilteredArguments) -> Result:
     if arg.title:
-        lst = [it for it in cardList if it.cardName.lower() == arg.title]
+        lst = [it for it in cardList if arg.title in it.cardName.lower()]
         if len(lst) == 0:
             return Result.createFailure("No card with selected title found")
         else:
