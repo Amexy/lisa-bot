@@ -22,12 +22,12 @@ class Loops(commands.Cog):
         self.firstAPI = requests.get('https://bestdori.com/api/news/all.5.json').json()
 
         if loops_enabled == 'true':
+            self.bot.loop.create_task(self.postT100CutoffUpdates())
             self.bot.loop.create_task(self.postEventT102min())
             self.bot.loop.create_task(self.postEventT101hr())
             self.bot.loop.create_task(self.postEventNotif('en'))
             self.bot.loop.create_task(self.postEventNotif('jp'))
             self.bot.loop.create_task(self.postSongUpdates1min())
-            self.bot.loop.create_task(self.postT1000CutoffUpdates())
             self.bot.loop.create_task(self.postT100CutoffUpdates())
             self.bot.loop.create_task(self.postBestdoriNews())
         else:
@@ -182,7 +182,7 @@ class Loops(commands.Cog):
                                         LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
                                         await LoopRemovalUpdates.send('Removing 1 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                                         rmChannelFromCutoffDatabase(channel, 100)
-                            initialT100Cutoffs = cutoffAPI
+                            self.initialT100Cutoffs = cutoffAPI
                     await asyncio.sleep(60)
             except Exception as e:
                 print('Failed posting t100 data.\n'+ str(e))
@@ -212,7 +212,7 @@ class Loops(commands.Cog):
                                         LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
                                         await LoopRemovalUpdates.send('Removing 1 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                                         rmChannelFromCutoffDatabase(channel, 1000)
-                            initialT1000Cutoffs = cutoffAPI
+                            self.initialT1000Cutoffs = cutoffAPI
                     await asyncio.sleep(60)
             except Exception as e:
                 print('Failed posting t1000 data.\n'+ str(e))
@@ -253,7 +253,7 @@ class Loops(commands.Cog):
                                 await channel.send(embed=embed)
 
                         embed=discord.Embed(color=0x09d9fd)
-                firstAPI = updatedAPI
+                self.firstAPI = updatedAPI
             await asyncio.sleep(300)
 
     async def sendEventUpdates(self, message: str, server: str):
