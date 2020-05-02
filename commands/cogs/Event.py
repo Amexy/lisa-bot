@@ -67,7 +67,7 @@ class Event(commands.Cog):
                         output = await t10formatting(server, eventid, False)
                     await ctx.send(output)
                 except:
-                    await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please let Josh#1373 know if this continues to happen")
+                    await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify`. command to let Josh know if this keeps happening")
 
     @commands.command(name='t10ids',
                 aliases=['t10i'],
@@ -93,7 +93,7 @@ class Event(commands.Cog):
                         output = await t10formatting(server, eventid, True)
                     await ctx.send(output)
                 except:
-                    await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please let Josh#1373 know if this continues to happen")
+                    await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify`. command to let Josh know if this keeps happening")
 
     @commands.command(name='t10members',
                 aliases=['t10m'],
@@ -121,7 +121,7 @@ class Event(commands.Cog):
                         output = await t10membersformatting(server, eventid, False)
                         await ctx.send(output)
                 except:
-                    await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please let Josh#1373 know if this continues to happen")
+                    await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify`. command to let Josh know if this keeps happening")
 
     @commands.command(name='timeleft',
             aliases=['tl'],
@@ -272,7 +272,7 @@ class Event(commands.Cog):
         if isinstance(error, commands.errors.BadArgument):
             await ctx.send("Invalid argument, please check valid arguments using `.help <command>`! Required arguments are enclosed in < >")
         if isinstance(error, commands.errors.CommandInvokeError):
-            await ctx.send("Failed getting cutoff data. Please let Josh#1373 know if this keeps happening. Old events cutoff data can been seen using the `event` command")
+            await ctx.send("Failed getting cutoff data. Please use the `.notify`. command to let Josh know if this keeps happening")
 
 def setup(bot):
     bot.add_cog(Event(bot))
