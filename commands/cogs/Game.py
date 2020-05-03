@@ -132,9 +132,9 @@ class Game(commands.Cog):
                 eventAPI = await GetBestdoriAllEventsAPI()
                 
                 if event:
-                    if isinstance(event, int):
-                        EventName = await GetEventName(server, event)
-                        EventID = event
+                    if event[0].isnumeric():
+                        EventName = await GetEventName(server, event[0])
+                        EventID = event[0]
                     else:
                         eventString = event[0]
                         for x in event:
@@ -205,52 +205,37 @@ class Game(commands.Cog):
                 #check to see if event requested is an active event or not
                 currentTime = int(round(time.time() * 1000))
                 
+                bannerAPI = await GetBestdoriBannersAPI(int(EventID))
+                bannerName = bannerAPI['assetBundleName']
+                eventUrl = 'https://bestdori.com/info/events/' + str(EventID)
+                thumbnail = 'https://bestdori.com/assets/%s/event/%s/images_rip/logo.png'  %(server,bannerName)
+                embed=discord.Embed(title=EventName, url=eventUrl, color=embedColor)
+                embed.set_thumbnail(url=thumbnail)
+                embed.add_field(name='Attribute', value=str(attribute).capitalize(), inline=True)
+                embed.add_field(name='Event Type', value=str(eventType).capitalize(), inline=True)
                 if(currentTime > int(endTime)):
-                    bannerAPI = await GetBestdoriBannersAPI(int(EventID))
                     archiveAPI = await GetBestdoriEventArchivesAPI()
-                    cutoffs = []
-                    if(server == 'en'):
-                        cutoffs = (archiveAPI[str(EventID)]['cutoff'][1]).items()
-                    elif(server == 'jp'):
-                        cutoffs = (archiveAPI[str(EventID)]['cutoff'][0]).items()
-                    elif(server == 'tw'):
-                        cutoffs = (archiveAPI[str(EventID)]['cutoff'][2]).items()
-                    elif(server == 'cn'):
-                        cutoffs = (archiveAPI[str(EventID)]['cutoff'][3]).items()
-                    bannerName = bannerAPI['assetBundleName']
-                    eventUrl = 'https://bestdori.com/info/events/' + str(EventID)
-                    thumbnail = 'https://bestdori.com/assets/%s/event/%s/images_rip/logo.png'  %(server,bannerName)
-                    embed=discord.Embed(title=EventName, url=eventUrl, color=embedColor)
-                    embed.set_thumbnail(url=thumbnail)
-                    embed.add_field(name='Attribute', value=str(attribute).capitalize(), inline=True)
-                    embed.add_field(name='Event Type', value=str(eventType).capitalize(), inline=True)
-                    if cutoffs:
-                        embed.add_field(name='Members', value='\n'.join(members), inline=True)
-                        embed.add_field(name='Cutoffs', value='\n'.join("{}: {}".format(k, "{:,}".format(v)) for k, v in cutoffs), inline=True)
-                    else:
-                        embed.add_field(name='Members', value='\n'.join(members), inline=False)
-                    embed.add_field(name='Start' , value=beginsString, inline=True)
-                    embed.add_field(name='End', value=endsString, inline=True)
-                    await ctx.send(embed=embed)
-                else:
-                    bannerAPI = await GetBestdoriBannersAPI(int(EventID))
-                    cutoffs = []
-                    bannerName = bannerAPI['assetBundleName']
-                    eventUrl = 'https://bestdori.com/info/events/' + str(EventID)
-                    thumbnail = 'https://bestdori.com/assets/%s/event/%s/images_rip/logo.png'  %(server,bannerName)
-                    embed=discord.Embed(title=EventName, url=eventUrl, color=embedColor)
-                    embed.set_thumbnail(url=thumbnail)
-                    embed.add_field(name='Attribute', value=str(attribute).capitalize(), inline=True)
-                    embed.add_field(name='Event Type', value=str(eventType).capitalize(), inline=True)
-                    embed.add_field(name='Members', value='\n'.join(members), inline=False)
-                    embed.add_field(name='Start' , value=beginsString, inline=True)
-                    embed.add_field(name='End', value=endsString, inline=True)
-                    await ctx.send(embed=embed)
+                    if str(EventID) in archiveAPI.keys():
+                        cutoffs = []
+                        if(server == 'en'):
+                            CutoffKey = 1
+                        elif(server == 'jp'):
+                            CutoffKey = 0
+                        elif(server == 'tw'):
+                            CutoffKey = 2
+                        elif(server == 'cn'):
+                            CutoffKey = 3
+                        if archiveAPI[str(EventID)]['cutoff'][CutoffKey]:
+                            cutoffs = (archiveAPI[str(EventID)]['cutoff'][CutoffKey]).items()
+                            embed.add_field(name='Cutoffs', value='\n'.join("{}: {}".format(k, "{:,}".format(v)) for k, v in cutoffs), inline=True)
+                embed.add_field(name='Members', value='\n'.join(members), inline=False)
+                embed.add_field(name='Start' , value=beginsString, inline=True)
+                embed.add_field(name='End', value=endsString, inline=True)
+                await ctx.send(embed=embed)
             else:
                 await ctx.send("Please enter a valid server (i.e. en, jp, tw, cn)")
-        except Exception as e:
-            print('Failed posting event data for event ' + str(event) + '\n' + str(e))
-            await ctx.send("Couldn't find the event entered. If using hiragana, try kana or vice versa (e.g. きみが doesn't work, but キミが does).")
+        except:
+            await ctx.send(f"No event information found for event `{EventID}` and server `{server}`. If using hiragana, try kana or vice versa (e.g. きみが doesn't work, but キミが does).")
 
     @commands.command(name='songinfo',
                       aliases=['song','songs'],
@@ -276,9 +261,9 @@ class Game(commands.Cog):
                       help='Shows song meta info (fever). By default, it will show the top 10 songs. Given a list of songs (EX dif only), it will sort them based off efficiency. Assumes SL5 and 100% Perfects. I recommend using Bestdori for finer tuning.\n\nExamples\n\n.songmeta\n.sm\n.meta\n.songmeta unite guren jumpin')
     async def songmeta(self, ctx, *songs):
         if songs:
-            output = await getSongMetaOutput(True, songs)
+            output = await GetSongMetaOutput(True, songs)
         else:
-            output = await getSongMetaOutput(True)
+            output = await GetSongMetaOutput(True)
         await ctx.send(output)
 
     @commands.command(name='songmetanofever',
@@ -287,9 +272,9 @@ class Game(commands.Cog):
                       help='Shows song meta info (no fever). By default, it will show the top 10 songs. Given a list of songs (EX dif only), it will sort them based off efficiency. Assumes SL5 and 100% Perfects. I recommend using Bestdori for finer tuning.\n\nExamples\n\n.songmetanofever\n.smnf\n.metanf\n.songmetanofever unite guren jumpin')
     async def songmetanf(self, ctx, *songs):
         if songs:
-            output = await getSongMetaOutput(False, list(songs))
+            output = await GetSongMetaOutput(False, list(songs))
         else:
-            output = await getSongMetaOutput(False)
+            output = await GetSongMetaOutput(False)
         await ctx.send(output)
 
     @commands.command(name='leaderboards',
@@ -299,58 +284,25 @@ class Game(commands.Cog):
         Output = await GetLeaderboardsOutput(server, type, entries)
         await ctx.send(Output)
 
-    @commands.command(name='cards',
-                      aliases=['card'],
-                      description="Provides bestdori link of the card being searched",
-                      brief="Bestdori card link",
-                      help="Enter the title/name or ID(s) of the card you want to search\n\nExamples:\n.card crystal\n.card 100\n.card 100 200 300")
-    async def cards(self, ctx, *args):
-
-        output = []
-        cardAPI = requests.get('https://bestdori.com/api/cards/all.0.json').json()
-        AllCardsAPI = requests.get('https://bestdori.com/api/cards/all.3.json').json()
-        if all(x.isnumeric() for x in args):
-            for x in args:
-                if(x not in cardAPI):
-                    output.append('Card with ID `%s` not found' %(x))
-                else:
-                    output.append('https://bestdori.com/info/cards/%s' %(x))    
-        else:
-            from langdetect import detect
-            CardTitle = args[0]
-            for x in args:
-                if x == CardTitle:
-                    continue
-                CardTitle += " %s" % x
-            if detect(CardTitle) == 'ja':
-                KeyValue = 0
-            else:
-                KeyValue = 1
-            for x in AllCardsAPI:
-                if AllCardsAPI[x]['prefix'][KeyValue]: # Not all cards have an english entry
-                    if CardTitle.lower() in AllCardsAPI[x]['prefix'][KeyValue].lower():
-                        output.append('https://bestdori.com/info/cards/%s' %(x))
-                            
-        await ctx.send('\n'.join(output))
-
-
-    @commands.command(name='cardinfo',
-                      aliases=['ci'],
+    @commands.command(name='card',
+                      aliases=['cards', 'ci', 'cardinfo'],
                       description="Provides embedded image of card with specified filters",
                       brief="Detailed card image",
-                      help="Enter the character with optional filters to see card information\n\nExamples:\n.card kokoro 2 - Second Kokoro SSR\n.card lisa df - Lisa Dreamfes card\n.card moca last ssr - Last released SSR of Moca\n.card hina last sr happy - Last released happy SR of Hina")
-    async def cardinfo(self, ctx: discord.abc.Messageable, *args):
+                      help="Enter the character with optional filters to see card information\n\nExamples:\n.card kokoro 2 - Second Kokoro SSR\n.card lisa df - Lisa Dreamfes card\n.card moca last ssr - Last released SSR of Moca\n.card hina last sr happy - Last released happy SR of Hina\n.card title maritime decective - Lookup card with title \"Maritime Detective\"")
+    async def card(self, ctx: discord.abc.Messageable, *args):
         resultFilteredArguments = filterArguments(*args)
         if resultFilteredArguments.failure:
-            await ctx.send(resultFilteredArguments.failure)
-        cards = parseCards(requests.get('https://bestdori.com/api/cards/all.5.json').json(), requests.get('https://bestdori.com/api/skills/all.5.json').json())
+            return await ctx.send(resultFilteredArguments.failure)
+        cardsApi = requests.get('https://bestdori.com/api/cards/all.5.json').json()
+        skillsApi = requests.get('https://bestdori.com/api/skills/all.5.json').json()
+        cards = parseCards(cardsApi, skillsApi)
         resultCard = findCardFromArguments(cards, resultFilteredArguments.success)
         if resultCard.failure:
-            await ctx.send(resultCard.failure)
+            return await ctx.send(resultCard.failure)
         card: Card = resultCard.success
         palette = Palette(card.attribute)
         imagePath = generateImage(card, palette)
-        channel: discord.TextChannel = self.bot.get_channel(523339468229312555) # Change this channel to the channel you want the bot to send images to so it can grab a URL for the embed
+        channel: discord.TextChannel = self.bot.get_channel(523339468229312555)  # Change this channel to the channel you want the bot to send images to so it can grab a URL for the embed
         fileSend: discord.Message = await channel.send(file=discord.File(imagePath))
         embed = discord.Embed(colour=palette.primaryInt)
         embed.set_image(url=fileSend.attachments[0].url)

@@ -21,6 +21,7 @@ class ArgParse(unittest.TestCase):
         self.assertFalse(success.df)
         self.assertTrue(success.last)
         self.assertIsNone(success.position)
+        self.assertIsNone(success.title)
 
     def test_card_alias(self):
         result = filterArguments("Yukinya")
@@ -34,6 +35,7 @@ class ArgParse(unittest.TestCase):
         self.assertFalse(success.df)
         self.assertTrue(success.last)
         self.assertIsNone(success.position)
+        self.assertIsNone(success.title)
 
     def test_card_number(self):
         result = filterArguments("kokoro", "2")
@@ -47,6 +49,7 @@ class ArgParse(unittest.TestCase):
         self.assertEqual(success.position, 2)
         self.assertFalse(success.df)
         self.assertFalse(success.last)
+        self.assertIsNone(success.title)
 
     def test_card_number_together(self):
         result = filterArguments("kokoro2")
@@ -60,6 +63,7 @@ class ArgParse(unittest.TestCase):
         self.assertFalse(success.df)
         self.assertFalse(success.last)
         self.assertEqual(success.position, 2)
+        self.assertIsNone(success.title)
 
     def test_card_rarity_number_together(self):
         result = filterArguments("kokoro", "rare4")
@@ -73,6 +77,7 @@ class ArgParse(unittest.TestCase):
         self.assertFalse(success.df)
         self.assertFalse(success.last)
         self.assertEqual(success.position, 4)
+        self.assertIsNone(success.title)
 
     def test_card_rarity_number(self):
         result = filterArguments("kokoro", "sr", "8")
@@ -86,6 +91,7 @@ class ArgParse(unittest.TestCase):
         self.assertFalse(success.df)
         self.assertFalse(success.last)
         self.assertEqual(success.position, 8)
+        self.assertIsNone(success.title)
 
     def test_card_df(self):
         result = filterArguments("kokoro", "df")
@@ -99,6 +105,7 @@ class ArgParse(unittest.TestCase):
         self.assertTrue(success.df)
         self.assertTrue(success.last)
         self.assertIsNone(success.position)
+        self.assertIsNone(success.title)
 
     def test_card_df_attr(self):
         result = filterArguments("kokoro", "df", "happy")
@@ -112,6 +119,7 @@ class ArgParse(unittest.TestCase):
         self.assertTrue(success.df)
         self.assertFalse(success.last)
         self.assertIsNone(success.position)
+        self.assertIsNone(success.title)
 
     def test_card_last(self):
         result = filterArguments("kokoro", "last")
@@ -125,6 +133,7 @@ class ArgParse(unittest.TestCase):
         self.assertFalse(success.df)
         self.assertTrue(success.last)
         self.assertIsNone(success.position)
+        self.assertIsNone(success.title)
 
     def test_card_last_attr(self):
         result = filterArguments("kokoro", "last", "happy")
@@ -138,6 +147,7 @@ class ArgParse(unittest.TestCase):
         self.assertFalse(success.df)
         self.assertTrue(success.last)
         self.assertIsNone(success.position)
+        self.assertIsNone(success.title)
 
     def test_card_last_rarity_attr_together(self):
         result = filterArguments("kokoro", "lastsr", "happy")
@@ -151,6 +161,7 @@ class ArgParse(unittest.TestCase):
         self.assertFalse(success.df)
         self.assertTrue(success.last)
         self.assertIsNone(success.position)
+        self.assertIsNone(success.title)
 
     def test_card_last_rarity_attr(self):
         result = filterArguments("kokoro", "last", "rare", "happy")
@@ -164,6 +175,7 @@ class ArgParse(unittest.TestCase):
         self.assertFalse(success.df)
         self.assertTrue(success.last)
         self.assertIsNone(success.position)
+        self.assertIsNone(success.title)
 
     def test_card_last_rarity_attr_misspell(self):
         result = filterArguments("kokoro", "last", "ssr", "hpy")
@@ -177,6 +189,21 @@ class ArgParse(unittest.TestCase):
         self.assertFalse(success.df)
         self.assertTrue(success.last)
         self.assertIsNone(success.position)
+        self.assertIsNone(success.title)
+
+    def test_title(self):
+        result = filterArguments("title", "maritime", "detective")
+        self.assertIsNone(result.failure)
+        self.assertIsNotNone(result.success)
+        self.assertEqual(type(result.success), FilteredArguments)
+        success: FilteredArguments = result.success
+        self.assertIsNone(success.char)
+        self.assertIsNone(success.rarity, Rarity.Ssr)
+        self.assertIsNone(success.attr)
+        self.assertFalse(success.df)
+        self.assertFalse(success.last)
+        self.assertIsNone(success.position)
+        self.assertEqual(success.title, "maritime detective")
 
 
 if __name__ == '__main__':

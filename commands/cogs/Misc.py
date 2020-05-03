@@ -44,7 +44,7 @@ class Misc(commands.Cog):
 
     @commands.command(name='notify',
                       aliases=['n'],
-                      help='Sends a notification about the bot to Josh#1373 (use this for things like 2min/1hr t10 tracking failing, or a command repeatedly fails')
+                      help='Sends a notification about the bot to Josh#1373 (use this for things like 2min/1hr t10 tracking failing, or a command repeatedly fails\n\nExamples:\n\n.notify the bot is failing to get t10 data for en')
     async def notify(self, ctx, *notification):
         if notification:
             notificationString = notification[0]
@@ -60,7 +60,7 @@ class Misc(commands.Cog):
 
     @commands.command(name='avatar',
                     aliases=['a'],
-                    help="Uploads the mentioned user's avatar\n\n.Examples:\n\n .avatar @Lisa#4081\n.a Lisa#4081")
+                    help="Uploads the mentioned user's avatar\n\n.Examples:\n\n.avatar @Lisa#4081\n.a Lisa#4081\n.a 523337807847227402\n.a Lisa (ths one may not always work)")
     async def getavatar(self, ctx, user: discord.Member):
         UserPicUrl = user.avatar_url.BASE + user.avatar_url._url
         if '.gif' in user.avatar_url._url:

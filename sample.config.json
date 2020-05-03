@@ -4,5 +4,4 @@
     "webdrivers_enabled" : "false",
     "pickle_path" : "path",
     "loops_enabled" : "true"
-
 }
