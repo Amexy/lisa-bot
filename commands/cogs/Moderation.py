@@ -55,7 +55,7 @@ class Servers(commands.Cog):
                         RemoveRoleFromAssingability(rolename,guild.id)
                     await ctx.send("Role `%s` has been deleted" %(rolename))
                 except Exception:
-                    await ctx.send("Role `%s` wasn't found. If the role exists and still isn't deletable, please delete it manually and let Josh#1373 know." %(rolename))
+                    await ctx.send("Role `%s` wasn't found. If the role exists and still isn't deletable, please delete it manually and use the `.notify` command to let Josh know." %(rolename))
         else:
             msg = "You must have `manage_roles` rights to run this command, {0.author.mention}".format(ctx.message)  
             await ctx.send(msg)
@@ -74,7 +74,7 @@ class Servers(commands.Cog):
                     await Member.add_roles(user, role)
                     await ctx.send('Role `%s` has been assigned to %s#%s' %(rolename,user.display_name,user.discriminator))
                 except Exception:
-                    await ctx.send("Role `%s` wasn't found. If the role exists and still isn't assignable, please let Josh#1373 know." %(rolename))
+                    await ctx.send("Role `%s` wasn't found. If the role exists and still isn't assignable, please use the `.notify` command to let Josh know." %(rolename))
             else:
                 await ctx.send("Role not found or isn't assignable")
         except Exception:

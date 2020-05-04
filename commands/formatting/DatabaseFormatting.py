@@ -227,7 +227,7 @@ def getChannelsToPost(interval: int, server: str):
         if(interval == 2):
             db = TinyDB(eventCheckDb2min)
         if(interval == 1):
-            db = TinyDB(eventCheckDb1min)
+            db = TinyDB(songUpdates1Min)
         if(interval == 3600):
             db = TinyDB(eventCheckDb1hr)
             interval = '1 hour'

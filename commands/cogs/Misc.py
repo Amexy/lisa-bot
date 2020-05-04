@@ -1,7 +1,7 @@
 from discord.ext import commands
 from tabulate import tabulate
 from googletrans import Translator
-import discord, os, shutil, requests
+import discord, os, shutil, requests, asyncio
 from discord import File
 
 class Misc(commands.Cog):
@@ -34,13 +34,31 @@ class Misc(commands.Cog):
         ValidUsers = [158699060893581313, 202289392394436609, 102201838752784384, 358733607151599636, 229933911717707776, 181690542730641408, 154997108603224064]
         if ctx.message.author.id not in ValidUsers:
             await ctx.send("You are not authorized to use this command. If you'd like access, please use the .notify command requesting access")
-        else:
+        else: 
+            for task in asyncio.Task.all_tasks():
+                if 'post' in str(task):
+                    task.cancel()
+                    print('Cancelled task ' + str(task._coro))
             try:
-                self.bot.reload_extension("commands.cogs.Loops")
+                from commands.cogs.Loops import Loops
+                Loops(self.bot)
+                c = self.bot.get_cog("Loops")
+                self.bot.remove_cog(c)
+                self.bot.add_cog(c)
                 await ctx.send("Successfully reloaded the Loops cog")
             except:
-                await ctx.send("Failed reloading the Loops cog. Please use the `.notify` command to let me know") 
+                await ctx.send("Faield reloading the Loops cog")
     
+    @commands.command(name='gt',
+                    hidden=True)
+    async def gettasks(self, ctx):
+        ValidUsers = [158699060893581313]
+        if ctx.message.author.id not in ValidUsers:
+            await ctx.send("You are not authorized to use this command. If you'd like access, please use the .notify command requesting access")
+        else: 
+            for task in asyncio.Task.all_tasks():
+                if 'post' in str(task):
+                    print(str(task._coro))
 
     @commands.command(name='notify',
                       aliases=['n'],

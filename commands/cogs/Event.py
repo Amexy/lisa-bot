@@ -67,7 +67,7 @@ class Event(commands.Cog):
                         output = await t10formatting(server, eventid, False)
                     await ctx.send(output)
                 except:
-                    await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please let Josh#1373 know if this continues to happen")
+                    await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify` command to let Josh know")
 
     @commands.command(name='t10ids',
                 aliases=['t10i'],
@@ -93,7 +93,7 @@ class Event(commands.Cog):
                         output = await t10formatting(server, eventid, True)
                     await ctx.send(output)
                 except:
-                    await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please let Josh#1373 know if this continues to happen")
+                    await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify` command to let Josh know")
 
     @commands.command(name='t10members',
                 aliases=['t10m'],
@@ -121,7 +121,7 @@ class Event(commands.Cog):
                         output = await t10membersformatting(server, eventid, False)
                         await ctx.send(output)
                 except:
-                    await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please let Josh#1373 know if this continues to happen")
+                    await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify` command to let Josh know")
 
     @commands.command(name='timeleft',
             aliases=['tl'],
@@ -186,62 +186,59 @@ class Event(commands.Cog):
                      help="Cutoff estimate for t10, t100, t1000, and t2000. Pass the tier you want and server (defaulted to en)\n\nCurrently using https://bestdori.com/tool/eventtracker/, all credit goes to Burrito\n\nExamples\n\n.cutoff 100\n.cutoff 1000 en\n.cutoff 2000 jp")
     async def cutoff(self, ctx, tier: int = 100, server: str = 'en'):
         from startup.OpenWebdrivers import enDriver, jpDriver, cnDriver, twkrDriver
-        server = server.lower()
-        ValidT2000 = ['jp','cn']
-        ValidT1000 = ['en','jp','cn']
-        ValidT10 = ['en','jp']
-        output = ''
-        ctx.invoked_with = ctx.invoked_with.lower()
-        if 't1000' in ctx.invoked_with:
-            tier = 1000
-        elif 't100' in ctx.invoked_with:
-            tier = 100
-        elif 't2000' in ctx.invoked_with:
-            tier = 2000
-        if tier == 10 and server not in ValidT10:
-            output = 'T10 is only valid for EN and JP'
-        if tier == 2000 and server not in ValidT2000:
-            output = 'T2000 is only valid for JP and CN'
-        if tier == 1000 and server not in ValidT1000:
-            output = 'T1000 is only valid for EN, JP, and CN'
-        if output:
-            await ctx.send(output)
+        ValidTiers = [100,1000,2000]
+        if tier not in ValidTiers:
+            await ctx.send(f"{tier} isn't supported")
         else:
-            if server == 'en':
-                driver = enDriver
-            elif server == 'jp':
-                driver = jpDriver
-            elif server == 'cn':
-                driver = cnDriver 
+            server = server.lower()
+            ValidT2000 = ['jp','cn']
+            ValidT1000 = ['en','jp','cn']
+            ValidT10 = ['en','jp']
+            output = ''
+            ctx.invoked_with = ctx.invoked_with.lower()
+            if 't1000' in ctx.invoked_with:
+                tier = 1000
+            elif 't100' in ctx.invoked_with:
+                tier = 100
+            elif 't2000' in ctx.invoked_with:
+                tier = 2000
+            if tier == 10 and server not in ValidT10:
+                output = 'T10 is only valid for EN and JP'
+            if tier == 2000 and server not in ValidT2000:
+                output = 'T2000 is only valid for JP and CN'
+            if tier == 1000 and server not in ValidT1000:
+                output = 'T1000 is only valid for EN, JP, and CN'
+            if output:
+                await ctx.send(output)
             else:
-                driver = twkrDriver
-            try:
-                output = await GetCutoffFormatting(driver, server, tier)
-                await ctx.send(embed=output)
-            except IndexError:
-                await ctx.send('Failed getting cutoff data, there is likely no data available yet on Bestdori')
-            except selenium.common.exceptions.WebDriverException:
-                await ctx.send("Failed getting cutoff data because Chrome likely crashed. Please wait a few seconds and run the command again")
-                from startup.OpenWebdrivers import LoadWebDrivers
-                LoadWebDrivers(server)
-            except selenium.common.exceptions.ElementNotInteractableException:
-                await ctx.send("Failed getting cutoff data because Chrome likely crashed. Please wait a few seconds and run the command again")
-                from startup.OpenWebdrivers import LoadWebDrivers
-                LoadWebDrivers(server)
+                if server == 'en':
+                    driver = enDriver
+                elif server == 'jp':
+                    driver = jpDriver
+                elif server == 'cn':
+                    driver = cnDriver 
+                else:
+                    driver = twkrDriver
+                try:
+                    output = await GetCutoffFormatting(driver, server, tier)
+                    await ctx.send(embed=output)
+                except selenium.common.exceptions.ElementNotInteractableException:
+                    await ctx.send("Failed getting cutoff data because Chrome likely crashed. Please wait a few seconds and run the command again")
+                    from startup.OpenWebdrivers import LoadWebDrivers
+                    LoadWebDrivers(server)
+                except selenium.common.exceptions.WebDriverException:
+                    await ctx.send("Failed getting cutoff data because Chrome likely crashed. Please wait a few seconds and run the command again")
+                    from startup.OpenWebdrivers import LoadWebDrivers
+                    LoadWebDrivers(server)
+                except IndexError:
+                    await ctx.send('Failed getting cutoff data, there is likely no data available yet on Bestdori')
 
-
-
-    import sys
-    #sys.tracebacklimit = 0
     @coasting.error
     async def coasting_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
             await ctx.send("Missing argument, please check required arguments using `.help <command>`. Required arguments are enclosed in < >")
         if isinstance(error, commands.BadArgument):
             await ctx.send("Invalid argument, please check argument positioning using `.help coasting`")
-
-
-
 
     @timeLeftBotCommand.error 
     async def timeleft_error(self, ctx, error):
@@ -277,7 +274,7 @@ class Event(commands.Cog):
         if isinstance(error, commands.errors.BadArgument):
             await ctx.send("Invalid argument, please check valid arguments using `.help <command>`! Required arguments are enclosed in < >")
         if isinstance(error, commands.errors.CommandInvokeError):
-            await ctx.send("Failed getting cutoff data. Please let Josh#1373 know if this keeps happening. Old events cutoff data can been seen using the `event` command")
+            await ctx.send("Failed getting cutoff data. Please use the `.notify` command to let Josh know. Old events cutoff data can been seen using the `event` command")
 
 def setup(bot):
     bot.add_cog(Event(bot))
