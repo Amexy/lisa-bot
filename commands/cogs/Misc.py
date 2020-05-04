@@ -62,7 +62,7 @@ class Misc(commands.Cog):
 
     @commands.command(name='notify',
                       aliases=['n'],
-                      help='Sends a notification about the bot to Josh#1373 (use this for things like 2min/1hr t10 tracking failing, or a command repeatedly fails')
+                      help='Sends a notification about the bot to Josh#1373 (use this for things like 2min/1hr t10 tracking failing, or a command repeatedly fails\n\nExamples:\n\n.notify the bot is failing to get t10 data for en')
     async def notify(self, ctx, *notification):
         if notification:
             notificationString = notification[0]

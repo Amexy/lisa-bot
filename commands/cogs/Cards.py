@@ -191,14 +191,16 @@ class FilteredArguments:
     df: bool
     last: bool
     position: int
+    title: str
 
-    def __init__(self, char: Character, rarity: Rarity = None, attr: Attribute = None, df: bool = False, last: bool = False, position: int = None):
+    def __init__(self, char: Character = None, rarity: Rarity = None, attr: Attribute = None, df: bool = False, last: bool = False, position: int = None, title: str = None):
         self.char = char
         self.rarity = rarity
         self.attr = attr
         self.df = df
         self.last = last
         self.position = position
+        self.title = title
 
 
 def parseCards(cards: Dict, skills: Dict) -> List[Card]:
@@ -279,13 +281,19 @@ def splitStrings(textToSplit: str, font, maxSize: int) -> str:
 
 
 def filterArguments(*args) -> Result:
-    name: str = args[0]
-    if len(name.rstrip('0123456789')) != len(name):
-        return filterArguments(name[:len(name.rstrip('0123456789'))], name[len(name.rstrip('0123456789')):], *(args[1:]))
+    firstArg: str = args[0]
+    if firstArg.lower() == "title":
+        if args[1:]:
+            title = " ".join(args[1:])
+            return Result.createSuccess(FilteredArguments(title=title))
+        else:
+            return Result.createFailure("Searching by title requires title to be specified.")
+    elif len(firstArg.rstrip('0123456789')) != len(firstArg):
+        return filterArguments(firstArg[:len(firstArg.rstrip('0123456789'))], firstArg[len(firstArg.rstrip('0123456789')):], *(args[1:]))
     else:
         for ch in Character:
             char: Character = ch
-            if findStringInList(name, char.value):
+            if findStringInList(firstArg, char.value):
                 args = args[1:]
                 if len(args) == 0:
                     return Result.createSuccess(FilteredArguments(char=char, rarity=Rarity.Ssr, last=True))
@@ -294,7 +302,7 @@ def filterArguments(*args) -> Result:
                 if nextParam.isdigit():
                     return Result.createSuccess(FilteredArguments(char=char, rarity=Rarity.Ssr, position=int(nextParam)))
                 elif len(nextParam.rstrip('0123456789')) != len(nextParam):
-                    return filterArguments(name, nextParam[:len(nextParam.rstrip('0123456789'))], nextParam[len(nextParam.rstrip('0123456789')):], *(args[1:]))
+                    return filterArguments(firstArg, nextParam[:len(nextParam.rstrip('0123456789'))], nextParam[len(nextParam.rstrip('0123456789')):], *(args[1:]))
                 elif rarity:
                     args = args[1:]
                     if len(args) == 0:
@@ -315,7 +323,7 @@ def filterArguments(*args) -> Result:
                         return Result.createSuccess(FilteredArguments(char=char, df=True, last=True))
                 elif nextParam.lower().startswith("last"):
                     if len(nextParam) > 4:
-                        return filterArguments(name, nextParam[:4], nextParam[4:], *(args[1:]))
+                        return filterArguments(firstArg, nextParam[:4], nextParam[4:], *(args[1:]))
                     args = args[1:]
                     if len(args) == 0:
                         return Result.createSuccess(FilteredArguments(char=char, rarity=Rarity.Ssr, last=True))
@@ -341,7 +349,7 @@ def filterArguments(*args) -> Result:
                             return Result.createSuccess(FilteredArguments(char=char, rarity=rarity, last=True))
                 else:
                     return Result.createSuccess(FilteredArguments(char=char, rarity=Rarity.Ssr, last=True))
-        return Result.createFailure("Character with name \"{}\" not found".format(name))
+        return Result.createFailure("Character with name \"{}\" not found".format(firstArg))
 
 
 def paramIntoAttr(param: str):
@@ -366,6 +374,13 @@ def findStringInList(find: str, collection: List[str]) -> bool:
 
 
 def findCardFromArguments(cardList: List[Card], arg: FilteredArguments) -> Result:
+    if arg.title:
+        lst = [it for it in cardList if arg.title in it.cardName.lower()]
+        if len(lst) == 0:
+            return Result.createFailure("No card with selected title found")
+        else:
+            return Result.createSuccess(lst[-1])
+
     lst = [it for it in cardList if
            it.character == arg.char and
            it.acquisition != Acquisition.Others]
@@ -394,6 +409,19 @@ def findCardFromArguments(cardList: List[Card], arg: FilteredArguments) -> Resul
 
 def generateImage(card: Card, palette: Palette) -> str:
     im = Image.new("RGBA", (570, 360))
+
+    rarity = card.rarity
+    if rarity == Rarity.Normal:
+        rarityPng = "img/normal.png"
+    elif rarity == Rarity.Rare:
+        rarityPng = "img/rare.png"
+    elif rarity == Rarity.Sr:
+        rarityPng = "img/sr.png"
+    else:
+        rarityPng = "img/ssr.png"
+    rarityBg = Image.open(rarityPng)
+    im.paste(rarityBg, mask=rarityBg)
+
     image: requests.models.Response = requests.get('https://bestdori.com/assets/jp/characters/resourceset/' + card.resourceName + '_rip/card_normal.png')
     cardArt = Image.open(BytesIO(image.content))
 
@@ -406,28 +434,45 @@ def generateImage(card: Card, palette: Palette) -> str:
     border = int((newCardArtWidth - 270) / 2)
     cardArt = cardArt.crop((border, 0, (border + 270), 340))
     im.paste(cardArt, (10, 10))
+
+    attribute = card.attribute
+    if attribute == Attribute.Powerful:
+        attrPng = "img/power.png"
+    elif attribute == Attribute.Cool:
+        attrPng = "img/cool.png"
+    elif attribute == Attribute.Pure:
+        attrPng = "img/pure.png"
+    else:
+        attrPng = "img/happy.png"
+    attrBg = Image.open(attrPng)
+    im.paste(attrBg, (524, 4), mask=attrBg)
+
     imageDraw = Draw(im)
+
     star = u"\u2605"
     rarityText = ""
-    for _ in range(card.rarity.value):
+    for _ in range(rarity.value):
         rarityText = rarityText + star
 
     # This font isn't installed by default on macOS. The name must entered exactly how it was installed as well
-    segoe28 = truetype('SEGUISYM.TTF', 26)
-    imageDraw.text((290, 0), rarityText, font=segoe28, fill="white", stroke_width=1, stroke_fill="black")
+    segoe26 = truetype('SEGUISYM.TTF', 26)
+    imageDraw.text((290, 3), rarityText, font=segoe26, fill="white", stroke_width=1, stroke_fill="black")
 
     segoe18 = truetype('SEGUISYM.TTF', 18)
     segoe16 = truetype('SEGUISYM.TTF', 16)
     segoe14 = truetype('SEGUISYM.TTF', 14)
 
-    imageDraw.text((290, 35), str(card.cardName), font=segoe14 if segoe18.getsize(card.cardName)[0] > 265 else segoe18, fill="white", stroke_width=1, stroke_fill="black")
+    cardNameText = card.cardName
+    cardNameSizeX = segoe18.getsize(cardNameText)[0]
+    if cardNameSizeX > 225:
+        cardNameText = splitStrings(cardNameText, segoe18, 225)
 
-    imageDraw.text((290, 60), str(card.acquisition.name), font=segoe14, fill="white", stroke_width=1, stroke_fill="black")
+    baseY = 40
+    cardNameSizeY = segoe18.getsize_multiline(cardNameText)[1]
+    imageDraw.text((290, baseY), cardNameText, font=segoe18, fill="white", stroke_width=1, spacing=-1, stroke_fill="black")
 
-    imageDraw.text((290, 100), "Performance", font=segoe16, fill="white", stroke_width=1, stroke_fill="black")
-    imageDraw.text((290, 130), "Technique", font=segoe16, fill="white", stroke_width=1, stroke_fill="black")
-    imageDraw.text((290, 160), "Visual", font=segoe16, fill="white", stroke_width=1, stroke_fill="black")
-    imageDraw.text((290, 200), "Total Power", font=segoe18, fill="white", stroke_width=1, stroke_fill="black")
+    baseY = baseY + cardNameSizeY + 5
+    imageDraw.text((290, baseY), str(card.acquisition.name), font=segoe14, fill="white", stroke_width=1, stroke_fill="black")
 
     statPerformance = card.stat.performance
     statTechnique = card.stat.technique
@@ -442,19 +487,30 @@ def generateImage(card: Card, palette: Palette) -> str:
     if statVisual > statPerformance and statVisual > statTechnique:
         visFocus = True
 
-    imageDraw.text(((540 - segoe16.getsize(str(statPerformance))[0]), 100), str(statPerformance), font=segoe16, fill=palette.accentHsv if perFocus else "white", stroke_width=1, stroke_fill="black")
-    imageDraw.text(((540 - segoe16.getsize(str(statTechnique))[0]), 130), str(statTechnique), font=segoe16, fill=palette.accentHsv if tecFocus else "white", stroke_width=1, stroke_fill="black")
-    imageDraw.text(((540 - segoe16.getsize(str(statVisual))[0]), 160), str(statVisual), font=segoe16, fill=palette.accentHsv if visFocus else "white", stroke_width=1, stroke_fill="black")
-    imageDraw.text(((540 - segoe18.getsize(str(statPerformance + statTechnique + statVisual))[0]), 200), str(statPerformance + statTechnique + statVisual), font=segoe18, fill="white", stroke_width=1, stroke_fill="black")
+    baseY = baseY + 35
+    imageDraw.text((290, baseY), "Performance", font=segoe16, fill="white", stroke_width=1, stroke_fill="black")
+    imageDraw.text(((540 - segoe16.getsize(str(statPerformance))[0]), baseY), str(statPerformance), font=segoe16, fill=palette.accentHsv if perFocus else "white", stroke_width=1, stroke_fill="black")
+
+    baseY = baseY + 30
+    imageDraw.text((290, baseY), "Technique", font=segoe16, fill="white", stroke_width=1, stroke_fill="black")
+    imageDraw.text(((540 - segoe16.getsize(str(statTechnique))[0]), baseY), str(statTechnique), font=segoe16, fill=palette.accentHsv if tecFocus else "white", stroke_width=1, stroke_fill="black")
+
+    baseY = baseY + 30
+    imageDraw.text((290, baseY), "Visual", font=segoe16, fill="white", stroke_width=1, stroke_fill="black")
+    imageDraw.text(((540 - segoe16.getsize(str(statVisual))[0]), baseY), str(statVisual), font=segoe16, fill=palette.accentHsv if visFocus else "white", stroke_width=1, stroke_fill="black")
+
+    baseY = baseY + 40
+    imageDraw.text((290, baseY), "Total Power", font=segoe18, fill="white", stroke_width=1, stroke_fill="black")
+    imageDraw.text(((540 - segoe18.getsize(str(statPerformance + statTechnique + statVisual))[0]), baseY), str(statPerformance + statTechnique + statVisual), font=segoe18, fill="white", stroke_width=1, stroke_fill="black")
 
     skillText = card.skill
     skillSize = segoe14.getsize(skillText)[0]
     if skillSize > 250:
         skillText = splitStrings(skillText, segoe14, 250)
 
-    imageDraw.text((290, 250), skillText, font=segoe14, spacing=-2, fill="white", stroke_width=1, stroke_fill="black")
+    baseY = baseY + 45
+    imageDraw.text((290, baseY), skillText, font=segoe14, spacing=-2, fill="white", stroke_width=1, stroke_fill="black")
 
-    imageDraw.rectangle([(566, 0), (570, 360)], fill=palette.primaryStr)
     fileName = "imgTmp/" + str(uuid.uuid1()) + ".png"
     im.save(fileName)
     return fileName

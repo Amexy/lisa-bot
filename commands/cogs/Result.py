@@ -17,5 +17,4 @@ def createSuccess(success: any) -> Result:
 
 
 def createFailure(failure: str) -> Result:
-    print("creating {}".format(failure))
     return Result(failure=failure)
