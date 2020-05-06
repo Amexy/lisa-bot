@@ -25,14 +25,14 @@ class Event(commands.Cog):
     @commands.command(name='t10archives',
                 aliases=["t10a"],
                 help="Attaches a txt file (if found) containing 2 minute t10 updates for the specified event and server\n\nExamples:\n\n.t10a 76 (this defaults to en)\n.t10a 112 jp")
-    async def t10archives(self, ctx, eventid: int = 0, server: str = 'en'):
-        if eventid.isstring():
+    async def t10archives(self, ctx, eventid: str, server: str = 'en'):
+        if not eventid.isnumeric():
             raise commands.errors.BadArgument
         try:
             if server not in self.ValidT10Servers:
                 await ctx.send('This function only works for the `EN` and `JP` servers')
             else:
-                FileToAttach = await GetT10ArchiveFile(eventid, server)
+                FileToAttach = await GetT10ArchiveFile(int(eventid), server)
                 if FileToAttach:
                     await ctx.send('File found, uploading..')
                     await ctx.send(file=FileToAttach)
@@ -147,7 +147,7 @@ class Event(commands.Cog):
         if server.lower() not in ValidServers:
             await ctx.send('Please enter a valid server from one of the following: ' + str(ValidServers)[1:-1])
         else:
-            coastingTable = await GetCoastingOutput(server, epPerSong, currentEP)
+            coastingTable = await GetCoastingOutput(server.lower(), epPerSong, currentEP)
             await ctx.send(coastingTable)
 
 

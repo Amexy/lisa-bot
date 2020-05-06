@@ -47,8 +47,8 @@ class Misc(commands.Cog):
                 self.bot.add_cog(c)
                 await ctx.send("Successfully reloaded the Loops cog")
             except:
-                await ctx.send("Faield reloading the Loops cog")
-    
+                await ctx.send("Failed reloading the Loops cog. Please use the `.notify` command to let Josh know")
+            
     @commands.command(name='gt',
                     hidden=True)
     async def gettasks(self, ctx):

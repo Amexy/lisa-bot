@@ -181,22 +181,25 @@ async def GetStarsUsedOutput(epPerSong: int, begRank: int, begEP: int, targetEP:
     return starsUsedOutputString
 
 async def GetCoastingOutput(server: str, epPerSong: int, currentEP: int):
-    from commands.formatting.EventCommands import GetCurrentEventID
-    EventID = await GetCurrentEventID(server)
-    TimeLeft = await GetEventTimeLeftSeconds(server, EventID)
-    if(TimeLeft < 0):
-        coastingOutputString = "The event is completed."
+    if epPerSong == 0:
+        coastingOutputString = ("```" + tabulate([["Ending EP", "{:,}".format(currentEP)],["Hours Left", "{:,}".format(0)],["Songs Played", "{:,}".format(0)]],tablefmt="plain") + "```")
     else:
-        hours = TimeLeft / 1000 / 60 / 60
-        daysofAds = math.floor(hours / 24)
-        epPerFlame = epPerSong / 3
-        epFromAds = (daysofAds * 5) * epPerFlame
-        naturalSongsLeft = math.floor((2 * hours) / 3)
-        epAtEnd = currentEP + (naturalSongsLeft * epPerSong) + (epFromAds)
-        totalSongs = naturalSongsLeft + ((daysofAds * 5) / 3)
-        epAtEnd = round(epAtEnd)
-        coastingOutputString = ("```" + tabulate([["Ending EP", "{:,}".format(epAtEnd)],["Hours Left", "{:,}".format(math.floor(hours))],["Songs Played", "{:,}".format(totalSongs)]],tablefmt="plain") + "```")
-    return coastingOutputString
+        from commands.formatting.EventCommands import GetCurrentEventID
+        EventID = await GetCurrentEventID(server)
+        TimeLeft = await GetEventTimeLeftSeconds(server, EventID)
+        if(TimeLeft < 0):
+            coastingOutputString = "The event is completed."
+        else:
+            hours = TimeLeft / 60 / 60
+            daysofAds = math.floor(hours / 24)
+            epPerFlame = epPerSong / 3
+            epFromAds = (daysofAds * 5) * epPerFlame
+            naturalSongsLeft = math.floor((2 * hours) / 3)
+            epAtEnd = currentEP + (naturalSongsLeft * epPerSong) + (epFromAds)
+            totalSongs = naturalSongsLeft + ((daysofAds * 5) / 3)
+            epAtEnd = round(epAtEnd)
+            coastingOutputString = ("```" + tabulate([["Ending EP", "{:,}".format(epAtEnd)],["Hours Left", "{:,}".format(math.floor(hours))],["Songs Played", "{:,}".format(round(totalSongs))]],tablefmt="plain") + "```")
+        return coastingOutputString
 
 def GetEPGainOutput(yourScore: int, multiScore: int, bpPercent: int, flamesUsed: int, eventType: int, bbPlace: int = 0): 
 
