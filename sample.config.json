@@ -1,7 +1,8 @@
 {
     "token": "token",
     "chromeDriverPath": "path",
-    "webdrivers_enabled" : "false",
+    "webdrivers_enabled" : "true",
     "pickle_path" : "path",
-    "loops_enabled" : "true"
+    "loops_enabled" : "true",
+    "load_t10events" : "true"
 }

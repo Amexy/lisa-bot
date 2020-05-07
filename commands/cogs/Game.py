@@ -102,7 +102,6 @@ class Game(commands.Cog):
         except:
             await ctx.send("Couldn't find the character entered, possible mispell?")
 
-
     @commands.command(name='starsused',
                       aliases=['su'],
                       brief="Star usage for tiering",
@@ -318,7 +317,10 @@ class Game(commands.Cog):
     @starsused.error
     async def starsused_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Missing argument, please check required arguments using `.help <command>`! Required arguments are enclosed in < >")
+            await ctx.send("Missing argument, please check required arguments using `.help starsused`! Required arguments are enclosed in < >")
+        if isinstance(error, commands.BadArgument):
+            await ctx.send('Please input a valid argument. These can be found by running `.help starsused`')
+
     @epgain.error
     async def epgain_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
