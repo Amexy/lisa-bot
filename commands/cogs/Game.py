@@ -318,11 +318,13 @@ class Game(commands.Cog):
     @starsused.error
     async def starsused_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Missing argument, please check required arguments using `.help <command>`! Required arguments are enclosed in < >")
+            await ctx.send("Missing argument, please check required arguments using `.help starsused`! Required arguments are enclosed in < >")
+        if isinstance(error, commands.BadArgument):
+            await ctx.send("Invalid argument, please check argument positioning using `.help starsused`")
     @epgain.error
     async def epgain_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Missing argument, please check required arguments using `.help <command>`! Required arguments are enclosed in < >")
+            await ctx.send("Missing argument, please check required arguments using `.help epgain`! Required arguments are enclosed in < >")
 
 
 def setup(bot):
