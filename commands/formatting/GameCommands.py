@@ -124,22 +124,27 @@ async def GetStarsUsedOutput(epPerSong: int, begRank: int, begEP: int, targetEP:
         songsPlayed = (targetEP - begEP) / epPerSong
         
         #beg xp
-        beginningXP = findRank(begRank)
+        if begRank != 300:
+            beginningXP = findRank(begRank)
 
-        #xp gained + end xp 
-        xpGained = xpPerFlame * songsPlayed
-        endingXP = beginningXP + xpGained
-
-        #end rank
-        xpTable = xpTableFnc()
-        for x in range(len(xpTable)):
-            if(endingXP < xpTable[x]):
-                endRank = x-1
-                break
-            elif(endingXP == xpTable[x]):
-                endRank = x
-                break
-
+            #xp gained + end xp 
+            xpGained = xpPerFlame * songsPlayed
+            endingXP = beginningXP + xpGained
+            xpTable = xpTableFnc()
+            
+            if endingXP > xpTable[-1]:
+                endRank = 300
+            else:
+            
+                for x in range(len(xpTable)):
+                    if(endingXP < xpTable[x]):
+                        endRank = x-1
+                        break
+                    elif(endingXP == xpTable[x]):
+                        endRank = x
+                        break
+        else:
+            endRank = 300
         #time
         from commands.formatting.EventCommands import GetCurrentEventID
 
