@@ -19,9 +19,51 @@ import selenium
 class Event(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        
-    ValidT10Servers = ['en','jp']
+        self.ValidT10Servers = ['en','jp']
 
+        with open("config.json") as file:
+            config_json = json.load(file)
+            load_t10events = config_json["load_t10events"]
+        if load_t10events == 'true':
+            print("Loading valid T10 Events")
+            self.ValidT10EventsEN = asyncio.run(self.GetT10Events('en'))
+            self.ValidT10EventsJP = asyncio.run(self.GetT10Events('jp'))
+        else:
+            print("Not loading Valid T10 Events")
+
+    async def GetT10Events(self, server):
+        from commands.apiFunctions import GetBestdoriAllEventsAPI
+        from protodefs.ranks import t10ranks
+        api = await GetBestdoriAllEventsAPI()
+        print(f'Grabbing events for {server}')
+        ValidEvents = []
+        if server == 'en':
+            ice = enICEObject
+        else:
+            ice = jpICEObject
+        for x in range(1, (len(api) + 1)):
+            ret = await t10ranks(ice, server, x)
+            if ret.top_10.contents:
+                print(f'Adding {x}')
+                ValidEvents.append(x)
+        return ValidEvents
+
+
+    @commands.command(name='t10events',
+                    aliases=['t10e'],
+                    help='Returns a list of events that can be checked for T10 data\n\nExamples:\n\n.t10events\n.t10e jp')
+    async def t10events(self, ctx, server: str = 'en'):
+        if server.lower() not in self.ValidT10Servers:
+            await ctx.send("Only EN and JP can be checked for T10 data")
+        else:
+            if server.lower() == 'en':
+                ValidT10Events = self.ValidT10EventsEN
+            if server.lower() == 'jp':
+                ValidT10Events = self.ValidT10EventsJP
+            if ValidT10Events: # In case the function isn't ran at startup
+                await ctx.send(f'Valid t10 events for `{server}` are: {str(ValidT10Events)[1:-1]}')
+            else:
+                await ctx.send('Error loading valid t10 events. Use the `notify` command to let Josh know')
     @commands.command(name='t10archives',
                 aliases=["t10a"],
                 help="Attaches a txt file (if found) containing 2 minute t10 updates for the specified event and server\n\nExamples:\n\n.t10a 76 (this defaults to en)\n.t10a 112 jp")
@@ -114,9 +156,12 @@ class Event(commands.Cog):
                         eventid = eventid
                     if(songs):
                         output = await t10membersformatting(server, eventid, True)
-                        #doing this because on a CL, the output is very likely >2000 characters bypassing discord's limit
-                        for x in output:
-                            await ctx.send(x)
+                        if 'No data found for event' in output: # Very scuffed way of doing this, but I don't feel like messing with errors (if that'd even work)
+                            await ctx.send(output)
+                        else:
+                            #doing this because on a CL, the output is very likely >2000 characters bypassing discord's limit
+                            for x in output:
+                                await ctx.send(x)
                     else:
                         output = await t10membersformatting(server, eventid, False)
                         await ctx.send(output)
