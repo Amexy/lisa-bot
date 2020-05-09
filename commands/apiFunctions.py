@@ -120,6 +120,16 @@ async def GetSongMetaAPI():
         async with session.get(api) as r:
             return await r.json()
 
-
-
+async def GetServerAPIKey(server: str):
+    if server == 'en':
+        Key = 1 
+    elif server == 'jp':
+        Key = 0 
+    elif server == 'tw':
+        Key = 2
+    elif server == 'cn':
+        Key = 3
+    elif server == 'kr':
+        Key = 4
+    return Key
 

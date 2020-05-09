@@ -19,36 +19,17 @@ def getICEObject(server: str):
     return ice
 
 async def GetEventName(server: str, eventid: int):
-    from commands.apiFunctions import GetBestdoriEventAPI
-    if server == 'en':
-        Key = 1 
-    elif server == 'jp':
-        Key = 0 
-    elif server == 'tw':
-        Key = 2
-    elif server == 'cn':
-        Key = 3
-    elif server == 'kr':
-        Key = 4
-
+    from commands.apiFunctions import GetBestdoriEventAPI, GetServerAPIKey
+    Key = await GetServerAPIKey(server)
     api = await GetBestdoriEventAPI(eventid)  
     EventName = api['eventName'][Key]
     return EventName
 
 async def IsEventActive(server: str, eventid: int):
     currentTime = time.time() * 1000
-    from commands.apiFunctions import GetBestdoriEventAPI
+    from commands.apiFunctions import GetBestdoriEventAPI, GetServerAPIKey
     api = await GetBestdoriEventAPI(eventid)
-    if server == 'en':
-        TimeKey = 1 
-    elif server == 'jp':
-        TimeKey = 0 
-    elif server == 'tw':
-        TimeKey = 2
-    elif server == 'cn':
-        TimeKey = 3
-    elif server == 'kr':
-        TimeKey = 4
+    TimeKey = await GetServerAPIKey(server)
     if api['startAt'][TimeKey]:
         if float(api['startAt'][TimeKey]) < currentTime < float(api['endAt'][TimeKey]):
             return True
@@ -65,21 +46,10 @@ async def GetEventAttribute(eventid: int):
     return EventAttribute
     
 async def GetCurrentEventID(server: str):
-    from commands.apiFunctions import GetBestdoriAllEventsAPI
-    
+    from commands.apiFunctions import GetBestdoriAllEventsAPI, GetServerAPIKey
     currentTime = time.time() * 1000
     CurrentEventID = ''
-    if server == 'en':
-        TimeKey = 1 
-    elif server == 'jp':
-        TimeKey = 0 
-    elif server == 'tw':
-        TimeKey = 2
-    elif server == 'cn':
-        TimeKey = 3
-    elif server == 'kr':
-        TimeKey = 4
-
+    TimeKey = await GetServerAPIKey(server)
     api = await GetBestdoriAllEventsAPI()
     for event in api:
         if api[event]['startAt'][TimeKey]:

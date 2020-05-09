@@ -20,34 +20,15 @@ async def GetEventTimeLeftSeconds(server: str, eventid: int):
     return TimeLeftSeconds
 
 async def GetEventEndTime(server: str, eventid: int):
-    from commands.apiFunctions import GetBestdoriEventAPI
-    if server == 'en':
-        TimeKey = 1 
-    elif server == 'jp':
-        TimeKey = 0 
-    elif server == 'tw':
-        TimeKey = 2
-    elif server == 'cn':
-        TimeKey = 3
-    elif server == 'kr':
-        TimeKey = 4
+    from commands.apiFunctions import GetBestdoriEventAPI, GetServerAPIKey
+    TimeKey = await GetServerAPIKey(server)
     api = await GetBestdoriEventAPI(eventid)  
     EventEndTime = api['endAt'][TimeKey]
     return float(EventEndTime)
 
 async def GetEventStartTime(server: str, eventid: int):
-    from commands.apiFunctions import GetBestdoriEventAPI
-    if server == 'en':
-        TimeKey = 1 
-    elif server == 'jp':
-        TimeKey = 0 
-    elif server == 'tw':
-        TimeKey = 2
-    elif server == 'cn':
-        TimeKey = 3
-    elif server == 'kr':
-        TimeKey = 4
-
+    from commands.apiFunctions import GetBestdoriEventAPI, GetServerAPIKey
+    TimeKey = await GetServerAPIKey(server)
     api = await GetBestdoriEventAPI(eventid)  
     EventStartTime = api['startAt'][TimeKey]
     return float(EventStartTime)
@@ -70,7 +51,21 @@ async def GetEventProgress(server: str, eventid: int):
 async def GetTimeLeftCommandOutput(server: str, eventid: int):
     TimeLeftSeconds = await GetEventTimeLeftSeconds(server, eventid)
     if(TimeLeftSeconds < 0):
-        output = "The event is completed."
+        from commands.apiFunctions import GetBestdoriEventAPI
+        from commands.formatting.EventCommands import GetEventName
+        import aiohttp
+        try:
+            CurrentTime = time.time() * 1000
+            TimeTilNextEventStarts = (int(await GetEventStartTime(server, int(eventid) + 1)) - CurrentTime )/ 1000
+            Days = str(int(TimeTilNextEventStarts) // 86400)
+            Hours = str(int(TimeTilNextEventStarts) // 3600 % 24)
+            Minutes = str(int(TimeTilNextEventStarts) // 60 % 60)
+            StringTimeLeft = (Days + "d " + Hours + "h " + Minutes + "m")
+            OldEventName = await GetEventName(server, int(eventid))
+            UpcomingEventName = await GetEventName(server, int(eventid) + 1)
+            output = f"`{OldEventName}` is completed. `{UpcomingEventName}` starts in {StringTimeLeft}"
+        except aiohttp.client_exceptions.ContentTypeError: # This will typically happen on JP since Bestdori doesn't always have the next event's information available until ~24 hours before event start
+            output = 'The event is completed'
     else:
         EventEndTime = await GetEventEndTime(server, eventid) 
         EndDate = datetime.fromtimestamp(EventEndTime / 1000).strftime("%Y-%m-%d %H:%M:%S %Z%z") + ' UTC'
