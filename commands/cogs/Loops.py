@@ -267,59 +267,57 @@ class Loops(commands.Cog):
             await asyncio.sleep(300)
 
     async def sendEventUpdates(self, message: str, server: str):
-        await self.bot.wait_until_ready()
-        while not self.bot.is_closed():
-            ids = updatesDB(server)
-            if(message):
-                for i in ids:
-                    channel = self.bot.get_channel(i)
-                    if channel != None:
-                        await channel.send(message)
+        ids = updatesDB(server)
+        if(message):
+            for i in ids:
+                channel = self.bot.get_channel(i)
+                if channel != None:
+                    await channel.send(message)
 
     async def postEventNotif(self, server: str):
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
-            from commands.apiFunctions import GetBestdoriEventAPI
-            from commands.formatting.EventCommands import GetCurrentEventID
+            from commands.apiFunctions import GetBestdoriEventAPI, GetServerAPIKey
+            from commands.formatting.EventCommands import GetCurrentEventID, IsEventActive, GetEventName
+            from commands.formatting.TimeCommands import GetEventStartTime
+            import aiohttp
             EventID = await GetCurrentEventID(server)
-            eventAPI = await GetBestdoriEventAPI(EventID)
-            eventName = await GetEventName(server, EventID)
-            currentTime = ((datetime.now().timestamp()) * 1000)
-            if server == 'en':
-                Key = 1 
-            elif server == 'jp':
-                Key = 0 
-            eventEnd = float(eventAPI['endAt'][Key])
-            eventStart = float(eventAPI['startAt'][Key])
-            timeTilEventEnd = (int(eventEnd) - currentTime) / 1000
-            timeToStart = (eventStart - currentTime) / 1000
-            if(timeToStart > 0):
-                if (timeToStart > 3600):
-                    sleep = int(timeToStart - 3600)
-                    await asyncio.sleep(sleep)
-                    message = "```The " + server.upper() + " event %s begins in 1 hour!```" %eventName
-                    await self.sendEventUpdates(message, 'en')
-                    await asyncio.sleep(3600)
-                    message = "```The " + server.upper() + " event %s! has begun!```" %eventName
-                    await self.sendEventUpdates(message, 'en')
+            try:
+                if not await IsEventActive(server, EventID):
+                    EventID = int(EventID) + 1                   
+                    EventName = await GetEventName(server, EventID)
+                    import time
+                    CurrentTime = time.time() * 1000
+                    TimeTilNextEventStarts = (int(await GetEventStartTime(server, int(EventID)) - CurrentTime ))/ 1000
+                    if TimeTilNextEventStarts > 86400:
+                        await asyncio.sleep(TimeTilNextEventStarts - 86400)
+                        Message = f"{EventName} on `{server.upper()}` begins in 1 day!"
+                        await self.sendEventUpdates(Message, 'en')               
+                    elif TimeTilNextEventStarts > 3600:
+                        await asyncio.sleep(TimeTilNextEventStarts - 3600)
+                        Message = f"{EventName} on `{server.upper()}` begins in 1 hour!"
+                        await self.sendEventUpdates(Message, 'en')
+                    else:
+                        await asyncio.sleep(TimeTilNextEventStarts)
+                        Message = f"{EventName} on `{server.upper()}` has begun!"
+                        await self.sendEventUpdates(Message, 'en')
                 else:
-                    await asyncio.sleep(timeToStart)
-                    message = "```The " + server.upper() + " event %s! has begun!```" %eventName
-                    await self.sendEventUpdates(message, 'en')
-            # check if there's more than 1 day left
-            elif(timeTilEventEnd > 86400):
-                timeTo1DayLeft = (eventEnd - 86400000)
-                sleep = int((timeTo1DayLeft - currentTime) / 1000)
-                await asyncio.sleep(sleep)
-                message = "```There is 1 day left in the " + server.upper() + " event %s!```" %eventName
-                await self.sendEventUpdates(message, 'en')
-                await asyncio.sleep(82800000 / 1000)
-                message = "```There is 1 hour left in the " + server.upper() + " event %s!```" %eventName
-                await self.sendEventUpdates(message, 'en')
-                await asyncio.sleep(3600)
-                message = "```The " + server.upper() + " event %s has concluded.```" %eventName
-                await self.sendEventUpdates(message, 'en')
-            await asyncio.sleep(60)
-
+                    EventName = await GetEventName(server, EventID)
+                    TimeLeftSeconds = await GetEventTimeLeftSeconds(server, EventID)
+                    if TimeLeftSeconds > 86400:
+                        await asyncio.sleep(TimeLeftSeconds - 86400)
+                        Message = f"{EventName} on `{server.upper()}` ends in 1 day!"
+                        await self.sendEventUpdates(Message, 'en')
+                    elif TimeLeftSeconds > 3600:
+                        await asyncio.sleep(TimeLeftSeconds - 3600)
+                        Message = f"{EventName} on `{server.upper()}` ends in 1 hour!"
+                        await self.sendEventUpdates(Message, 'en')
+                    else:
+                        await asyncio.sleep(TimeLeftSeconds)
+                        Message = f"{EventName} on `{server.upper()}` has ended!"
+                        await self.sendEventUpdates(Message, 'en')
+                        await asyncio.sleep(60)
+            except aiohttp.client_exceptions.ContentTypeError: # This will typically happen on JP since Bestdori doesn't always have the next event's information available until ~24 hours before event start
+                await asyncio.sleep(60)
 def setup(bot):
     bot.add_cog(Loops(bot))

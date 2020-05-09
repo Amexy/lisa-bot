@@ -8,7 +8,7 @@ from pytz import timezone
 from operator import itemgetter
 from time import strftime
 from time import gmtime
-from commands.apiFunctions import GetBestdoriAllCharactersAPI, GetBestdoriAllEventsAPI, GetBestdoriBannersAPI, GetBestdoriEventArchivesAPI, GetBestdoriAllGachasAPI, GetBestdoriGachaAPI, GetBestdoriCardAPI, GetSongMetaAPI, GetBestdoriCharasAPI
+from commands.apiFunctions import GetBestdoriAllCharactersAPI, GetBestdoriAllEventsAPI, GetBestdoriBannersAPI, GetBestdoriEventArchivesAPI, GetBestdoriAllGachasAPI, GetBestdoriGachaAPI, GetBestdoriCardAPI, GetSongMetaAPI, GetBestdoriCharasAPI, GetServerAPIKey
 from commands.cogs.Cards import parseCards, generateImage, Palette, filterArguments, findCardFromArguments, Card
 from commands.formatting.GameCommands import GetStarsUsedOutput, GetEPGainOutput, characterOutput, GetSongInfo, GetSongMetaOutput, GetLeaderboardsOutput
 from commands.formatting.TimeCommands import GetCurrentTime
@@ -216,14 +216,7 @@ class Game(commands.Cog):
                     archiveAPI = await GetBestdoriEventArchivesAPI()
                     if str(EventID) in archiveAPI.keys():
                         cutoffs = []
-                        if(server == 'en'):
-                            CutoffKey = 1
-                        elif(server == 'jp'):
-                            CutoffKey = 0
-                        elif(server == 'tw'):
-                            CutoffKey = 2
-                        elif(server == 'cn'):
-                            CutoffKey = 3
+                        CutoffKey = await GetServerAPIKey(server)
                         if archiveAPI[str(EventID)]['cutoff'][CutoffKey]:
                             cutoffs = (archiveAPI[str(EventID)]['cutoff'][CutoffKey]).items()
                             embed.add_field(name='Cutoffs', value='\n'.join("{}: {}".format(k, "{:,}".format(v)) for k, v in cutoffs), inline=True)
