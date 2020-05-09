@@ -37,6 +37,12 @@ def LoadWebDrivers(server: str):
         return twkrDriver
 
 if drivers_enabled == 'true':
+    import psutil
+    for p in psutil.process_iter():
+        if 'Google' in p.name():
+            print(f'Killing process: {p.name()}')
+            p = psutil.Process(p.pid)
+            p.kill()
     enDriver = LoadWebDrivers('en')
     jpDriver = LoadWebDrivers('jp')
     cnDriver = LoadWebDrivers('cn')
