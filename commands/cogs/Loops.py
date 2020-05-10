@@ -22,7 +22,7 @@ class Loops(commands.Cog):
         self.firstAPI = requests.get('https://bestdori.com/api/news/all.5.json').json()
 
         if loops_enabled == 'true':
-            self.bot.loop.create_task(self.postT100CutoffUpdates())
+            self.bot.loop.create_task(self.postT1000CutoffUpdates())
             self.bot.loop.create_task(self.postEventT102min())
             self.bot.loop.create_task(self.postEventT101hr())
             self.bot.loop.create_task(self.postEventNotif('en'))
