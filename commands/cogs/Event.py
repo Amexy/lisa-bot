@@ -15,6 +15,7 @@ import asyncio
 import discord
 import json
 import selenium
+import math
 
 class Event(commands.Cog):
     def __init__(self, bot):
@@ -195,13 +196,8 @@ class Event(commands.Cog):
             coastingTable = await GetCoastingOutput(server.lower(), epPerSong, currentEP)
             await ctx.send(coastingTable)
 
-
-        
-        
-        
-
     #######################
-    #    Cutoff Command   #
+    #    Cutoff Commands   #
     #######################
     
     #open website
@@ -210,21 +206,31 @@ class Event(commands.Cog):
                        aliases=['r'],
                        hidden=True)
     async def refresh(self, ctx, server: str = 'en'):
+        from startup.OpenWebdrivers import enDriver, jpDriver, cnDriver, twkrDriver
         try:
             if server == 'en':
-                driver = self.enDriver
+                driver = enDriver
             elif server == 'jp':
-                driver = self.jpDriver
+                driver = jpDriver
             elif server == 'cn':
-                driver = self.cnDriver
+                driver = cnDriver
             else:
-                driver = self.twkrDriver
+                driver = twkrDriver
             driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div/div[3]/div[1]/div[2]/div/div[2]/a').click()
         except:
             await ctx.send('Failed refreshing the event tracker page for %s.' %(server))        
-    
 
-        
+    @commands.command(name='cutoffhistory',
+                    aliases=['cutoffarchives','ch','ca'],
+                    help = "Gets the highest cutoff value for a given server and tier\n\nNote: This is based off Bestdori's data, so it's possible data could be incorrect because that value isn't known\n\nExamples\n\n.cutoffhistory en 100\n.ch jp 1")
+    async def cutoffhistory(self, ctx, server: str = 'en', tier: str = '10'):
+        from commands.formatting.EventCommands import GetCutoffHistory
+        try:
+            embed = await GetCutoffHistory(server, tier)
+            await ctx.send(embed=embed)
+        except:
+            await ctx.send(f"Couldn't find cutoff history for server `{server}` tier `{tier}`")
+
     @commands.command(name='cutoff',
                      aliases=['t100','t1000','t2000'],
                      brief="Cutoff estimate for t10, t100, t1000, and t2000",
