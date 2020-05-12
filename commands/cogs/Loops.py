@@ -17,12 +17,12 @@ class Loops(commands.Cog):
         with open("config.json") as file:
             config_json = json.load(file)
             loops_enabled = config_json['loops_enabled']
-        self.initialT100Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=77&tier=0').json()
-        self.initialT1000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=77&tier=1').json()
+        self.initialT100Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=78&tier=0').json()
+        self.initialT1000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=78&tier=1').json()
         self.firstAPI = requests.get('https://bestdori.com/api/news/all.5.json').json()
 
         if loops_enabled == 'true':
-            self.bot.loop.create_task(self.postT100CutoffUpdates())
+            self.bot.loop.create_task(self.postT1000CutoffUpdates())
             self.bot.loop.create_task(self.postEventT102min())
             self.bot.loop.create_task(self.postEventT101hr())
             self.bot.loop.create_task(self.postEventNotif('en'))
@@ -172,60 +172,60 @@ class Loops(commands.Cog):
         while not self.bot.is_closed():
             try:
                 EventID = await GetCurrentEventID('en')
-                if EventID:
-                    timeLeft = await GetEventTimeLeftSeconds('en', EventID)
-                    if(timeLeft > 0):
-                        ids = getCutoffChannels(100)
-                        initialT100Cutoffs = self.initialT100Cutoffs  
-                        cutoffAPI = await GetBestdoriCutoffAPI(100)
-                        if(sorted(initialT100Cutoffs.items()) != sorted(cutoffAPI.items())):
-                            from startup.OpenWebdrivers import enDriver      
-                            output = await GetCutoffFormatting(enDriver, 'en', 100)
-                            ids = getCutoffChannels(100)
-                            for i in ids:
-                                channel = self.bot.get_channel(i)
-                                if channel != None:
-                                    try:
-                                        await channel.send('T100 update found!')
-                                        await channel.send(embed=output)
-                                    except commands.BotMissingPermissions: 
-                                        LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
-                                        await LoopRemovalUpdates.send('Removing 1 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
-                                        rmChannelFromCutoffDatabase(channel, 100)
-                            self.initialT100Cutoffs = cutoffAPI
-                    await asyncio.sleep(60)
             except Exception as e:
-                print('Failed posting t100 data.\n'+ str(e))
+                print('Failed posting t100 update. Exception: ' + str(e))            
+            if EventID:
+                timeLeft = await GetEventTimeLeftSeconds('en', EventID)
+                if(timeLeft > 0):
+                    ids = getCutoffChannels(100)
+                    initialT100Cutoffs = self.initialT100Cutoffs  
+                    cutoffAPI = await GetBestdoriCutoffAPI(100)
+                    if(sorted(initialT100Cutoffs.items()) != sorted(cutoffAPI.items())):
+                        from startup.OpenWebdrivers import enDriver      
+                        output = await GetCutoffFormatting(enDriver, 'en', 100)
+                        ids = getCutoffChannels(100)
+                        for i in ids:
+                            channel = self.bot.get_channel(i)
+                            if channel != None:
+                                try:
+                                    await channel.send('T100 update found!')
+                                    await channel.send(embed=output)
+                                except commands.BotMissingPermissions: 
+                                    LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
+                                    await LoopRemovalUpdates.send('Removing t100 updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
+                                    rmChannelFromCutoffDatabase(channel, 100)
+                        self.initialT100Cutoffs = cutoffAPI
+                await asyncio.sleep(60)
 
     async def postT1000CutoffUpdates(self):
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
             try:
                 EventID = await GetCurrentEventID('en')
-                if EventID:
-                    timeLeft = await GetEventTimeLeftSeconds('en', EventID)
-                    if(timeLeft > 0):
-                        ids = getCutoffChannels(1000)
-                        initialT1000Cutoffs = self.initialT1000Cutoffs  
-                        cutoffAPI = await GetBestdoriCutoffAPI(1000)
-                        if(sorted(initialT1000Cutoffs.items()) != sorted(cutoffAPI.items())):
-                            from startup.OpenWebdrivers import enDriver      
-                            output = await GetCutoffFormatting(enDriver, 'en', 1000)
-                            ids = getCutoffChannels(1000)
-                            for i in ids:
-                                channel = self.bot.get_channel(i)
-                                if channel != None:
-                                    try:
-                                        await channel.send('T1000 update found!')
-                                        await channel.send(embed=output)
-                                    except commands.BotMissingPermissions: 
-                                        LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
-                                        await LoopRemovalUpdates.send('Removing 1 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
-                                        rmChannelFromCutoffDatabase(channel, 1000)
-                            self.initialT1000Cutoffs = cutoffAPI
-                    await asyncio.sleep(60)
             except Exception as e:
-                print('Failed posting t1000 data.\n'+ str(e))
+                print('Failed posting t1000 update. Exception: ' + str(e))   
+            if EventID:
+                timeLeft = await GetEventTimeLeftSeconds('en', EventID)
+                if(timeLeft > 0):
+                    ids = getCutoffChannels(1000)
+                    initialT1000Cutoffs = self.initialT1000Cutoffs  
+                    cutoffAPI = await GetBestdoriCutoffAPI(1000)
+                    if(sorted(initialT1000Cutoffs.items()) != sorted(cutoffAPI.items())):
+                        from startup.OpenWebdrivers import enDriver      
+                        output = await GetCutoffFormatting(enDriver, 'en', 1000)
+                        ids = getCutoffChannels(1000)
+                        for i in ids:
+                            channel = self.bot.get_channel(i)
+                            if channel != None:
+                                try:
+                                    await channel.send('T1000 update found!')
+                                    await channel.send(embed=output)
+                                except commands.BotMissingPermissions: 
+                                    LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
+                                    await LoopRemovalUpdates.send('Removing t1000 updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
+                                    rmChannelFromCutoffDatabase(channel, 1000)
+                        self.initialT1000Cutoffs = cutoffAPI
+                await asyncio.sleep(60)
 
     async def postBestdoriNews(self):
         await self.bot.wait_until_ready()
