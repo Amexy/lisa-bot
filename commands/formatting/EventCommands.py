@@ -18,6 +18,49 @@ def getICEObject(server: str):
         ice = jpICEObject
     return ice
 
+async def GetCutoffHistory(server, tier):
+    from commands.apiFunctions import GetBestdoriEventArchivesAPI, GetServerAPIKey, GetBestdoriBannersAPI
+    from commands.formatting.EventCommands import GetEventName, GetEventAttribute
+    from commands.formatting.TimeCommands import GetEventLengthSeconds
+    import math
+    HistoryAPI = await GetBestdoriEventArchivesAPI()
+    Key = await GetServerAPIKey(server)
+    Histories = []
+    for x in range(1, len(HistoryAPI)):
+        x = str(x)
+        if HistoryAPI[x]['cutoff'][Key]:
+            if tier in HistoryAPI[x]['cutoff'][Key]: # Event 17 for example doesn't have a value for T100, so we need to check if it exists
+                Histories.append(HistoryAPI[x]['cutoff'][Key][tier])
+            else:
+                Histories.append(0) # If we don't add an entry if the event exists, then the EventID result will be incorrect
+    # Because of the above `else`, the list may be full of zeros (e.g. En and tier 5000)
+    if not all(x==Histories[0] for x in Histories):
+        Cutoff = max(Histories) 
+        EventID = Histories.index(Cutoff)+ 1
+        EventName = await GetEventName(server, EventID)
+        Attribute = await GetEventAttribute(EventID)
+        BannerAPI = await GetBestdoriBannersAPI(EventID)
+        EventLengthHours = await GetEventLengthSeconds(server, EventID) / 3600
+        EPPerHour = "{:,}".format(math.floor(Cutoff / EventLengthHours))
+        Thumbnail = 'https://bestdori.com/assets/%s/event/%s/images_rip/logo.png'  %(server,BannerAPI['assetBundleName'])
+        Cutoff = "{:,}".format(Cutoff)
+        EventUrl = 'https://bestdori.com/info/events/' + str(EventID)
+        if(Attribute == 'powerful'):
+            EmbedColor = 0x0ff345a
+        elif(Attribute == 'cool'):
+            EmbedColor = 0x04057e3
+        elif(Attribute == 'pure'):
+            EmbedColor = 0x044c527
+        else:
+            EmbedColor = 0x0ff6600
+
+        embed=discord.Embed(title=EventName, url=EventUrl, color=EmbedColor)
+        embed.set_thumbnail(url=Thumbnail)
+        embed.add_field(name='Tier', value=tier, inline=True)
+        embed.add_field(name='EP', value=Cutoff, inline=True)
+        embed.add_field(name='EP Per Hour', value=EPPerHour, inline=True)
+        return embed
+
 async def GetEventName(server: str, eventid: int):
     from commands.apiFunctions import GetBestdoriEventAPI, GetServerAPIKey
     Key = await GetServerAPIKey(server)

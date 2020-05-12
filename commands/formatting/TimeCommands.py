@@ -98,6 +98,13 @@ async def GetTimeLeftCommandOutput(server: str, eventid: int):
 
     return output
  
+async def GetEventLengthSeconds(server, eventid):
+    from commands.apiFunctions import GetBestdoriEventAPI, GetServerAPIKey
+    API = await GetBestdoriEventAPI(eventid)
+    Key = await GetServerAPIKey(server)
+    EventLengthSeconds = (float(API['endAt'][Key]) - float(API['startAt'][Key])) / 1000
+    return EventLengthSeconds
+    
 async def GetTimeLeftString(server: str, eventid):
     TimeLeftSeconds = await GetEventTimeLeftSeconds(server, eventid)
     if(TimeLeftSeconds < 0):
