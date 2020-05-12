@@ -3,7 +3,7 @@ from protodefs.ranks import t10ranks
 from startup.login import enICEObject, jpICEObject
 from datetime import datetime
 from pytz import timezone
-import discord, asyncio, time
+import discord, asyncio, time, json
 
 def parseHTML(driver):
     html = driver.page_source
@@ -68,7 +68,91 @@ async def GetCurrentEventID(server: str):
         return CurrentEventID
     else:
         return 0
-    
+
+def GetCutoffJSONFile(Server, Tier):
+    if Server == 'en':
+        if Tier == 100:
+            FileName = 'databases/ent100.json'
+        else:
+            FileName = 'databases/ent1000.json'
+    elif Server == 'jp':
+        if Tier == 100:
+            FileName = 'databases/jpt100.json'
+        elif Tier == 1000:
+            FileName = 'databases/jpt1000.json'
+        else:
+            FileName = 'databases/jpt2000.json'
+    elif Server == 'cn':
+        if Tier == 100:
+            FileName = 'databases/cnt100.json'
+        elif Tier == 1000:
+            FileName = 'databases/cnt1000.json'
+        else:
+            FileName = 'databases/cnt2000.json'
+    elif Server == 'tw':
+        FileName = 'databases/twt100.json'
+    else:
+        FileName = 'databases/krt100.json'
+    return FileName
+
+def UpdateCutoffJSON(Server, Tier, EventID, Current, Estimate):
+    FileName = GetCutoffJSONFile(Server, Tier)
+    try:
+        with open(FileName) as file:
+            api = json.load(file)
+    except (json.JSONDecodeError, FileNotFoundError):
+        # Create the file and add an empty dict to it so we can load the json file
+        with open(FileName, 'a+') as file:
+            data = {}
+            json.dump(data, file, indent=2)
+        
+        # Load the newly created file
+        with open(FileName) as file:
+            api = json.load(file)
+
+    # Check if there's an entry for the EventID in the json file 
+    if str(EventID) in api:
+        if Current in api[str(EventID)]['current']:
+            print(f'Current value already in list for event {str(EventID)}')
+        else:
+            api[str(EventID)]['current'].append(Current)
+            api[str(EventID)]['estimate'].append(Estimate)
+            with open(FileName, 'w') as f:
+                json.dump(api, f)
+    # This adds a new key to the dictionary
+    else:
+        data = {EventID: {
+                        "current" : [Current],
+                        "estimate" : [Estimate]
+                        }
+                }
+        with open(FileName, 'w') as f:
+            api.update(data)
+            json.dump(api, f)
+
+def GetUpdatedValues(Server, Tier, EventID, Position):
+    FileName = GetCutoffJSONFile(Server, Tier)
+    try:
+        with open(FileName) as file:
+            api = json.load(file)
+    except (json.JSONDecodeError, FileNotFoundError):
+        with open(FileName, 'a+') as file:
+            data = {}
+            json.dump(data, file, indent=2)
+        with open(FileName) as file:
+            api = json.load(file)
+
+    if str(EventID) in api:
+        if Position == 'last':
+            LastUpdatedCurrent = api[str(EventID)]['current'][-1]
+            LastUpdatedEstimate = api[str(EventID)]['estimate'][-1]
+        elif Position == 'secondlast':
+            if len(api[str(EventID)]['current']) >= 2:
+                LastUpdatedCurrent = api[str(EventID)]['current'][-2]
+                LastUpdatedEstimate = api[str(EventID)]['estimate'][-2]
+        return LastUpdatedCurrent, LastUpdatedEstimate
+        
+
 async def GetCutoffFormatting(driver, server: str, tier: int):
     from commands.apiFunctions import GetBestdoriAllEventsAPI, GetBestdoriBannersAPI
     from commands.formatting.TimeCommands import GetTimeLeftString, GetEventProgress
@@ -85,9 +169,9 @@ async def GetCutoffFormatting(driver, server: str, tier: int):
                 eventName = 'T100: ' + eventName
                 if server != 'kr' and server != 'tw':
                     driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div/div[3]/div[5]/div[2]/div/div/div/a[2]').click()
-                    await asyncio.sleep(.5)
+                    await asyncio.sleep(.3)
                     driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div/div[3]/div[5]/div[2]/div/div/div/a[1]').click()
-                    await asyncio.sleep(.5)
+                    await asyncio.sleep(.3)
                 else:
                     if server == 'kr':
                         driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div[1]/div[3]/div[4]/div[2]/div/div/div/a[3]').click()
@@ -154,6 +238,36 @@ async def GetCutoffFormatting(driver, server: str, tier: int):
     eventUrl = 'https://bestdori.com/info/events/' + str(eventId)
     thumbnail = 'https://bestdori.com/assets/%s/event/%s/images_rip/logo.png'  %(server,bannerName)
 
+    # Get difference in current and estimate values
+    LastUpdatedValues = GetUpdatedValues(server, tier, eventId, 'last')
+    UpdateCutoffJSON(server, tier, eventId, current, estimate)
+    # This doesn't need a try/except because GetUpdatedValues will always return None if no event id (ie no data at all) is found
+    if LastUpdatedValues:
+
+        if LastUpdatedValues[0] == current:
+            # This fails because a 2nd to last value doesn't exist. This would happen on event start
+            try:
+                SecondLastUpdatedValues = GetUpdatedValues(server, tier, eventId, 'secondlast')
+            except:
+                SecondLastUpdatedValues = []
+                pass
+            if SecondLastUpdatedValues:
+                # Because trying to do this in one line was a pain I'm doing it one by one here
+                LastCurrent = int(SecondLastUpdatedValues[0].replace(',',''))
+                LastEstimate = int(SecondLastUpdatedValues[1].replace(',',''))
+                CurrentDifference = "{:,}".format(int(current.replace(',','')) - LastCurrent)
+                EstimateDifference = "{:,}".format(int(estimate.replace(',','')) - LastEstimate)
+                current = f'{current} ({CurrentDifference})'
+                estimate = f'{estimate} ({EstimateDifference})'
+            else:
+                pass
+        else:
+            LastCurrent = int(LastUpdatedValues[0].replace(',',''))
+            LastEstimate = int(LastUpdatedValues[1].replace(',',''))
+            CurrentDifference = "{:,}".format(int(current.replace(',','')) - LastCurrent)
+            EstimateDifference = "{:,}".format(int(estimate.replace(',','')) - LastEstimate)
+            current = f'{current} ({CurrentDifference})'
+            estimate = f'{estimate} ({EstimateDifference})'
 
     embed=discord.Embed(title=eventName, url=eventUrl, color=0x09d9fd)
     embed.set_thumbnail(url=thumbnail)

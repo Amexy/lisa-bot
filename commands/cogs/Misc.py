@@ -31,7 +31,7 @@ class Misc(commands.Cog):
     @commands.command(name='reload',
                     help='In the event that the loops (in particular 2 minute/1hr t10 posting) stop working, run this command to restart that process. If you want access to this command, please use the .notify command')
     async def reload(self, ctx):
-        ValidUsers = [158699060893581313, 202289392394436609, 102201838752784384, 358733607151599636, 229933911717707776, 181690542730641408, 154997108603224064]
+        ValidUsers = [99640840929943552, 158699060893581313, 202289392394436609, 102201838752784384, 358733607151599636, 229933911717707776, 181690542730641408, 154997108603224064]
         if ctx.message.author.id not in ValidUsers:
             await ctx.send("You are not authorized to use this command. If you'd like access, please use the .notify command requesting access")
         else: 
