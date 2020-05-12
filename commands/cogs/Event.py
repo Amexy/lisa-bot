@@ -196,11 +196,6 @@ class Event(commands.Cog):
             coastingTable = await GetCoastingOutput(server.lower(), epPerSong, currentEP)
             await ctx.send(coastingTable)
 
-
-        
-        
-        
-
     #######################
     #    Cutoff Commands   #
     #######################
