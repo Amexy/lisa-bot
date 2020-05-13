@@ -11,17 +11,7 @@ class Servers(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name='setprefix',
-                      description='Sets the command prefix the bot will use',
-                      help='Example: .setprefix !')
-    async def setprefix(self, ctx, prefix: str):
-        from commands.formatting.DatabaseFormatting import addPrefixToDatabase
-        if ctx.message.author.guild_permissions.administrator:
-            guild = ctx.message.guild
-            await ctx.send(addPrefixToDatabase(guild, prefix))
-        else:
-            msg = "You must have administrator rights to run this command, {0.author.mention}".format(ctx.message)  
-            await ctx.send(msg)
+
 
 
     @commands.command(name='newrole',
@@ -106,11 +96,6 @@ class Servers(commands.Cog):
             await ctx.send("```Assignable Roles:\n\n" + RolesAvailable + "```")
         except Exception as e:
             pass
-
-    @setprefix.error 
-    async def setprefix_error(self, ctx, error):
-        if isinstance(error, commands.MissingPermissions):
-            await ctx.send("You must have administrator rights on the servers to run this command.")
 
 def setup(bot):
     bot.add_cog(Servers(bot))
