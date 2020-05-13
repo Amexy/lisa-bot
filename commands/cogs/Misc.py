@@ -10,7 +10,7 @@ class Misc(commands.Cog):
 
     @commands.command(name='servericon',
                     aliases=['sp','si','serverpic'],
-                    help="Uploads the server's icon")
+                    description="Uploads the server's icon")
     async def servericon(self, ctx):
         GuildInfo = self.bot.get_guild(ctx.message.guild.id)
         GuildPicURL = GuildInfo.icon_url.BASE + GuildInfo.icon_url._url
@@ -29,7 +29,7 @@ class Misc(commands.Cog):
         del response
     
     @commands.command(name='reload',
-                    help='In the event that the loops (in particular 2 minute/1hr t10 posting) stop working, run this command to restart that process. If you want access to this command, please use the .notify command')
+                     description='In the event that the loops (in particular 2 minute/1hr t10 posting) stop working, run this command to restart that process. If you want access to this command, please use the .notify command')
     async def reload(self, ctx):
         ValidUsers = [99640840929943552, 158699060893581313, 202289392394436609, 102201838752784384, 358733607151599636, 229933911717707776, 181690542730641408, 154997108603224064]
         if ctx.message.author.id not in ValidUsers:
@@ -62,7 +62,8 @@ class Misc(commands.Cog):
 
     @commands.command(name='notify',
                       aliases=['n'],
-                      help='Sends a notification about the bot to Josh#1373 (use this for things like 2min/1hr t10 tracking failing, or a command repeatedly fails\n\nExamples:\n\n.notify the bot is failing to get t10 data for en')
+                      description='Sends a notification about the bot to Josh#1373 (use this for things like 2min/1hr t10 tracking failing, or a command repeatedly fails',
+                      help='.notify the bot is failing to get t10 data for en')
     async def notify(self, ctx, *notification):
         if notification:
             notificationString = notification[0]
@@ -78,7 +79,8 @@ class Misc(commands.Cog):
 
     @commands.command(name='avatar',
                     aliases=['a'],
-                    help="Uploads the mentioned user's avatar\n\n.Examples:\n\n.avatar @Lisa#4081\n.a Lisa#4081\n.a 523337807847227402\n.a Lisa (ths one may not always work)")
+                    description="Uploads the mentioned user's avatar",
+                    help='.avatar @Lisa#4081\n.a Lisa#4081\n.a 523337807847227402\n.a Lisa (ths one may not always work if multiple users have the same name)')
     async def getavatar(self, ctx, user: discord.Member):
         UserPicUrl = user.avatar_url.BASE + user.avatar_url._url
         if '.gif' in user.avatar_url._url:
@@ -97,15 +99,13 @@ class Misc(commands.Cog):
 
     @commands.command(name='about',
                       aliases=['info'],
-                      description="Posts info about the bot",
-                      brief="Posts info about the bot",
-                      help="Posts info about the bot")
+                      description="Posts info about the bot")
     async def about(self, ctx):
         await ctx.send("```" + "Developed by: Josh#1373 (with help from many others)\nDiscord:      discord.gg/wDu5CAA\nPlease DM or @ Josh if you have any feedback/suggestions!" + "```")
     
     @commands.command(name='translate',
-                      aliases=['trans'],
-                      help='Translates the message given (source language is autodetected)')
+                      aliases=['t'],
+                      description='Translates the message given')
     async def translate(self, ctx, language, *message):
         FullMessage = message[0]
         for x in message:
@@ -115,27 +115,25 @@ class Misc(commands.Cog):
         translator = Translator()
         TranslatedMessage = translator.translate(FullMessage)
         await ctx.send(TranslatedMessage.text)
-
-    
+ 
     @commands.command(name='invite',
-                      help='Posts the invite link for Lisabot',
-                      brief='Posts the invite link for Lisabot',
                       description='Posts the invite link for Lisabot')
     async def invite(self, ctx):
         await ctx.send('LisaBot: https://lisabot.bandori.app')
+    
     @commands.command(name='support',
-                      brief='Posts kofi link')
+                      description='Posts kofi link')
     async def kofi(self, ctx):
         await ctx.send("If you'd like to support the hosting costs for Lisabot, you can do so by visiting https://ko-fi.com/lisabot")
 
     @commands.command(name='github',
-                      brief='Posts github repo')
+                      description='Posts github repo')
     async def github(self, ctx):
         await ctx.send("If you'd like to contribue to Lisabot or just learn more about the code, please visit https://github.com/Amexy/lisa-bot")
 
     @commands.command(name='suggest',
-                      brief='Make a suggestion for Lisabot',
-                      help='Sends a suggestion for Lisabot to Josh#1373')
+                      description='Sends a suggestion for Lisabot to Josh#1373',
+                      help='.suggest this is a suggestion')
     async def suggest(self, ctx, *suggestion):
         if suggestion:
             suggestionString = suggestion[0]

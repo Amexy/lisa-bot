@@ -52,7 +52,8 @@ class Event(commands.Cog):
 
     @commands.command(name='t10events',
                     aliases=['t10e'],
-                    help='Returns a list of events that can be checked for T10 data\n\nExamples:\n\n.t10events\n.t10e jp')
+                    description="Returns a list of events that can be checked for T10 data",
+                    help='Examples:\n\n.t10events\n.t10e jp')
     async def t10events(self, ctx, server: str = 'en'):
         if server.lower() not in self.ValidT10Servers:
             await ctx.send("Only EN and JP can be checked for T10 data")
@@ -65,9 +66,11 @@ class Event(commands.Cog):
                 await ctx.send(f'Valid t10 events for `{server}` are: {str(ValidT10Events)[1:-1]}')
             else:
                 await ctx.send('Error loading valid t10 events. Use the `notify` command to let Josh know')
+
     @commands.command(name='t10archives',
                 aliases=["t10a"],
-                help="Attaches a txt file (if found) containing 2 minute t10 updates for the specified event and server\n\nExamples:\n\n.t10a 76 (this defaults to en)\n.t10a 112 jp")
+                description="ttaches a txt file (if found) containing 2 minute t10 updates for the specified event and server",
+                help=".t10a 76 (this defaults to en)\n.t10a 112 jp")
     async def t10archives(self, ctx, eventid: str, server: str = 'en'):
         if not eventid.isnumeric():
             raise commands.errors.BadArgument
@@ -87,8 +90,9 @@ class Event(commands.Cog):
             await ctx.send("No file found for the specified event.")
 
     @commands.command(name='t10',
-                brief="t10 info",
-                help="Provides current or specified event t10 info. Can look on a per event/server level, you can also include the songs parameter to look at song info (CL or VS only). However, a lot of the old data has been made inacessible or deleted so the bot may throw an error when checking. You can find the eventIds for any event by going to https://bestdori.com/info/events\n\nExamples\n\n.t10 en\n.t10 en 30\n.t10 jp 78 songs")
+                brief="t10 info",                    
+                description="Posts t10 info. You can also include the songs parameter at the end to look at song info (given the event is CL or VS)",
+                help=".t10 en 30\n.t10 jp 78 songs\n.t10 (defaults to en and the current event id, no songs")
     async def t10(self, ctx, server: str = 'en', eventid: int = 0, *songs):
         if server.isnumeric():
             raise commands.errors.BadArgument
@@ -113,9 +117,9 @@ class Event(commands.Cog):
                     await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify` command to let Josh know")
 
     @commands.command(name='t10ids',
-                aliases=['t10i'],
-                brief="t10 info with user ids",
-                help="Provides current or specified event t10 info. Can look on a per event/server level, you can also include the songs parameter to look at song info (CL or VS only). However, a lot of the old data has been made inacessible or deleted so the bot may throw an error when checking. You can find the eventIds for any event by going to https://bestdori.com/info/events\n\nExamples\n\n.t10ids en\n.t10ids en 30\n.t10ids jp 78 songs")
+                    aliases=['t10i'],
+                    description="Posts t10 info with each player's id. You can also include the songs parameter at the end to look at song info (given the event is CL or VS)",
+                    help=".t10ids en 30\n.t10ids jp 78 songs\n.t10i (defaults to en and the current event id, no songs)")
     async def t10ids(self, ctx, server: str = 'en', eventid: int = 0, *songs):
         if server.isnumeric():
             raise commands.errors.BadArgument
@@ -139,9 +143,9 @@ class Event(commands.Cog):
                     await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify` command to let Josh know")
 
     @commands.command(name='t10members',
-                aliases=['t10m'],
-                help="Aliases: t10m\n\nPosts t10 info with each player's team in their profile along with skill level for each member",
-                brief='t10 info with member info ')
+                    aliases=['t10m'],
+                    description="Posts t10 info with each player's team in their profile along with skill level for each member. You can also include the songs parameter at the end to look at song info (given the event is CL or VS)",
+                    help=".t10members en 50\n.t10members jp 100 songs\n.t10m (defaults to en and the current event id, no songs)")
     async def t10members(self, ctx, server: str = 'en', eventid: int = 0, *songs):
         if server.isnumeric():
             raise commands.errors.BadArgument
@@ -170,10 +174,9 @@ class Event(commands.Cog):
                     await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify` command to let Josh know")
 
     @commands.command(name='timeleft',
-            aliases=['tl'],
-                description="Provides the amount of time left (in hours) for an event",
-                brief="Time Left",
-                help="Specify EN or JP")
+                    aliases=['tl'],
+                    description="Provides the amount of time left (in hours) for an event",
+                    help=".timeleft (defaults to en)\n.timeleft jp")
     async def timeLeftBotCommand(self, ctx, server: str = 'en'):
         EventID = await GetCurrentEventID(server)
         if EventID:
@@ -187,7 +190,7 @@ class Event(commands.Cog):
 
     @commands.command(name='coasting',
                 description="Given an input of server, ep gained per song, and beginning EP, the bot provides how much EP you'll have at the end of the event if you natural flame for the rest of the event",
-                brief="EP at end of event via only natural flames")
+                help=".coasting en 5000 200000")
     async def coasting(self, ctx, server: str, epPerSong: int, currentEP: int):
         ValidServers = ['en','jp','cn','tw','kr']
         if server.lower() not in ValidServers:
@@ -222,7 +225,8 @@ class Event(commands.Cog):
 
     @commands.command(name='cutoffhistory',
                     aliases=['cutoffarchives','ch','ca'],
-                    help = "Gets the highest cutoff value for a given server and tier\n\nNote: This is based off Bestdori's data, so it's possible data could be incorrect because that value isn't known\n\nExamples\n\n.cutoffhistory en 100\n.ch jp 1")
+                    description="Gets the highest cutoff value for a given server and tier\n\nNote: This is based off Bestdori's data, so it's possible data could be incorrect because that value isn't known",
+                    help = ".cutoffhistory en 100\n.ch jp 1")
     async def cutoffhistory(self, ctx, server: str = 'en', tier: str = '10'):
         from commands.formatting.EventCommands import GetCutoffHistory
         try:
@@ -233,8 +237,8 @@ class Event(commands.Cog):
 
     @commands.command(name='cutoff',
                      aliases=['t100','t1000','t2000'],
-                     brief="Cutoff estimate for t10, t100, t1000, and t2000",
-                     help="Cutoff estimate for t10, t100, t1000, and t2000. Pass the tier you want and server (defaulted to en)\n\nCurrently using https://bestdori.com/tool/eventtracker/, all credit goes to Burrito\n\nExamples\n\n.cutoff 100\n.cutoff 1000 en\n.cutoff 2000 jp")
+                     description="Cutoff estimate for t10, t100, t1000, and t2000. Input the tier and server (defaulted to en and 100)\n\nNote: t100 and t1000 can only be used for en, and t2000 for jp\n\nCurrently using https://bestdori.com/tool/eventtracker/, all credit goes to Burrito",
+                     help=".cutoff 100\n.cutoff 1000 en\n.cutoff 2000 jp")
     async def cutoff(self, ctx, tier: int = 100, server: str = 'en'):
         from startup.OpenWebdrivers import enDriver, jpDriver, cnDriver, twkrDriver
         ValidTiers = [100,1000,2000]

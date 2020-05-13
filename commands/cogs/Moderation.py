@@ -10,10 +10,24 @@ from tabulate import tabulate
 class Servers(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        
+
+    @commands.command(name='setprefix',
+                      description='Sets the command prefix the bot will use',
+                      help='Example: .setprefix !')
+    async def setprefix(self, ctx, prefix: str):
+        from commands.formatting.DatabaseFormatting import addPrefixToDatabase
+        if ctx.message.author.guild_permissions.administrator:
+            guild = ctx.message.guild
+            await ctx.send(addPrefixToDatabase(guild, prefix))
+        else:
+            msg = "You must have administrator rights to run this command, {0.author.mention}".format(ctx.message)  
+            await ctx.send(msg)
+
+
     @commands.command(name='newrole',
                       aliases=['nr','addrole'],
-                      help='(Manage Roles) Adds a mentionable role (self assignable or not) to the server. \n\nInputs are name, color, and selfassignable (just True or False). Color must be in hex format (# not needed) or a value from the list below. SelfAssignable requires a value of True or False.\n\nValid Premade Colors:\n\nTeal\nDark Teal\nGreen\nDark Green\nBlue\nDark Blue\nPurple\nDark Purple\nMagenta\nDark Magenta\nGold\nDark Gold\nOrange\nDark Orange\nRed\nDark Red\nLighter Grey\nDark Grey\nLight Grey\nDarker Grey\nBlurple\nGreyple\n\nExamples: \n\n.newrole RoleName\n.nr RoleName True\n.nr RoleName True ffe2b0\n.newrole RoleName False blue')
+                      description='(Manage Roles) Adds a mentionable role (self assignable or not) to the server',
+                      help='Inputs are name, color, and selfassignable (just True or False). Color must be in hex format (# not needed) or a value from the list below. SelfAssignable requires a value of True or False.\n\nValid Premade Colors:\n\nTeal\nDark Teal\nGreen\nDark Green\nBlue\nDark Blue\nPurple\nDark Purple\nMagenta\nDark Magenta\nGold\nDark Gold\nOrange\nDark Orange\nRed\nDark Red\nLighter Grey\nDark Grey\nLight Grey\nDarker Grey\nBlurple\nGreyple\n\nExamples: \n\n.newrole RoleName\n.nr RoleName True\n.nr RoleName True ffe2b0\n.newrole RoleName False blue')
     async def newrole(self, ctx, rolename: str, selfassignable: bool = False, rolecolor: str = ''):
         if ctx.message.author.guild_permissions.manage_roles:
             try:
@@ -41,7 +55,8 @@ class Servers(commands.Cog):
 
     @commands.command(name='deleterole',
                       aliases=['dr','removerole','rmr'],
-                      help='(Manage Roles) Remove a role from the server. \n\nExample: \n\n.removerole RoleName')
+                      description='(Manage Roles) Remove a role from the server',
+                      help='.removerole RoleName')
     async def deleterole(self, ctx, rolename: str):
         if ctx.message.author.guild_permissions.manage_roles:
                 guild = ctx.guild
@@ -62,7 +77,7 @@ class Servers(commands.Cog):
 
     @commands.command(name='assignrole',
                       aliases=['asnr','assign','ar'],
-                      help='Assigns the user running the command the role mentioned')
+                      description='Assigns the user running the command the role mentioned')
     async def assignrole(self,ctx,rolename: str):
         try:
             GuildID = ctx.guild.id
@@ -82,7 +97,7 @@ class Servers(commands.Cog):
         
     @commands.command(name='getroles',
                       aliases=['gr'],
-                      help='Lists all self assignable roles in the server')
+                      description='Lists all self assignable roles in the server')
     async def getroles(self, ctx):
         try:
             GuildID = ctx.guild.id
@@ -92,6 +107,10 @@ class Servers(commands.Cog):
         except Exception as e:
             pass
 
+    @setprefix.error 
+    async def setprefix_error(self, ctx, error):
+        if isinstance(error, commands.MissingPermissions):
+            await ctx.send("You must have administrator rights on the servers to run this command.")
 
 def setup(bot):
     bot.add_cog(Servers(bot))
