@@ -19,7 +19,7 @@ class Help(commands.Cog):
                             if y.hidden == False:
                                 commands.append(y.name)
                         commands = ('\n'.join(map(str, sorted(commands))))
-                        help.add_field(name=x,value=commands,color=discord.Color.blue(),inline=True)
+                        help.add_field(name=x,value=commands,inline=True)
                 await ctx.send(embed=help)
             else:
                 for command in commands:
