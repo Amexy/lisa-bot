@@ -138,7 +138,7 @@ def GetCutoffJSONFile(Server, Tier):
         FileName = 'databases/krt100.json'
     return FileName
 
-def UpdateCutoffJSON(Server, Tier, EventID, Current, Estimate):
+def UpdateCutoffJSON(Server, Tier, EventID, Current, Estimate, SmoothingEstimate, EPPerHour):
     FileName = GetCutoffJSONFile(Server, Tier)
     try:
         with open(FileName) as file:
@@ -159,14 +159,31 @@ def UpdateCutoffJSON(Server, Tier, EventID, Current, Estimate):
             print(f'Current value already in list for event {str(EventID)}')
         else:
             api[str(EventID)]['current'].append(Current)
+
+        if Estimate in api[str(EventID)]['estimate']:
+            print(f'Estimate value already in list for event {str(EventID)}')
+        else:    
             api[str(EventID)]['estimate'].append(Estimate)
-            with open(FileName, 'w') as f:
-                json.dump(api, f)
+
+        if SmoothingEstimate in api[str(EventID)]['smoothingestimate']:
+            print(f'Smoothing Estimate value already in list for event {str(EventID)}')
+        else:    
+            api[str(EventID)]['smoothingestimate'].append(SmoothingEstimate)
+
+        if EPPerHour in api[str(EventID)]['epperhour']:
+            print(f'EPPerHour value already in list for event {str(EventID)}')
+        else:    
+            api[str(EventID)]['epperhour'].append(EPPerHour)
+            
+        with open(FileName, 'w') as f:
+            json.dump(api, f)
     # This adds a new key to the dictionary
     else:
         data = {EventID: {
                         "current" : [Current],
-                        "estimate" : [Estimate]
+                        "estimate" : [Estimate],
+                        "smoothingestimate" : [SmoothingEstimate],
+                        "epperhour" : [EPPerHour]
                         }
                 }
         with open(FileName, 'w') as f:
@@ -189,16 +206,22 @@ def GetUpdatedValues(Server, Tier, EventID, Position):
         if Position == 'last':
             LastUpdatedCurrent = api[str(EventID)]['current'][-1]
             LastUpdatedEstimate = api[str(EventID)]['estimate'][-1]
+            LastUpdatedSmoothingEstimate = api[str(EventID)]['smoothingestimate'][-1]
+            LastUpdatedEPPerHour = api[str(EventID)]['epperhour'][-1]
         elif Position == 'secondlast':
             if len(api[str(EventID)]['current']) >= 2:
                 LastUpdatedCurrent = api[str(EventID)]['current'][-2]
                 LastUpdatedEstimate = api[str(EventID)]['estimate'][-2]
-        return LastUpdatedCurrent, LastUpdatedEstimate
+                LastUpdatedSmoothingEstimate = api[str(EventID)]['smoothingestimate'][-2]
+                LastUpdatedEPPerHour = api[str(EventID)]['epperhour'][-2]
+
+        return LastUpdatedCurrent, LastUpdatedEstimate, LastUpdatedSmoothingEstimate, LastUpdatedEPPerHour
         
 
 async def GetCutoffFormatting(driver, server: str, tier: int):
-    from commands.apiFunctions import GetBestdoriAllEventsAPI, GetBestdoriBannersAPI
-    from commands.formatting.TimeCommands import GetTimeLeftString, GetEventProgress
+    from commands.apiFunctions import GetBestdoriAllEventsAPI, GetBestdoriBannersAPI, GetBestdoriCutoffAPI
+    from commands.formatting.TimeCommands import GetTimeLeftString, GetEventProgress, GetEventTimeLeftSeconds, GetEventLengthSeconds, GetEventStartTime
+    import math
     eventId = await GetCurrentEventID(server)
     eventAPI = await GetBestdoriAllEventsAPI()
     eventName = eventAPI[str(eventId)]['eventName'][1]
@@ -210,55 +233,62 @@ async def GetCutoffFormatting(driver, server: str, tier: int):
         if tier != 10:
             if tier == 100:
                 eventName = 'T100: ' + eventName
-                if server != 'kr' and server != 'tw':
-                    driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div/div[3]/div[5]/div[2]/div/div/div/a[2]').click()
+                if server != 'kr' and server != 'tw':               
+                    driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div[1]/div[3]/div[11]/div[2]/div/div/div/a[2]').click()
                     await asyncio.sleep(.3)
-                    driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div/div[3]/div[5]/div[2]/div/div/div/a[1]').click()
+                    driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div[1]/div[3]/div[11]/div[2]/div/div/div/a[1]').click()
                     await asyncio.sleep(.3)
                 else:
                     if server == 'kr':
-                        driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div[1]/div[3]/div[4]/div[2]/div/div/div/a[3]').click()
+                        driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div[1]/div[3]/div[10]/div[2]/div/div/div/a[3]').click()
                         await asyncio.sleep(.5)
-                        driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div[1]/div[3]/div[4]/div[2]/div/div/div/a[5]').click()
+                        driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div[1]/div[3]/div[10]/div[2]/div/div/div/a[5]').click()
                         await asyncio.sleep(.5)
                     else:
-                        driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div[1]/div[3]/div[4]/div[2]/div/div/div/a[5]').click()
+                        driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div[1]/div[3]/div[10]/div[2]/div/div/div/a[5]').click()
                         await asyncio.sleep(.5)
-                        driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div[1]/div[3]/div[4]/div[2]/div/div/div/a[3]').click()
+                        driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div[1]/div[3]/div[10]/div[2]/div/div/div/a[3]').click()
                         await asyncio.sleep(.5)
             elif tier == 1000:
                 eventName = 'T1000: ' + eventName
-                driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div/div[3]/div[5]/div[2]/div/div/div/a[1]').click()                
+                driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div[1]/div[3]/div[11]/div[2]/div/div/div/a[1]').click()                
                 await asyncio.sleep(.3)
-                driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div/div[3]/div[5]/div[2]/div/div/div/a[2]').click()  
+                driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div[1]/div[3]/div[11]/div[2]/div/div/div/a[2]').click()
                 await asyncio.sleep(.5)   
             else:
                 eventName = 'T2000: ' + eventName
-                driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div/div[3]/div[5]/div[2]/div/div/div/a[1]').click()
+                driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div[1]/div[3]/div[11]/div[2]/div/div/div/a[1]').click()                
                 await asyncio.sleep(.5)
-                driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div/div[3]/div[5]/div[2]/div/div/div/a[3]').click()
+                driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div[1]/div[3]/div[11]/div[2]/div/div/div/a[3]').click()                
                 await asyncio.sleep(.5)
             await asyncio.sleep(.5)
-            parsedHTML = parseHTML(driver)
-            if not parsedHTML:
+            # Have to do this twice to get non smoothed values
+            parsedHTMLSmoothed = parseHTML(driver)
+            driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div[1]/div[3]/div[8]/div[2]/div/div/div/a[2]').click()
+            parsedHTMLNoSmoothing = parseHTML(driver)
+            driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div[1]/div[3]/div[8]/div[2]/div/div/div/a[1]').click()
+
+            if not parsedHTMLSmoothed:
                 valid = 'n'
             else:
                 valid = 'y'
             
             # for when the event is completed
-            if parsedHTML[2].text == 'Final Cutoff':
-                if parsedHTML[3].text == '?':
-                    estimate = parsedHTML[9].text    
-                    lastupdated = parsedHTML[11].text
-                    current = parsedHTML[7].text    
+            if parsedHTMLSmoothed[2].text == 'Final Cutoff':
+                if parsedHTMLSmoothed[3].text == '?':
+                    estimate = parsedHTMLSmoothed[9].text    
+                    lastupdated = parsedHTMLSmoothed[11].text
+                    current = parsedHTMLSmoothed[7].text    
                 else:
-                    estimate = parsedHTML[7].text
-                    lastupdated = parsedHTML[9].text
-                    current = parsedHTML[3].text
+                    estimate = parsedHTMLSmoothed[7].text
+                    lastupdated = parsedHTMLSmoothed[9].text
+                    current = parsedHTMLSmoothed[3].text
+                estimatenosmoothing = estimate # Because there's only 1 estimate at the end of the event
             else:
-                estimate = parsedHTML[5].text
-                lastupdated = parsedHTML[7].text
-                current = parsedHTML[3].text
+                estimate = parsedHTMLSmoothed[5].text
+                lastupdated = parsedHTMLSmoothed[7].text
+                current = parsedHTMLSmoothed[3].text
+                estimatenosmoothing = parsedHTMLNoSmoothing[5].text
 
         else:
             ice = getICEObject(server)
@@ -271,6 +301,7 @@ async def GetCutoffFormatting(driver, server: str, tier: int):
 
     fmt = "%Y-%m-%d %H:%M:%S %Z%z"
     now_time = datetime.now(timezone('US/Eastern'))
+    EventLengthSeconds = await GetEventLengthSeconds(server, eventId)
     timeLeft = await GetTimeLeftString(server,eventId)
     #await ctx.send("Grabbing cutoff...")
     prog = await GetEventProgress(server,eventId) 
@@ -280,42 +311,89 @@ async def GetCutoffFormatting(driver, server: str, tier: int):
     bannerName = bannerAPI['assetBundleName']
     eventUrl = 'https://bestdori.com/info/events/' + str(eventId)
     thumbnail = 'https://bestdori.com/assets/%s/event/%s/images_rip/logo.png'  %(server,bannerName)
-
+    
     # Get difference in current and estimate values
     LastUpdatedValues = GetUpdatedValues(server, tier, eventId, 'last')
-    UpdateCutoffJSON(server, tier, eventId, current, estimate)
-    # This doesn't need a try/except because GetUpdatedValues will always return None if no event id (ie no data at all) is found
-    if LastUpdatedValues:
 
-        if LastUpdatedValues[0] == current:
-            # This fails because a 2nd to last value doesn't exist. This would happen on event start
+
+    if LastUpdatedValues:
+        if current != LastUpdatedValues[0]:    
+            LastUpdatedTime = (await GetBestdoriCutoffAPI(tier))['cutoffs'][-1]['time']
+            EventStartTime = await GetEventStartTime(server, eventId)
+            ElapsedTimeHours = (LastUpdatedTime - EventStartTime) / 1000 / 3600            
+            EPPerHour = math.floor(float(current.replace(',','')) / ElapsedTimeHours)
+            if estimate == '?':
+                UpdateCutoffJSON(server,tier,eventId,current,"0","0",EPPerHour)     
+            else:
+                UpdateCutoffJSON(server,tier,eventId,current,estimate,estimatenosmoothing,EPPerHour)     
+            LastCurrent = int(LastUpdatedValues[0].replace(',',''))
+            LastEstimate = int(LastUpdatedValues[1].replace(',',''))
+            LastEstimateNoSmoothing = int(LastUpdatedValues[2].replace(',',''))
+            LastEPPerHour = LastUpdatedValues[3] #this value is stored as an int
+            CurrentDifference = "{:,}".format(int(current.replace(',','')) - LastCurrent)
+            EstimateDifference = "{:,}".format(int(estimate.replace(',','')) - LastEstimate)
+            EstimateNoSmoothingDifference = "{:,}".format(int(estimatenosmoothing.replace(',','')) - LastEstimateNoSmoothing)
+            EPPerHourDifference = EPPerHour - LastEPPerHour
+            if int(CurrentDifference.replace(',','')) > 0:
+                CurrentDifference = "{:+,}".format(int(CurrentDifference.replace(',','')))
+            if int(EstimateDifference.replace(',','')) > 0:
+                EstimateDifference = "{:+,}".format(int(EstimateDifference.replace(',','')))
+            if int(EstimateNoSmoothingDifference.replace(',','')) > 0:
+                EstimateNoSmoothingDifference = "{:+,}".format(int(EstimateNoSmoothingDifference.replace(',','')))
+            if  EPPerHourDifference > 0:
+                EPPerHourDifference = "{:+,}".format(EPPerHourDifference)
+            current = f'{current} ({CurrentDifference})'
+            estimate = f'{estimate} ({EstimateDifference})'
+            estimatenosmoothing = f'{estimatenosmoothing} ({EstimateNoSmoothingDifference})'
+            EPPerHour = f"{'{:,}'.format(EPPerHour)} ({EPPerHourDifference})"
+        elif current == LastUpdatedValues[0]:
             try:
                 SecondLastUpdatedValues = GetUpdatedValues(server, tier, eventId, 'secondlast')
             except:
                 SecondLastUpdatedValues = []
                 pass
             if SecondLastUpdatedValues:
-                # Because trying to do this in one line was a pain I'm doing it one by one here
+                TimeLeftSeconds = await GetEventTimeLeftSeconds(server, eventId)
+                ElapsedTimeHours = (EventLengthSeconds - TimeLeftSeconds) / 3600
+                EPPerHour = math.floor(float(current.replace(',','')) / ElapsedTimeHours)
                 LastCurrent = int(SecondLastUpdatedValues[0].replace(',',''))
                 LastEstimate = int(SecondLastUpdatedValues[1].replace(',',''))
+                LastEstimateNoSmoothing = int(SecondLastUpdatedValues[2].replace(',',''))
+                LastEPPerHour = SecondLastUpdatedValues[3] #this value is stored as an int
                 CurrentDifference = "{:,}".format(int(current.replace(',','')) - LastCurrent)
                 EstimateDifference = "{:,}".format(int(estimate.replace(',','')) - LastEstimate)
+                EstimateNoSmoothingDifference = "{:,}".format(int(estimatenosmoothing.replace(',','')) - LastEstimateNoSmoothing)
+                EPPerHourDifference = EPPerHour - LastEPPerHour
+                if int(CurrentDifference.replace(',','')) > 0:
+                    CurrentDifference = "{:+,}".format(int(CurrentDifference.replace(',','')))
+                if int(EstimateDifference.replace(',','')) > 0:
+                    EstimateDifference = "{:+,}".format(int(EstimateDifference.replace(',','')))
+                if int(EstimateNoSmoothingDifference.replace(',','')) > 0:
+                    EstimateNoSmoothingDifference = "{:+,}".format(int(EstimateNoSmoothingDifference.replace(',','')))
+                if  EPPerHourDifference > 0:
+                    EPPerHourDifference = "{:+,}".format(EPPerHourDifference)
                 current = f'{current} ({CurrentDifference})'
                 estimate = f'{estimate} ({EstimateDifference})'
+                estimatenosmoothing = f'{estimatenosmoothing} ({EstimateNoSmoothingDifference})'
+                EPPerHour = f"{'{:,}'.format(EPPerHour)} ({EPPerHourDifference})"
             else:
-                pass
+                EPPerHour = "{:,}".format(LastUpdatedValues[3])
+    else:
+        LastUpdatedTime = (await GetBestdoriCutoffAPI(tier))['cutoffs'][-1]['time']
+        EventStartTime = await GetEventStartTime(server, eventId)
+        ElapsedTimeHours = (LastUpdatedTime - EventStartTime) / 1000 / 3600            
+        EPPerHour = math.floor(float(current.replace(',','')) / ElapsedTimeHours)
+        if estimate == '?':
+            UpdateCutoffJSON(server,tier,eventId,current,"0","0",EPPerHour)     
         else:
-            LastCurrent = int(LastUpdatedValues[0].replace(',',''))
-            LastEstimate = int(LastUpdatedValues[1].replace(',',''))
-            CurrentDifference = "{:,}".format(int(current.replace(',','')) - LastCurrent)
-            EstimateDifference = "{:,}".format(int(estimate.replace(',','')) - LastEstimate)
-            current = f'{current} ({CurrentDifference})'
-            estimate = f'{estimate} ({EstimateDifference})'
-
+            UpdateCutoffJSON(server,tier,eventId,current,estimate,estimatenosmoothing,EPPerHour)     
+        EPPerHour = "{:,}".format(EPPerHour)
     embed=discord.Embed(title=eventName, url=eventUrl, color=0x09d9fd)
     embed.set_thumbnail(url=thumbnail)
-    embed.add_field(name='Current', value=current, inline=True)
+    embed.add_field(name='Current', value=current, inline=False)
     embed.add_field(name='Estimate', value=estimate, inline=True)
+    embed.add_field(name='Estimate (No Smoothing)', value=estimatenosmoothing, inline=True)
+    embed.add_field(name='EP Per Hour', value=EPPerHour, inline=False)
     embed.add_field(name='Last Updated', value=lastupdated, inline=False)
     embed.add_field(name='Time Left', value=timeLeft, inline=True)
     embed.add_field(name='Progress', value=prog, inline=True)
