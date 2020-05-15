@@ -81,7 +81,9 @@ class Misc(commands.Cog):
                     aliases=['a'],
                     description="Uploads the mentioned user's avatar",
                     help='.avatar @Lisa#4081\n.a Lisa#4081\n.a 523337807847227402\n.a Lisa (ths one may not always work if multiple users have the same name)')
-    async def getavatar(self, ctx, user: discord.Member):
+    async def getavatar(self, ctx, user: discord.Member = None):
+        if not user:
+            user = self.bot.get_user(ctx.message.author.id)
         UserPicUrl = user.avatar_url.BASE + user.avatar_url._url
         if '.gif' in user.avatar_url._url:
             FileExtension = '.gif'
