@@ -63,7 +63,7 @@ class Loops(commands.Cog):
                         if channel != None:
                             try:
                                 await channel.send(EnMessage)
-                            except commands.BotMissingPermissions: 
+                            except (commands.BotMissingPermissions, discord.errors.NotFound): 
                                 LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
                                 await LoopRemovalUpdates.send('Removing 2 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                                 removeChannelFromDatabase(channel, 2, 'en')
@@ -79,7 +79,7 @@ class Loops(commands.Cog):
                         if channel != None:
                             try:
                                 await channel.send(JPMessage)
-                            except commands.BotMissingPermissions: 
+                            except (commands.BotMissingPermissions, discord.errors.NotFound): 
                                 LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
                                 await LoopRemovalUpdates.send('Removing 2 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                                 removeChannelFromDatabase(channel, 2, 'jp')
@@ -114,7 +114,7 @@ class Loops(commands.Cog):
                         if channel != None:
                             try:
                                 await channel.send(EnMessage)
-                            except commands.BotMissingPermissions: 
+                            except (commands.BotMissingPermissions, discord.errors.NotFound): 
                                 LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
                                 await LoopRemovalUpdates.send('Removing 1 hour updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                                 removeChannelFromDatabase(channel, 3600, 'en')
@@ -130,7 +130,7 @@ class Loops(commands.Cog):
                         if channel != None:
                             try:
                                 await channel.send(JPMessage)
-                            except commands.BotMissingPermissions: 
+                            except (commands.BotMissingPermissions, discord.errors.NotFound): 
                                 LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
                                 await LoopRemovalUpdates.send('Removing 1 hour updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                                 removeChannelFromDatabase(channel, 3600, 'jp')                  
@@ -154,11 +154,7 @@ class Loops(commands.Cog):
                             try:
                                 for x in message:
                                     await channel.send(x)
-                            except commands.BotMissingPermissions:  
-                                LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
-                                await LoopRemovalUpdates.send('Removing 1 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
-                                removeChannelFromDatabaseSongs(channel)
-                            except discord.errors.Forbidden:
+                            except (commands.BotMissingPermissions, discord.errors.NotFound, discord.errors.Forbidden): 
                                 LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
                                 await LoopRemovalUpdates.send('Removing 1 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                                 removeChannelFromDatabaseSongs(channel)
@@ -190,7 +186,7 @@ class Loops(commands.Cog):
                                 try:
                                     await channel.send('T100 update found!')
                                     await channel.send(embed=output)
-                                except commands.BotMissingPermissions: 
+                                except (commands.BotMissingPermissions, discord.errors.NotFound): 
                                     LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
                                     await LoopRemovalUpdates.send('Removing t100 updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                                     rmChannelFromCutoffDatabase(channel, 100)
@@ -220,7 +216,7 @@ class Loops(commands.Cog):
                                 try:
                                     await channel.send('T1000 update found!')
                                     await channel.send(embed=output)
-                                except commands.BotMissingPermissions: 
+                                except (commands.BotMissingPermissions, discord.errors.NotFound): 
                                     LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
                                     await LoopRemovalUpdates.send('Removing t1000 updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                                     rmChannelFromCutoffDatabase(channel, 1000)

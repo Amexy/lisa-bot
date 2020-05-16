@@ -62,7 +62,7 @@ async def on_guild_join(guild):
         await general.send("Thanks for inviting me! You can get started by typing .help to find the current command list and change the command prefix by typing .setprefix followed by the desired prefix e.g. !.\nSource Code: https://github.com/Amexy/lisa-bot\nSupport: https://ko-fi.com/lisabot\nIf you have any feedback or requests, please dm Josh#1373 or join discord.gg/wDu5CAA.")
 
 
-bot.get_command('help').hidden=True
+bot.remove_command('help')
 bot.load_extension("commands.cogs.Game")
 bot.load_extension("commands.cogs.Misc")
 bot.load_extension("commands.cogs.Admin")
@@ -70,5 +70,6 @@ bot.load_extension("commands.cogs.Event")
 bot.load_extension("commands.cogs.Updates")
 bot.load_extension("commands.cogs.Moderation")
 bot.load_extension("commands.cogs.Loops")
+bot.load_extension("commands.cogs.Help")
 
 bot.run(TOKEN) 

@@ -22,16 +22,16 @@ class Game(commands.Cog):
         self.bot = bot
 
     @commands.command(name='level',
-                    help='Given a current level, xp earned per song, and the amount of songs played, the end level will be provided')
+                    description='Given a current level, xp earned per song, and the amount of songs played, the end level will be provided',
+                    help='.level 100 500 10')
     async def level(self, ctx, CurrentLevel: int, XPPerSong: int, SongsPlayed: int):
         from commands.formatting.GameCommands import GetLevelOutput
         NewLevel = await GetLevelOutput(CurrentLevel, XPPerSong, SongsPlayed)
         await ctx.send('New Level: %s' %(str(NewLevel)))
 
-
     @commands.command(name='gacha',
-                      brief='Gives info on the current gachas',
-                      help="Gives info on the current gachas available. Doesn't show the gachas that are always available (new player, 3+ ticket, etc)")
+                      description="Gives info on the current gachas. Doesn't show the gachas that are always available (new player, 3+ ticket, etc)",
+                      help=".gacha en\n.gacha (defaults to en)")
     async def gacha(self, ctx, server: str = 'en'):
         api = await GetBestdoriAllGachasAPI()
         gachas = []
@@ -93,8 +93,8 @@ class Game(commands.Cog):
 
     @commands.command(name='character',
                       aliases=['chara','c'],
-                      help='Posts character info\n\nExamples\n.character lisa',
-                      brief='Posts character info')
+                      description='Posts character info',
+                      help='.character lisa\n.c kasumi')
     async def characterinfo(self, ctx, character: str):
         try:
             output = await characterOutput(character)
@@ -104,23 +104,22 @@ class Game(commands.Cog):
 
     @commands.command(name='starsused',
                       aliases=['su'],
-                      brief="Star usage for tiering",
-                      help="Provides star usage when aiming for a certain amount of EP. Challenge live calculations aren't incorporated yet. I recommended using Bestdori's event calculator.\n\nExamples\n\n.starsused 9750 100 0 2000000 3 en\n.starsused 9750 100 0 2000000 3 jp\n.starsused 9750 100 0 2000000 3 168\n.starsused 9750 100 0 2000000 3")
+                      description="Provides star usage when aiming for a certain amount of EP. Challenge live calculations aren't incorporated yet. I recommended using Bestdori's event calculator",
+                      help=".starsused 9750 100 0 2000000 3 en\n.starsused 9750 100 0 2000000 3 jp\n.starsused 9750 100 0 2000000 3 168\n.su 9750 100 0 2000000 3")
     async def starsused(self, ctx, epPerSong: int, begRank: int, begEP: int, targetEP: int, flamesUsed: int, *ServerOrHoursLeft):
         starsUsedTable = await GetStarsUsedOutput(epPerSong, begRank, begEP, targetEP, flamesUsed, *ServerOrHoursLeft)
         await ctx.send(starsUsedTable)
 
     @commands.command(name='epgain',
                       description="Provides EP gain given user-provided inputs",
-                      brief="Calculates EP gain",
-                      help="BPPercent should be between 1 and 150 and in intervals of 10 e.g. 10, 20, 30\nNormal Event = 1\nLive Trial = 2\nChallenge = 3\nBand Battle* = 4\n*For Band Battles, specify placement between 1-5.")
+                      help="BPPercent should be between 1 and 150 and in intervals of 10 e.g. 10, 20, 30\n\nNormal Event = 1\nLive Trial = 2\nChallenge = 3\nBand Battle* = 4\n*For Band Battles, specify placement between 1-5.\n\n.epgain 1500000 7500000 150 3 1\n.epgain 1000000 6000000 130 2 4 5")
     async def epgain(self, ctx, yourScore: int, multiScore: int, bpPercent: int, flamesUsed: int, eventType: int, bbPlace: int = 0):
         ep = GetEPGainOutput(yourScore, multiScore, bpPercent, flamesUsed, eventType, bbPlace)
         await ctx.send("EP Gain: " + str(math.floor(ep)))
 
     @commands.command(name='event',
-                      help='Posts event info, defaults to en and the current event id. Only supports EN and JP currently\n\nExamples\n.event\n.event jp\n.event en 12\n.event en Lisa\n.event jp 一閃',
-                      brief='Posts event info')
+                      description='Posts event info',
+                      help='event\n.event jp\n.event en 12\n.event en Lisa\n.event jp 一閃')
     async def event(self, ctx, server: str = 'en', *event):
         from commands.formatting.EventCommands import GetEventName, GetCurrentEventID, GetEventAttribute
         from protodefs.ranks import GetEventType
@@ -232,8 +231,7 @@ class Game(commands.Cog):
     @commands.command(name='songinfo',
                       aliases=['song','songs'],
                       description='Provides info about a song',
-                      brief='Game Song information',
-                      help='Please provide the song name EXACTLY as it appears in game e.g. B.O.F not BOF, b.o.f, etc.')
+                      help='If there are special characters in the song name, provide the song name EXACTLY as it appears in game e.g. B.O.F not BOF, b.o.f, etc.\n\n.songinfo Sunkissed')
     async def songinfo(self, ctx, *args: str):
         try:
             songName = args[0]
@@ -245,12 +243,11 @@ class Game(commands.Cog):
             await ctx.send(string)
         except: 
             await ctx.send("Couldn't find the song entered, it was possibly entered incorrectly. The song needs to be spelled exactly as it appears in game")
-    
 
     @commands.command(name='songmeta',
                       aliases=['sm','smf','meta'],
-                      brief='Shows song meta info (fever)',
-                      help='Shows song meta info (fever). By default, it will show the top 20 songs. Given a list of songs (EX and SP dif only), it will sort them based off efficiency. Assumes 100% Score Boost SL5 and 100% Perfects. I recommend using Bestdori for finer tuning.\n\nExamples\n\n.songmeta\n.sm\n.meta\n.songmeta unite guren jumpin')
+                      description='Shows song meta info (fever). By default, it will show the top 20 songs. Given a list of songs (EX and SP dif only), it will sort them based off efficiency. Assumes SL5 and 100% Perfects. I recommend using Bestdori for finer tuning',
+                      help='.songmeta\n.sm\n.meta\n.songmeta unite guren jumpin')
     async def songmeta(self, ctx, *songs):
         if songs:
             output = await GetSongMetaOutput(True, songs)
@@ -260,8 +257,8 @@ class Game(commands.Cog):
 
     @commands.command(name='songmetanofever',
                       aliases=['smnf','metanf'],
-                      brief='Shows song meta info (no fever)',
-                      help='Shows song meta info (no fever). By default, it will show the top 20 songs. Given a list of songs (EX and SP dif only), it will sort them based off efficiency. Assumes 100% Score Boost SL5 and 100% Perfects. I recommend using Bestdori for finer tuning.\n\nExamples\n\n.songmetanofever\n.smnf\n.metanf\n.songmetanofever unite guren jumpin')
+                      description='Shows song meta info (no fever). By default, it will show the top 20 songs. Given a list of songs (EX and SP dif only), it will sort them based off efficiency. Assumes SL5 and 100% Perfects. I recommend using Bestdori for finer tuning',
+                      help='.songmeta\n.sm\n.meta\n.songmeta unite guren jumpin')
     async def songmetanf(self, ctx, *songs):
         if songs:
             output = await GetSongMetaOutput(False, list(songs))
@@ -271,7 +268,8 @@ class Game(commands.Cog):
 
     @commands.command(name='leaderboards',
                       aliases=['lb','lbs'],
-                      help='Shows the player leaderboards from Bestdori\n\nSupports the EN/JP/TW/CN/KR Server.\nA valid type of leaderboard must be entered, these valid entries are: highscores/hs, fullcombo/fc, ranks/rank, and cleared\n\nExamples:\n\n.lb\n.lb en ranks\n.lb jp highscores 50')
+                      description='Shows the player leaderboards from Bestdori\n\nSupports the EN/JP/TW/CN/KR Server.\n',
+                      help='A valid type of leaderboard must be entered, these valid entries are: highscores/hs, fullcombo/fc, ranks/rank, and cleared\n\n.lb\n.lb en ranks\n.lb jp highscores 50')
     async def playerleaderboards(self, ctx, server: str = 'en', type: str = 'highscores', entries: int = 20):
         Output = await GetLeaderboardsOutput(server, type, entries)
         await ctx.send(Output)
@@ -279,8 +277,7 @@ class Game(commands.Cog):
     @commands.command(name='card',
                       aliases=['cards', 'ci', 'cardinfo'],
                       description="Provides embedded image of card with specified filters",
-                      brief="Detailed card image",
-                      help="Enter the character with optional filters to see card information\n\nExamples:\n.card kokoro 2 - Second Kokoro SSR\n.card lisa df - Lisa Dreamfes card\n.card moca last ssr - Last released SSR of Moca\n.card hina last sr happy - Last released happy SR of Hina\n.card title maritime decective - Lookup card with title \"Maritime Detective\"")
+                      help="Enter the character with optional filters to see card information\n\n.card kokoro 2 - Second Kokoro SSR\n.card lisa df - Lisa Dreamfes card\n.card moca last ssr - Last released SSR of Moca\n.card hina last sr happy - Last released happy SR of Hina\n.card title maritime decective - Lookup card with title \"Maritime Detective\"")
     async def card(self, ctx: discord.abc.Messageable, *args):
         resultFilteredArguments = filterArguments(*args)
         if resultFilteredArguments.failure:
