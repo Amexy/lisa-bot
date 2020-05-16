@@ -75,40 +75,84 @@ async def GetSongInfo(songName: str):
     return songInfoOutput
 
 async def GetSongMetaOutput(fever: bool, songs: tuple = []):
+    songNameAPI = await GetSongAPI()
+    songMetaAPI = await GetSongMetaAPI()
+    songWeightList = []
+    addedSongs = []
+
     if songs:
         # Get APIs
-        songNameAPI = await GetSongAPI()
-        songMetaAPI = await GetSongMetaAPI()
         
         # Find the IDs for the input
         #So 5.3.2 = [2.7628, 1.0763, 3.3251, 1.488]
         #Means that song (id = 5) on expert (difficulty = 3) on a 7 second skill (duration = 2 + 5) has those meta numbers.
         #First two = non fever, so if the skill is 60% then song score = 2.7628 + 1.0763 * 60%    
-        songWeightList = []
-        addedSongs = [] # to get rid of duplicate entries since full song names aren't required
         for song in songs:
-            for key in songNameAPI:
-                element = songNameAPI[key]['musicTitle'][1]
-                if(element is None):
-                    element = songNameAPI[key]['musicTitle'][0]
-                if song.lower() in element.lower():
-                    songValues = songMetaAPI[key]["3"]["2"]
-                    songLength = songNameAPI[key]['length']
+            for x in songNameAPI:
+                try:
+                    if song.lower() in (songNameAPI[x]['musicTitle'][1]).lower():
+                        addedSongs.append([songNameAPI[x]['musicTitle'][1],x])
+                        break
+                except:
+                    if song.lower() in (songNameAPI[x]['musicTitle'][0]).lower():
+                        addedSongs.append([songNameAPI[x]['musicTitle'][0],x])
+                        break
+        if addedSongs:
+            for song in addedSongs:
+                if "4" in songMetaAPI[song[1]]:
+                    songValues = songMetaAPI[song[1]]["4"]["7"] 
+                    songLength = songNameAPI[song[1]]['length']
                     songLength = strftime("%H:%M:%S", gmtime(songLength))
-                    if element not in addedSongs:
-                        if fever:
-                            songWeightList.append([element, round(((songValues[2] + songValues[3] * 2) * 1.1) * 100), songLength])
-                        else:
-                            songWeightList.append([element, round(((songValues[0] + songValues[1] * 2) * 1.1) * 100), songLength])
-                        addedSongs.append(element)
-        songWeightList = sorted(songWeightList,key=itemgetter(1),reverse=True)
+                    if fever:
+                        songWeightList.append([song[0] + '(SP)', round(((songValues[2] + songValues[3] * 2) * 1.1) * 100), songLength])
+                    else:
+                        songWeightList.append([song[0] + '(SP)', round(((songValues[0] + songValues[1] * 2) * 1.1) * 100), songLength])
+                songValues = songMetaAPI[song[1]]["3"]["7"] 
+                songLength = songNameAPI[song[1]]['length']
+                songLength = strftime("%H:%M:%S", gmtime(songLength))
+                if fever:
+                    songWeightList.append([song[0], round(((songValues[2] + songValues[3] * 2) * 1.1) * 100), songLength])
+                else:
+                    songWeightList.append([song[0], round(((songValues[0] + songValues[1] * 2) * 1.1) * 100), songLength])
+
+        if songWeightList:
+            songWeightList = sorted(songWeightList,key=itemgetter(1),reverse=True)
         output = ("```" + tabulate(songWeightList,tablefmt="plain",headers=["Song","Score %","Length"]) + "```")
     else:
-        if fever:
-            songWeightList = (["1","Jumpin'"],["2","Unite! From A To Z (EX)"],["3","Guren no Yumiya"],["4","Extra Magic Hour"],["5","Unite! From A To Z (SP)"],["6","Roku Chounen To Ichiya Monogatari (SP)"],["7","Roku Chounen To Ichiya Monogatari (EX)"],["8","BRAVE JEWEL"],["9","PASSIONATE ANTHEM"],["10","Azu no Yozora Shoukaihan"])
-        else:
-            songWeightList = (["1","Unite! From A To Z (EX)"],["2","Roku Chounen To Ichiya Monogatari (SP)"],["3","Guren no Yumiya"],["4","Roku Chounen To Ichiya Monogatari (EX)"],["5","Jumpin'"],["6","Extra Magic Hour"],["7","Azu no Yozora Shoukaihan"],["8","Unite! From A To Z (SP)"],["9","Goka! Gokai!? Phantom Thief!"],["10","Fuwa-Fuwa Time"])       
-        output = ("```" + tabulate(songWeightList,tablefmt="plain",headers=["#","Song"]) + "```")
+        for x in songMetaAPI:
+            if "4" in songMetaAPI[x]:
+                songValues = songMetaAPI[x]["4"]["7"] 
+                try:
+                    if songNameAPI[x]['musicTitle'][1] != None:
+                        songName = songNameAPI[x]['musicTitle'][1]
+                    else:
+                        songName = songNameAPI[x]['musicTitle'][0]
+                except:
+                    songName = songNameAPI[x]['musicTitle'][0]
+                songLength = songNameAPI[x]['length']
+                songLength = strftime("%H:%M:%S", gmtime(songLength))
+                if fever:
+                    songWeightList.append([songName + '(SP)', round(((songValues[2] + songValues[3] * 2) * 1.1) * 100), songLength])
+                else:
+                    songWeightList.append([songName + '(SP)', round(((songValues[0] + songValues[1] * 2) * 1.1) * 100), songLength])
+            songValues = songMetaAPI[x]["3"]["7"] 
+            try:
+                if songNameAPI[x]['musicTitle'][1] != None:
+                    songName = songNameAPI[x]['musicTitle'][1]
+                else:
+                    songName = songNameAPI[x]['musicTitle'][0]
+            except:
+                songName = songNameAPI[x]['musicTitle'][0]
+            songLength = songNameAPI[x]['length']
+            songLength = strftime("%H:%M:%S", gmtime(songLength))
+            if fever:
+                songWeightList.append([songName, round(((songValues[2] + songValues[3] * 2) * 1.1) * 100), songLength])
+            else:
+                songWeightList.append([songName, round(((songValues[0] + songValues[1] * 2) * 1.1) * 100), songLength])
+        if songWeightList:
+            songWeightList = sorted(songWeightList,key=itemgetter(1),reverse=True)
+            songWeightList = songWeightList[:20]
+            output = ("```" + tabulate(songWeightList,tablefmt="plain",headers=["Song","Score %","Length"]) + "```")
     return output
     
 

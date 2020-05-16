@@ -246,7 +246,7 @@ class Game(commands.Cog):
 
     @commands.command(name='songmeta',
                       aliases=['sm','smf','meta'],
-                      description='Shows song meta info (fever). By default, it will show the top 10 songs. Given a list of songs (EX dif only), it will sort them based off efficiency. Assumes SL5 and 100% Perfects. I recommend using Bestdori for finer tuning',
+                      description='Shows song meta info (fever). By default, it will show the top 20 songs. Given a list of songs (EX and SP dif only), it will sort them based off efficiency. Assumes SL5 and 100% Perfects. I recommend using Bestdori for finer tuning',
                       help='.songmeta\n.sm\n.meta\n.songmeta unite guren jumpin')
     async def songmeta(self, ctx, *songs):
         if songs:
@@ -257,8 +257,8 @@ class Game(commands.Cog):
 
     @commands.command(name='songmetanofever',
                       aliases=['smnf','metanf'],
-                      description='Shows song meta info (no fever). By default, it will show the top 10 songs. Given a list of songs (EX dif only), it will sort them based off efficiency. Assumes SL5 and 100% Perfects. I recommend using Bestdori for finer tuning',
-                      help='.songmetanofever\n.smnf\n.metanf\n.songmetanofever unite guren jumpin')
+                      description='Shows song meta info (no fever). By default, it will show the top 20 songs. Given a list of songs (EX and SP dif only), it will sort them based off efficiency. Assumes SL5 and 100% Perfects. I recommend using Bestdori for finer tuning',
+                      help='.songmeta\n.sm\n.meta\n.songmeta unite guren jumpin')
     async def songmetanf(self, ctx, *songs):
         if songs:
             output = await GetSongMetaOutput(False, list(songs))
