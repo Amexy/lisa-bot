@@ -1,5 +1,4 @@
 import os
-
 from commands.apiFunctions import GetSongAPI
 from tabulate import tabulate
 from discord.ext import commands
@@ -8,19 +7,18 @@ from pytz import timezone
 from operator import itemgetter
 from time import strftime
 from time import gmtime
-from commands.apiFunctions import GetBestdoriAllCharactersAPI, GetBestdoriAllEventsAPI, GetBestdoriBannersAPI, GetBestdoriEventArchivesAPI, GetBestdoriAllGachasAPI, GetBestdoriGachaAPI, GetBestdoriCardAPI, GetSongMetaAPI, GetBestdoriCharasAPI, GetServerAPIKey
+from commands.apiFunctions import GetBestdoriAllCharactersAPI, GetBestdoriAllEventsAPI, GetBestdoriBannersAPI, GetBestdoriEventArchivesAPI, GetBestdoriAllGachasAPI, GetBestdoriGachaAPI, GetBestdoriCardAPI, GetSongMetaAPI, GetBestdoriCharasAPI, GetServerAPIKey, GetBestdoriAllCardsAPI
 from commands.cogs.Cards import parseCards, generateImage, Palette, filterArguments, findCardFromArguments, Card
 from commands.formatting.GameCommands import GetStarsUsedOutput, GetEPGainOutput, characterOutput, GetSongInfo, GetSongMetaOutput, GetLeaderboardsOutput
 from commands.formatting.TimeCommands import GetCurrentTime
-import discord
-import time
-import requests
-import math
+import discord, shutil, time, requests, math, asyncio
+
 
 class Game(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+        
     @commands.command(name='level',
                     description='Given a current level, xp earned per song, and the amount of songs played, the end level will be provided',
                     help='.level 100 500 10')

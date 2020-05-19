@@ -83,6 +83,12 @@ async def GetBestdoriEventArchivesAPI():
         async with session.get(api) as r:
             return await r.json()
 
+async def GetBestdoriAllCardsAPI():
+    async with aiohttp.ClientSession() as session:
+        api = 'https://bestdori.com/api/cards/all.5.json'
+        async with session.get(api) as r:
+            return await r.json()
+        
 async def GetBestdoriAllCharasAPI():
     async with aiohttp.ClientSession() as session:
         api = 'https://bestdori.com/api/characters/all.2.json'

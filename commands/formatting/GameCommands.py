@@ -329,19 +329,32 @@ async def characterOutput(character: str):
         charalist = r[x]['characterName']
         if character in charalist[1]:
             charaId = x
+        elif character in charalist[0]:
+            charaId = x
 
     charaApi = await GetBestdoriCharasAPI(int(charaId))
-    charaNames = charaApi['characterName'][1] + ' / ' + charaApi['characterName'][0] 
-    charaFavFood = '**Favorite Food**: ' + charaApi['profile']['favoriteFood'][1] 
-    charaSeiyuu = '**Seiyuu**: ' + charaApi['profile']['characterVoice'][1] 
-    charaHatedFood = '**Hated Food**: ' + charaApi['profile']['hatedFood'][1] 
-    charaHobbies = '**Hobbies**: ' + charaApi['profile']['hobby'][1] 
-    charaAbout = charaApi['profile']['selfIntroduction'][1] 
-    charaSchool = '**School**: ' + charaApi['profile']['school'][1]
+    charaNames = charaApi['characterName'][1] + ' / ' + charaApi['characterName'][0]
+    try:
+        charaFavFood = '**Favorite Food**: ' + charaApi['profile']['favoriteFood'][1] 
+        charaSeiyuu = '**Seiyuu**: ' + charaApi['profile']['characterVoice'][1] 
+        charaHatedFood = '**Hated Food**: ' + charaApi['profile']['hatedFood'][1] 
+        charaHobbies = '**Hobbies**: ' + charaApi['profile']['hobby'][1] 
+        charaAbout = charaApi['profile']['selfIntroduction'][1] 
+        charaSchool = '**School**: ' + charaApi['profile']['school'][1]
+    except:
+        charaFavFood = '**Favorite Food**: ' + charaApi['profile']['favoriteFood'][0] 
+        charaSeiyuu = '**Seiyuu**: ' + charaApi['profile']['characterVoice'][0] 
+        charaHatedFood = '**Hated Food**: ' + charaApi['profile']['hatedFood'][0] 
+        charaHobbies = '**Hobbies**: ' + charaApi['profile']['hobby'][0] 
+        charaAbout = charaApi['profile']['selfIntroduction'][0] 
+        charaSchool = '**School**: ' + charaApi['profile']['school'][0]
+
     if 'hanasakigawa_high' in charaSchool:
         charaSchool = '**School**: Hanasakigawa High'
     elif 'haneoka_high' in charaSchool:
         charaSchool = '**School**: Haneoka High'
+    elif 'tsukinomori_high' in charaSchool:
+        charaSchool = '**School**: Tsukinomori High'
 
     charaYearAnime = '**Year (anime)**: ' + str(charaApi['profile']['schoolYear'][0])
     charaPosition = '**Position**: ' + charaApi['profile']['part'].capitalize()

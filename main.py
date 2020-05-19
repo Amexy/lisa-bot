@@ -71,5 +71,6 @@ bot.load_extension("commands.cogs.Updates")
 bot.load_extension("commands.cogs.Moderation")
 bot.load_extension("commands.cogs.Loops")
 bot.load_extension("commands.cogs.Help")
+bot.load_extension("commands.cogs.Fun")
 
 bot.run(TOKEN) 
