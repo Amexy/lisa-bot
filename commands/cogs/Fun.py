@@ -193,6 +193,7 @@ class Fun(commands.Cog):
             TotalRolled = str(api[str(id)]['TotalRolls'] * 10)
             TwoStarsRolled = api[str(id)]['TwoStars']
             ThreeStarsRolled = api[str(id)]['ThreeStars']
+            FourStarsRolled = api[str(id)]['FourStars']
             FourStarRate = str(round(((int(FourStarsRolled) / (int(TotalRolled))) * 100), 2)) + '%'
             Icon = user.avatar_url.BASE + user.avatar_url._url
             embed=discord.Embed(title=Title,color=discord.Color.blue())
@@ -297,6 +298,7 @@ class Fun(commands.Cog):
             embed=discord.Embed(title=Title,color=discord.Color.blue())
             embed.set_image(url=fileSend.attachments[0].url)
             embed.set_thumbnail(url=RolledStats[5])
+            embed.add_field(name='Total Cards Rolled',value=RolledStats[0],inline=True)
             embed.add_field(name='4* Rate',value=RolledStats[4],inline=True)
             embed.add_field(name='\u200b', value='\u200b', inline=True)
             embed.add_field(name='2* Rolled',value=RolledStats[1],inline=True)
