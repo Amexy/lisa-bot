@@ -17,8 +17,8 @@ class Loops(commands.Cog):
         with open("config.json") as file:
             config_json = json.load(file)
             loops_enabled = config_json['loops_enabled']
-        self.initialT100Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=78&tier=0').json()
-        self.initialT1000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=78&tier=1').json()
+        self.initialT100Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=79&tier=0').json()
+        self.initialT1000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=79&tier=1').json()
         self.firstAPI = requests.get('https://bestdori.com/api/news/all.5.json').json()
 
         if loops_enabled == 'true':
@@ -146,18 +146,19 @@ class Loops(commands.Cog):
                 timeLeft = await GetEventTimeLeftSeconds('en', EnEventID)
                 if(timeLeft > 0):
                     message = await t10membersformatting('en', EnEventID, True)
-                    #await t10logging('en', eventid, True)
-                    ids = getChannelsToPost(1, 'en')
-                    for i in ids:
-                        channel = self.bot.get_channel(i)
-                        if channel != None:
-                            try:
-                                for x in message:
-                                    await channel.send(x)
-                            except (commands.BotMissingPermissions, discord.errors.NotFound, discord.errors.Forbidden): 
-                                LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
-                                await LoopRemovalUpdates.send('Removing 1 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
-                                removeChannelFromDatabaseSongs(channel)
+                    if message != "This event doesn't have a song ranking.":
+                        #await t10logging('en', eventid, True)
+                        ids = getChannelsToPost(1, 'en')
+                        for i in ids:
+                            channel = self.bot.get_channel(i)
+                            if channel != None:
+                                try:
+                                    for x in message:
+                                        await channel.send(x)
+                                except (commands.BotMissingPermissions, discord.errors.NotFound, discord.errors.Forbidden): 
+                                    LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
+                                    await LoopRemovalUpdates.send('Removing 1 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
+                                    removeChannelFromDatabaseSongs(channel)
             timeStart = datetime.now()
             timeFinish = (timeStart + timedelta(minutes=1)).replace(second=0, microsecond=0).timestamp()
             timeStart = timeStart.timestamp()
@@ -174,7 +175,7 @@ class Loops(commands.Cog):
                 timeLeft = await GetEventTimeLeftSeconds('en', EventID)
                 if(timeLeft > 0):
                     ids = getCutoffChannels(100)
-                    initialT100Cutoffs = self.initialT100Cutoffs  
+                    initialT100Cutoffs = self.initialT100Cutoffs
                     cutoffAPI = await GetBestdoriCutoffAPI(100)
                     if(sorted(initialT100Cutoffs.items()) != sorted(cutoffAPI.items())):
                         from startup.OpenWebdrivers import enDriver      

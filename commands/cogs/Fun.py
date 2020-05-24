@@ -1,14 +1,69 @@
 from discord.ext import commands
 from typing import Union
-import discord, shutil, time, requests, math, asyncio, os
+import discord, shutil, time, requests, math, asyncio, os, json
+from pixivpy3 import *
 
 class Fun(commands.Cog):
     def __init__(self, bot):
+        with open("config.json") as file:
+            config_json = json.load(file)
+            pixiv_username = config_json["pixiv_username"]
+            pixiv_pw = config_json["pixiv_pw"]
+
         self.bot = bot
         self.AllCards = asyncio.run(self.GetCards())
         self.AllTwoStarCards = self.AllCards[0]
         self.AllThreeStarCards = self.AllCards[1]
         self.AllFourStarCards = self.AllCards[2]
+        self.api = AppPixivAPI()
+        self.api.login(pixiv_username,pixiv_pw)
+        # Uncomment this to load new images
+        #self.AllPics = asyncio.run(self.GetImages())
+        
+    async def GetImages(self):
+        import json
+        from commands.apiFunctions import GetBestdoriAllCharasAPI
+        api = self.api
+        r = await GetBestdoriAllCharasAPI()
+        AllCharacters = []
+        for x in r:
+            charalist = r[x]['characterName']
+            if charalist[1]:
+                name = "".join(charalist[0].split())
+                AllCharacters.append(name)
+        #AllCharacters = AllCharacters[0:25] # Because the API has a lot more than the 25 main characters
+        for chara in AllCharacters:
+            AllPics = {}
+            
+            print(f'Grabbing pictures for {chara}')
+            Pics = []
+            pics = api.search_illust(chara)
+            for pic in pics.illusts:
+                if pic['total_bookmarks'] > 200 and pic['sanity_level'] < 3 and pic['page_count'] == 1:
+                    Pics.append(pic)
+            ContinueSearching = True
+            while ContinueSearching:
+                next_page = api.parse_qs(pics.next_url)
+                pics = api.search_illust(**next_page)
+                if 'illusts' in pics.keys():
+                    for pic in pics.illusts:
+                        if pic['total_bookmarks'] > 200 and pic['sanity_level'] < 3 and pic['page_count'] == 1:
+                            Pics.append(pic)
+                    if pics.next_url:
+                        ContinueSearching = True
+                    else:
+                        ContinueSearching = False
+                else:
+                    ContinueSearching = False
+            data = {chara: {
+            "pics" : Pics}}
+            AllPics.update(data)
+            newfile = json.dumps(AllPics)
+            f = open(f"{chara}.json","a")
+            f.write(newfile)
+            f.close()
+            await asyncio.sleep(60)
+        return AllPics
 
     async def GetCards(self):
         AllFourStarCards = []
@@ -284,7 +339,7 @@ class Fun(commands.Cog):
             if 4 not in Rolled:
                 Title = "Haha no 4*"
             else:
-                Title = "You spent $25 for a png"
+                Title = "mbn getting a 4*"
 
             import uuid
             from discord import File
@@ -314,7 +369,104 @@ class Fun(commands.Cog):
     @commands.command(name='lisafeet',
                     description='Possi and Aura told me to make this so here it is')
     async def forpossiandaura(self, ctx):
-        await ctx.send('<:lisafoot_0_0:712737613060243476><:lisafoot_1_0:712737613081083945><:lisafoot_2_0:712737613295124550>\n<:lisafoot_0_1:712737613043204117><:lisafoot_1_1:712737612913180673><:lisafoot_2_1:712737613181878353>\n<:lisafoot_0_2:712737613064437810><:lisafoot_1_2:712737613026426962><:lisafoot_2_2:712737613257244682>')
+        # Pubcord
+        if ctx.message.guild.id != 432379300684103699:
+            await ctx.send('<:lisafoot_0_0:712737613060243476><:lisafoot_1_0:712737613081083945><:lisafoot_2_0:712737613295124550>\n<:lisafoot_0_1:712737613043204117><:lisafoot_1_1:712737612913180673><:lisafoot_2_1:712737613181878353>\n<:lisafoot_0_2:712737613064437810><:lisafoot_1_2:712737613026426962><:lisafoot_2_2:712737613257244682>')
+        else:
+            print('This command is disabled in this server.')
 
+    @commands.command(name='lisaxodia',
+                    description='lol')
+    async def lisaxodia(self, ctx):
+        # Pubcord
+        if ctx.message.guild.id != 432379300684103699:
+            from discord import File
+            SavedFile = "img/lisaxodia.png"
+            DiscordFileObject = File(SavedFile)
+            await ctx.send(file=DiscordFileObject)
+        else:
+            print('This command is disabled in this server.')
+        
+    @commands.command(name='picture',
+                      aliases=['p'],
+                      description='Note: THIS MAY RETURN NSFW IMAGES\n\nReturns an image with > 100 bookmarks on Pixiv for the specified character/band/or defaults to Bang Dream tag and returns one random image from that list.',
+                      help='For bands, the values below are valid, if an invalid value is entered, the command will fail\n\nRoselia\nAfterglow\nPopipa\nPasupare\nHHW\n\n.picture\n.picture lisa\n.picture roselia')
+    async def picture(self, ctx, query = None):
+        try:
+            from commands.apiFunctions import GetBestdoriAllCharasAPI
+            from discord import File
+            import random, json       
+            
+            if not query:
+                newquery = 'バンドリ'
+                charaImageURL = 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/BanG_Dream%21_logo.svg/1200px-BanG_Dream%21_logo.svg.png'
+            else:
+                if query.lower() in ['roselia','afterglow','pasupare','popipa','hhw']:
+                    newquery = query.lower()
+                    if query.lower() == 'popipa':
+                        newquery = "Poppin'Party"
+                        charaImageURL = 'https://vignette.wikia.nocookie.net/bandori/images/d/d2/Band_1.svg/revision/latest/scale-to-width-down/40?cb=20191102143957'
+                    elif query.lower() == 'afterglow':
+                        newquery = "afterglow"
+                        charaImageURL = 'https://vignette.wikia.nocookie.net/bandori/images/2/21/Band_2.svg/revision/latest/scale-to-width-down/40?cb=20191102143958'
+                    elif query.lower() == 'hhw':
+                        newquery = "ハロー、ハッピーワールド!"
+                        charaImageURL = 'https://vignette.wikia.nocookie.net/bandori/images/8/82/Band_3.svg/revision/latest/scale-to-width-down/40?cb=20191102143958'
+                    elif query.lower() == 'pasupare':
+                        newquery = "PastelPalettes"
+                        charaImageURL = 'https://vignette.wikia.nocookie.net/bandori/images/3/3e/Band_4.svg/revision/latest/scale-to-width-down/40?cb=20191102143958'
+                    elif query.lower() == 'roselia':
+                        newquery = "roselia"
+                        charaImageURL = 'https://vignette.wikia.nocookie.net/bandori/images/e/ee/Icon_roselia.png/revision/latest/scale-to-width-down/40?cb=20190316121700'
+                else:
+                    r = await GetBestdoriAllCharasAPI()
+                    charaId = False
+                    for x in r:
+                        if charaId:
+                            break
+                        charalist = r[x]['characterName']
+                        if query.capitalize() in charalist[1]:
+                            charaId = x
+                            newquery = "".join(charalist[0].split())
+                            charaImageURL = 'https://bestdori.com/res/icon/chara_icon_%s.png' %charaId
+
+            db = f'databases/{newquery}.json'
+            with open(db, 'r') as file:
+                db = json.load(file)
+            pic = random.choice(db[newquery]['pics'])
+            PicID = pic['id']
+            PicURL = pic['image_urls']['large']
+            SavedPicPath = f'imgTmp/{PicID}_p0.jpg'
+            response = requests.get(PicURL, 
+                                    headers={
+                                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36', 
+                                        'referer' : PicURL,
+                                        'scheme' : 'https',
+                                        'accept' : 'image/webp,image/apng,image/*,*/*;q=0.8'
+                                        },
+                                    stream=True)
+            if os.path.exists(SavedPicPath):
+                os.remove(SavedPicPath)
+            with open(SavedPicPath, 'wb') as Out_file:
+                response.raw.decode_content = True
+                Out_file.write(response.content)   
+                DiscordFileObject = File(SavedPicPath)
+            channel: discord.TextChannel = self.bot.get_channel(712732064381927515)  # Change this channel to the channel you want the bot to send images to so it can grab a URL for the embed
+            fileSend: discord.Message = await channel.send(file=DiscordFileObject)
+            os.remove(SavedPicPath)
+
+            
+            TitleURL = f"https://www.pixiv.net/en/artworks/{PicID}"
+
+
+            embed=discord.Embed(title=pic['title'],url=TitleURL,color=discord.Color.blue())
+            embed.set_thumbnail(url=charaImageURL)
+            embed.set_image(url=fileSend.attachments[0].url)
+            embed.add_field(name='Artist',value=pic['user']['name'],inline=True)
+            embed.add_field(name='Date',value=pic['create_date'],inline=True)
+            await ctx.send(embed=embed)
+        except:
+            await ctx.send('Failed posting image. Please use the `notify` command if this keeps happening')
+                   
 def setup(bot):
     bot.add_cog(Fun(bot))

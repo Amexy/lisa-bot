@@ -21,3 +21,4 @@ commands/cogs/Servers.py
 startup/google.py
 rolls/*
 
+commands/cogs/Music.py
