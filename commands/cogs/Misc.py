@@ -107,7 +107,8 @@ class Misc(commands.Cog):
     
     @commands.command(name='translate',
                       aliases=['t'],
-                      description='Translates the message given')
+                      description='Translates the message given. Autodetects language',
+                      help='.translate 今井リサ')
     async def translate(self, ctx, language, *message):
         FullMessage = message[0]
         for x in message:

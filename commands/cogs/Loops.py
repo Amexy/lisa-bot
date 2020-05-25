@@ -30,10 +30,28 @@ class Loops(commands.Cog):
             self.bot.loop.create_task(self.postSongUpdates1min())
             self.bot.loop.create_task(self.postT100CutoffUpdates())
             self.bot.loop.create_task(self.postBestdoriNews())
+            self.bot.loop.create_task(self.UpdateAvatar())
         else:
             print('Not loading loops')
         print('Successfully loaded Loops cog')
-
+        
+    async def UpdateAvatar(self):
+        await self.bot.wait_until_ready()
+        while not self.bot.is_closed():
+            from os import listdir
+            import os, random
+            path = "pfps/"
+            files = []
+            for file in os.listdir(path):
+                files.append('pfps/' + file)
+            pic = random.choice(files)
+            try:
+                with open(pic, 'rb') as f:
+                    await self.bot.user.edit(avatar=f.read())
+            except:
+                print('Failed updating avatar.')
+            await asyncio.sleep(1200)
+            
     def StartLoops(self):
         self.bot.loop.create_task(self.postT100CutoffUpdates())
         self.bot.loop.create_task(self.postT1000CutoffUpdates())
@@ -43,6 +61,7 @@ class Loops(commands.Cog):
         self.bot.loop.create_task(self.postEventNotif('en'))
         self.bot.loop.create_task(self.postEventNotif('jp'))
         self.bot.loop.create_task(self.postBestdoriNews())
+        self.bot.loop.create_task(self.UpdateAvatar())
      
     async def postEventT102min(self):
         await self.bot.wait_until_ready()

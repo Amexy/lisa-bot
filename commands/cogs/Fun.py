@@ -99,7 +99,7 @@ class Fun(commands.Cog):
         except:
             return 'Unknown error. If this keeps happening please use the `notify` command to let Josh know'
 
-    def UpdateRollsJSON(self, UserIDOrOverall, TwoStars, ThreeStars, FourStars):
+    def UpdateRollsJSON(self, UserIDOrOverall, Name, TwoStars, ThreeStars, FourStars):
         import json
         FileName = 'databases/rolls.json'
         try:
@@ -121,6 +121,8 @@ class Fun(commands.Cog):
             api[str(UserIDOrOverall)]['ThreeStars'] += ThreeStars
             api[str(UserIDOrOverall)]['FourStars'] += FourStars
             api[str(UserIDOrOverall)]['TotalRolls'] += 1
+            if 'Name' not in api[str(UserIDOrOverall)]:
+                api[str(UserIDOrOverall)].update({'Name' : Name})
             with open(FileName, 'w') as f:
                 json.dump(api, f)
         # This adds a new key to the dictionary
@@ -129,7 +131,8 @@ class Fun(commands.Cog):
                             "TotalRolls" : 1,
                             "TwoStars" : TwoStars,
                             "ThreeStars" : ThreeStars,
-                            "FourStars" : FourStars
+                            "FourStars" : FourStars,
+                            "Name" : Name
                             }
                     }
             with open(FileName, 'w') as f:
@@ -332,9 +335,10 @@ class Fun(commands.Cog):
                 new_im.paste(im, (x_offset,180))
                 x_offset += im.size[0]        
             
-
-            self.UpdateRollsJSON('overall', TwoStarsRolled, ThreeStarsRolled, FourStarsRolled)
-            self.UpdateRollsJSON(ctx.message.author.id, TwoStarsRolled, ThreeStarsRolled, FourStarsRolled)
+            user = self.bot.get_user(ctx.message.author.id)
+            user = user.name + '#' + user.discriminator
+            self.UpdateRollsJSON('overall', 'self', TwoStarsRolled, ThreeStarsRolled, FourStarsRolled)
+            self.UpdateRollsJSON(ctx.message.author.id, user, TwoStarsRolled, ThreeStarsRolled, FourStarsRolled)
 
             if 4 not in Rolled:
                 Title = "Haha no 4*"
@@ -468,5 +472,99 @@ class Fun(commands.Cog):
         except:
             await ctx.send('Failed posting image. Please use the `notify` command if this keeps happening')
                    
+    @commands.command(name='rolllb',
+                      aliases=['rlb'],
+                      description='Shows the top 20 leaderboards for the roll command')
+    async def rolllb(self, ctx):
+        try:
+            from operator import itemgetter
+            from tabulate import tabulate
+            with open('databases/rolls.json') as file:
+                api = json.load(file)
+            Rolls = []
+            for key in api:
+                if key != 'overall':
+                    if 'Name' in api[key]:
+                        Name = api[key]['Name']
+                    else:
+                        Name = key
+                    FourStarPercent = str(round((((int(api[key]['FourStars']) / (int(api[key]['TotalRolls'] * 10)))) * 100), 2)) + '%'
+                    Rolls.append([Name,api[key]['TotalRolls'],api[key]['FourStars'],FourStarPercent])
+                    Rolls = sorted(Rolls,key=itemgetter(1),reverse=True)
+            Rolls = Rolls[0:20]
+            output = "```" + tabulate(Rolls,headers=['User','Total Rolls','Total 4*','4* %'],tablefmt='plain') + "```"
+        except:
+            output = 'Failed getting the roll leaderboards. Please use the `notify` command if this keeps happening'
+        await ctx.send(output)
+        
+
+    @commands.command(name='birthdays',
+                      aliases=['bdays','bday'],
+                      description="Note: This data may be publicly accessible\n\nIf you're like me and easily forget birthdays, you can use this command to add birthday entries and grab them as needed. Entries are server specific",
+                      help='.birthdays (this returns all birthdays for the server the command was ran in\n.bdays add "10 Aug" (adds an entry to the list for the user running the command' )
+    async def bdays(self,ctx,*add):
+        if add:
+            user = self.bot.get_user(ctx.message.author.id)
+            Name = user.name + '#' + user.discriminator
+            ServerID = ctx.message.guild.id
+            Date = add[1].capitalize() + ' ' + add[2]
+            try:
+                self.UpdateBirthdaysJSON(ServerID, Name, Date)
+                output = f"Successfully added user `{Name}` to the birthdays list with date `{Date}`"
+            except:
+                output = "Failed adding user to the birthdays list. Please use the `notify` command if this keeps happening"
+        else:
+            from tabulate import tabulate
+            from datetime import datetime          
+            FileName = 'databases/birthdays.json'
+            with open(FileName) as file:
+                api = json.load(file)
+            entries = []
+            OrderedDates = api[str(ctx.message.guild.id)]
+            OrderedDates = ({k:v for k, v in sorted(OrderedDates.items(), key = lambda x : datetime.strptime(x[1]['Date'], "%B %d"))})
+            for key in OrderedDates:
+                entries.append([key,api[str(ctx.message.guild.id)][key]['Date']])
+            output = "```" + tabulate(entries,headers=['Name','Date'],tablefmt='plain') + "```"
+        await ctx.send(output)
+        
+    def UpdateBirthdaysJSON(self, Server, User, Date):
+        import json
+        FileName = 'databases/birthdays.json'
+        try:
+            with open(FileName) as file:
+                api = json.load(file)
+        except (json.JSONDecodeError, FileNotFoundError):
+            # Create the file and add an empty dict to it so we can load the json file
+            with open(FileName, 'a+') as file:
+                data = {}
+                json.dump(data, file, indent=2)
+            
+            # Load the newly created file
+            with open(FileName) as file:
+                api = json.load(file)
+
+        # Check if there's an entry for the Server and User in the json file 
+        if str(Server) in api:
+            if str(User) not in api[str(Server)]:
+                api[str(Server)].update({User: {'Date' : Date}})
+            else:
+                api[str(Server)][User]['Date'] = Date
+            with open(FileName, 'w') as f:
+                json.dump(api, f)
+                
+        # This adds a new key to the dictionary
+        else:
+            data = {
+                    Server:
+                                {
+                                    User: {
+                                        'Date' : Date                                       
+                                    }
+                                }
+            }
+            with open(FileName, 'w') as f:
+                api.update(data)
+                json.dump(api, f)
+
 def setup(bot):
     bot.add_cog(Fun(bot))
