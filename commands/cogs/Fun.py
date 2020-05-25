@@ -18,7 +18,7 @@ class Fun(commands.Cog):
         self.api = AppPixivAPI()
         self.api.login(pixiv_username,pixiv_pw)
         # Uncomment this to load new images
-        #self.AllPics = asyncio.run(self.GetImages())
+        # self.AllPics = asyncio.run(self.GetImages())
         
     async def GetImages(self):
         import json
@@ -69,15 +69,23 @@ class Fun(commands.Cog):
         AllFourStarCards = []
         AllThreeStarCards = []
         AllTwoStarCards = []
-        TwoPath = "icons/2/"
-        ThreePath = "icons/3/"
-        FourPath = "icons/4/"
-        for file in os.listdir(TwoPath):
-            AllTwoStarCards.append(file)
-        for file in os.listdir(ThreePath):
-            AllThreeStarCards.append(file)
-        for file in os.listdir(FourPath):
-            AllFourStarCards.append(file)
+
+        for folder in os.listdir("icons/"):
+            if folder != '.DS_Store':
+                    for subfolder in os.listdir(f"icons/{folder}"):
+                        if subfolder == '2':
+                            for file in os.listdir(f"icons/{folder}/{subfolder}"):
+                                AllTwoStarCards.append(f"icons/{folder}/{subfolder}/" + file)
+                        elif subfolder == '3':
+                            for file in os.listdir(f"icons/{folder}/{subfolder}"):
+                                AllThreeStarCards.append(f"icons/{folder}/{subfolder}/" + file)
+                        elif subfolder == '4':
+                            for file in os.listdir(f"icons/{folder}/{subfolder}"):
+                                AllFourStarCards.append(f"icons/{folder}/{subfolder}/" + file)
+                        else:
+                            pass
+
+
         return AllTwoStarCards, AllThreeStarCards, AllFourStarCards
 
     def GetRollStats(self, user):
@@ -141,7 +149,7 @@ class Fun(commands.Cog):
 
     @commands.command(name='updatecards',
                       hidden=True,
-                      enabled=True)
+                      enabled=False)
     async def GetIcons(self, ctx):
         from commands.apiFunctions import GetBestdoriAllCardsAPI, GetBestdoriAllCharactersAPI        
         from PIL import Image
@@ -157,8 +165,8 @@ class Fun(commands.Cog):
                 ResourceSetName = CardAPI[x]['resourceSetName']
                 Rarity = str(CardAPI[x]['rarity'])  
                 Attribute = str(CardAPI[x]['attribute'])      
-                IconsPath = f"icons/{Rarity}/{x}.png"
                 CharacterID = str(CardAPI[x]['characterId'])
+                IconsPath = f"icons/{CharacterID}/{Rarity}/{x}.png"
                 BandID = CharaAPI[CharacterID]['bandId']
                 AllowedTypes = ['limited','permanent']     
                 if Rarity != '1':
@@ -270,8 +278,8 @@ class Fun(commands.Cog):
         
 
     @commands.command(name='roll',
-                      description='Simulates a 10 roll using the default rates. Add df to the input to simulate increased rates.',
-                      help='.roll\n.roll df')
+                      description='Simulates a 10 roll using the default rates and all the permanent/limited cards that have been released in JP so far. Event cards are not included. Add df and/or the characters names to the input to simulate increased rates/only roll those cards.',
+                      help='.roll\n.roll df\n.roll lisa\n.roll df yukina lisa')
     async def gacharoll(self, ctx, *args):
         try:
 
@@ -279,13 +287,35 @@ class Fun(commands.Cog):
             from PIL import Image
             from PIL.ImageDraw import Draw
             from PIL.ImageFont import truetype
-
+            Rates = [.97,.885]
             CardsRolled = []
             Rolled = []
-            if args and 'df' in [x.lower() for x in args]:
-                Rates = [.94,.855]
+            if args:
+                if 'df' in [x.lower() for x in args]:
+                    Rates = [.94,.855]
+                    args = list(args)
+                    args.remove('df')
+                if args: # Check again since the value may not exist anymore after removing df from the step above
+                    AllTwoStarCards = []
+                    AllThreeStarCards = []
+                    AllFourStarCards = []
+                    for chara in args:
+                        for x in os.listdir(f"icons/{chara}/2"):
+                            AllTwoStarCards.append(f"icons/{chara}/2/" + x)
+                        for x in os.listdir(f"icons/{chara}/3"):
+                            AllThreeStarCards.append(f"icons/{chara}/3/" + x)
+                        for x in os.listdir(f"icons/{chara}/4"):
+                            AllFourStarCards.append(f"icons/{chara}/4/" + x),
+                else:
+                    AllTwoStarCards = self.AllTwoStarCards
+                    AllThreeStarCards = self.AllThreeStarCards
+                    AllFourStarCards = self.AllFourStarCards
             else:
-                Rates = [.97,.885]
+                AllTwoStarCards = self.AllTwoStarCards
+                AllThreeStarCards = self.AllThreeStarCards
+                AllFourStarCards = self.AllFourStarCards
+            
+
 
             for _ in range(0,9):
                 value = random.random()
@@ -307,14 +337,14 @@ class Fun(commands.Cog):
 
             for x in Rolled:
                 if x == 2:
-                    random.shuffle(self.AllTwoStarCards)
-                    CardsRolled.append("icons/2/" + str(self.AllTwoStarCards[0]))
+                    random.shuffle(AllTwoStarCards)
+                    CardsRolled.append(str(AllTwoStarCards[0]))
                 elif x == 3:
-                    random.shuffle(self.AllThreeStarCards)
-                    CardsRolled.append("icons/3/" + str(self.AllThreeStarCards[0]))
+                    random.shuffle(AllThreeStarCards)
+                    CardsRolled.append(str(AllThreeStarCards[0]))
                 else:
-                    random.shuffle(self.AllFourStarCards)
-                    CardsRolled.append("icons/4/" + str(self.AllFourStarCards[0]))
+                    random.shuffle(AllFourStarCards)
+                    CardsRolled.append(str(AllFourStarCards[0]))
             FirstHalfCardsRolled = CardsRolled[:len(CardsRolled)//2]        
             SecondtHalfCardsRolled = CardsRolled[len(CardsRolled)//2:]
 
@@ -347,15 +377,14 @@ class Fun(commands.Cog):
 
             import uuid
             from discord import File
-            SavedFile = "rolls/" + str(ctx.message.author.id) + '_' + str(uuid.uuid4()) + '.png'
+            FileName = str(ctx.message.author.id) + '_' + str(uuid.uuid4()) + '.png'
+            SavedFile = "rolls/" + FileName
             new_im.save(SavedFile)
-            DiscordFileObject = File(SavedFile)
+            DiscordFileObject = File(SavedFile,filename=FileName)
             RolledStats = self.GetRollStats(ctx.message.author.id)
 
-            channel: discord.TextChannel = self.bot.get_channel(712732064381927515)  # Change this channel to the channel you want the bot to send images to so it can grab a URL for the embed
-            fileSend: discord.Message = await channel.send(file=DiscordFileObject)
+            await asyncio.sleep(.5)
             embed=discord.Embed(title=Title,color=discord.Color.blue())
-            embed.set_image(url=fileSend.attachments[0].url)
             embed.set_thumbnail(url=RolledStats[5])
             embed.add_field(name='Total Cards Rolled',value=RolledStats[0],inline=True)
             embed.add_field(name='4* Rate',value=RolledStats[4],inline=True)
@@ -363,8 +392,8 @@ class Fun(commands.Cog):
             embed.add_field(name='2* Rolled',value=RolledStats[1],inline=True)
             embed.add_field(name='3* Rolled',value=RolledStats[2],inline=True)
             embed.add_field(name='4* Rolled',value=RolledStats[3],inline=True) 
-
-            await ctx.send(embed=embed)
+            embed.set_image(url=f"attachment://{FileName}")
+            await ctx.send(file=DiscordFileObject, embed=embed)
         except Exception as e:
             print(str(e))
             await ctx.send('Failed generating a roll. If this keeps happening, please use the `notify` command to let Josh know')
@@ -501,18 +530,29 @@ class Fun(commands.Cog):
     @commands.command(name='birthdays',
                       aliases=['bdays','bday'],
                       description="Note: This data may be publicly accessible\n\nIf you're like me and easily forget birthdays, you can use this command to add birthday entries and grab them as needed. Entries are server specific",
-                      help='.birthdays (this returns all birthdays for the server the command was ran in\n.bdays add "10 Aug" (adds an entry to the list for the user running the command' )
+                      help='.birthdays (this returns all birthdays for the server the command was ran in\n.bdays add "10 Aug" (adds an entry to the list for the user running the command\n.bdays del (removes the user running the command from the database)' )
     async def bdays(self,ctx,*add):
-        if add:
+        if add and add[0] != 'del':
             user = self.bot.get_user(ctx.message.author.id)
             Name = user.name + '#' + user.discriminator
             ServerID = ctx.message.guild.id
             Date = add[1].capitalize() + ' ' + add[2]
             try:
-                self.UpdateBirthdaysJSON(ServerID, Name, Date)
+                self.UpdateBirthdaysJSON(ServerID, Name, Date, False)
                 output = f"Successfully added user `{Name}` to the birthdays list with date `{Date}`"
             except:
                 output = "Failed adding user to the birthdays list. Please use the `notify` command if this keeps happening"
+        elif add[0] == 'del':
+            user = self.bot.get_user(ctx.message.author.id)
+            Name = user.name + '#' + user.discriminator
+            ServerID = ctx.message.guild.id
+            Date = '0 0'
+            try:
+                self.UpdateBirthdaysJSON(ServerID, Name, Date, True)
+                output = f"Successfully removed user `{Name}` from the birthdays list"
+            except:
+                output = "Failed removing user from the birthdays list. Please use the `notify` command if this keeps happening"
+            
         else:
             from tabulate import tabulate
             from datetime import datetime          
@@ -527,7 +567,7 @@ class Fun(commands.Cog):
             output = "```" + tabulate(entries,headers=['Name','Date'],tablefmt='plain') + "```"
         await ctx.send(output)
         
-    def UpdateBirthdaysJSON(self, Server, User, Date):
+    def UpdateBirthdaysJSON(self, Server, User, Date, Delete: bool = False):
         import json
         FileName = 'databases/birthdays.json'
         try:
@@ -544,26 +584,31 @@ class Fun(commands.Cog):
                 api = json.load(file)
 
         # Check if there's an entry for the Server and User in the json file 
-        if str(Server) in api:
-            if str(User) not in api[str(Server)]:
-                api[str(Server)].update({User: {'Date' : Date}})
+        if not Delete:
+            if str(Server) in api:
+                if str(User) not in api[str(Server)]:
+                    api[str(Server)].update({User: {'Date' : Date}})
+                else:
+                    api[str(Server)][User]['Date'] = Date
+                with open(FileName, 'w') as f:
+                    json.dump(api, f)
+                    
+            # This adds a new key to the dictionary
             else:
-                api[str(Server)][User]['Date'] = Date
-            with open(FileName, 'w') as f:
-                json.dump(api, f)
-                
-        # This adds a new key to the dictionary
-        else:
-            data = {
-                    Server:
-                                {
-                                    User: {
-                                        'Date' : Date                                       
+                data = {
+                        Server:
+                                    {
+                                        User: {
+                                            'Date' : Date                                       
+                                        }
                                     }
-                                }
-            }
+                }
+                with open(FileName, 'w') as f:
+                    api.update(data)
+                    json.dump(api, f)
+        else:
+            api[str(Server)].pop(User, None)
             with open(FileName, 'w') as f:
-                api.update(data)
                 json.dump(api, f)
 
 def setup(bot):

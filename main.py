@@ -19,7 +19,7 @@ import startup.OpenWebdrivers
 # checks prefix database for each message. could probably improve this 
 default_prefix = "."
 def prefix(bot, message):
-    prefixList = TinyDB('databases\prefixdb.json')
+    prefixList = TinyDB('databases/prefixdb.json')
     results = prefixList.search(where('id') == message.guild.id)
     if results:
         prefix = results[0]['prefix']
@@ -72,6 +72,6 @@ bot.load_extension("commands.cogs.Moderation")
 bot.load_extension("commands.cogs.Loops")
 bot.load_extension("commands.cogs.Help")
 bot.load_extension("commands.cogs.Fun")
-bot.load_extension("commands.cogs.Music")
+#bot.load_extension("commands.cogs.Music")
 
 bot.run(TOKEN) 
