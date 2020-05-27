@@ -189,8 +189,8 @@ class Game(commands.Cog):
                 else:
                     beginsString = int(beginTime) / 1000
                     endsString = int(endTime) / 1000
-                    beginsString = datetime.fromtimestamp(beginsString).strftime("%Y-%m-%d %H:%M:%S %Z%z") + ' CST'
-                    endsString = datetime.fromtimestamp(endsString).strftime("%Y-%m-%d %H:%M:%S %Z%z") + ' CST'
+                    beginsString = datetime.fromtimestamp(beginsString).strftime("%Y-%m-%d %H:%M:%S %Z%z") + ' UTC'
+                    endsString = datetime.fromtimestamp(endsString).strftime("%Y-%m-%d %H:%M:%S %Z%z") + ' UTC'
 
                 members = []
                 for member in eventAPI[str(EventID)]['characters']:

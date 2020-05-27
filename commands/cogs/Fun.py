@@ -11,7 +11,7 @@ class Fun(commands.Cog):
             pixiv_pw = config_json["pixiv_pw"]
 
         self.bot = bot
-        self.AllCards = asyncio.run(self.GetCards())
+        self.AllCards = self.GetCards()
         self.AllTwoStarCards = self.AllCards[0]
         self.AllThreeStarCards = self.AllCards[1]
         self.AllFourStarCards = self.AllCards[2]
@@ -65,7 +65,7 @@ class Fun(commands.Cog):
             await asyncio.sleep(60)
         return AllPics
 
-    async def GetCards(self):
+    def GetCards(self):
         AllFourStarCards = []
         AllThreeStarCards = []
         AllTwoStarCards = []
@@ -84,7 +84,6 @@ class Fun(commands.Cog):
                                 AllFourStarCards.append(f"icons/{folder}/{subfolder}/" + file)
                         else:
                             pass
-
 
         return AllTwoStarCards, AllThreeStarCards, AllFourStarCards
 
@@ -278,11 +277,11 @@ class Fun(commands.Cog):
         
 
     @commands.command(name='roll',
-                      description='Simulates a 10 roll using the default rates and all the permanent/limited cards that have been released in JP so far. Event cards are not included. Add df and/or the characters names to the input to simulate increased rates/only roll those cards.',
-                      help='.roll\n.roll df\n.roll lisa\n.roll df yukina lisa')
+                      description='Simulates a 10 roll using the default rates and all the permanent/limited cards that have been released in JP so far. Event cards are not included. Add df and/or the bands/characters names to the input to simulate increased rates/only roll those cards.',
+                      help='For bands, the values below are valid, if an invalid value is entered, the command will fail\n\nRoselia\nAfterglow\nPopipa\nPasupare\nHHW\nMorfonica\n\n.roll\n.roll df\n.roll lisa\n.roll df yukina lisa\n.roll roselia\n.roll roselia popipa')
     async def gacharoll(self, ctx, *args):
         try:
-
+            import re
             import random
             from PIL import Image
             from PIL.ImageDraw import Draw
@@ -291,15 +290,53 @@ class Fun(commands.Cog):
             CardsRolled = []
             Rolled = []
             if args:
+                args = list(args)
+                for x in args:
+                    if '/' in x:
+                        args.remove(x)
+                        x = re.sub('[^A-Za-z0-9]+', ' ', x)
+                        SplitAmount = 0
+                        for y in x:
+                            if y == ' ':
+                                SplitAmount += 1
+                        SplitList = x.split(' ', SplitAmount)
+                        for x in SplitList:
+                            if x:
+                                args.append(x)
                 if 'df' in [x.lower() for x in args]:
                     Rates = [.94,.855]
-                    args = list(args)
                     args.remove('df')
                 if args: # Check again since the value may not exist anymore after removing df from the step above
                     AllTwoStarCards = []
                     AllThreeStarCards = []
                     AllFourStarCards = []
-                    for chara in args:
+                    Characters = []
+
+                    for x in args:
+                        if x.lower() not in Characters:                  
+                            if x.lower() in ['roselia','popipa','hhw','pasupare','afterglow','morfonica']:
+                                if x.lower() == 'roselia':
+                                    Characters.extend(('lisa','yukina','sayo','ako','rinko'))
+                                elif x.lower() == 'popipa':
+                                    Characters.extend(('kasumi', 'rimi', 'saya', 'tae', 'arisa'))
+                                elif x.lower() == 'hhw':
+                                    Characters.extend(('kokoro', 'kaoru', 'kanon', 'hagumi', 'misaki'))
+                                elif x.lower() == 'pasupare':
+                                    Characters.extend(('aya', 'eve', 'maya', 'chisato', 'hina'))
+                                elif x.lower() == 'afterglow':
+                                    Characters.extend(('ran', 'moca', 'himari', 'tsugumi', 'tomoe'))
+                                elif x.lower() == 'morfonica':
+                                    Characters.extend(('mashiro', 'nanami', 'toko', 'rui', 'tsukushi'))
+                            else:
+                                if x.lower() in ['rinboi','rin boi']:
+                                    Characters.append('hagumi')
+                                elif x.lower() in ['npc','tsugu']:
+                                    Characters.append('tsugumi')
+                                elif x.lower() in ['josh', 'john']: #for you qwewqa
+                                    Characters.append('lisa')
+                                else:
+                                    Characters.append(x)
+                    for chara in Characters:
                         for x in os.listdir(f"icons/{chara}/2"):
                             AllTwoStarCards.append(f"icons/{chara}/2/" + x)
                         for x in os.listdir(f"icons/{chara}/3"):
@@ -315,8 +352,6 @@ class Fun(commands.Cog):
                 AllThreeStarCards = self.AllThreeStarCards
                 AllFourStarCards = self.AllFourStarCards
             
-
-
             for _ in range(0,9):
                 value = random.random()
                 if value > Rates[0]:
@@ -422,82 +457,86 @@ class Fun(commands.Cog):
         
     @commands.command(name='picture',
                       aliases=['p'],
-                      description='Note: THIS MAY RETURN NSFW IMAGES\n\nReturns an image with > 100 bookmarks on Pixiv for the specified character/band/or defaults to Bang Dream tag and returns one random image from that list.',
-                      help='For bands, the values below are valid, if an invalid value is entered, the command will fail\n\nRoselia\nAfterglow\nPopipa\nPasupare\nHHW\n\n.picture\n.picture lisa\n.picture roselia')
-    async def picture(self, ctx, query = None):
+                      description='Note: THIS MAY RETURN NSFW IMAGES\n\nReturns an image (or images if multiple names/bands are entered) with > 100 bookmarks on Pixiv for the specified character/band/or defaults to Bang Dream tag and returns one random image from that list.',
+                      help='For bands, the values below are valid, if an invalid value is entered, the command will fail\n\nRoselia\nAfterglow\nPopipa\nPasupare\nHHW\n\n.picture\n.picture lisa\n.p roselia arisa himari')
+    async def picture(self, ctx, *queries):
         try:
             from commands.apiFunctions import GetBestdoriAllCharasAPI
             from discord import File
             import random, json       
             
-            if not query:
-                newquery = 'バンドリ'
-                charaImageURL = 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/BanG_Dream%21_logo.svg/1200px-BanG_Dream%21_logo.svg.png'
+            AllQueries = []
+            CharaImageURLs = []
+            if not queries:
+                AllQueries.append('バンドリ')
+                CharaImageURLs.append(
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/BanG_Dream%21_logo.svg/1200px-BanG_Dream%21_logo.svg.png')
             else:
-                if query.lower() in ['roselia','afterglow','pasupare','popipa','hhw']:
-                    newquery = query.lower()
-                    if query.lower() == 'popipa':
-                        newquery = "Poppin'Party"
-                        charaImageURL = 'https://vignette.wikia.nocookie.net/bandori/images/d/d2/Band_1.svg/revision/latest/scale-to-width-down/40?cb=20191102143957'
-                    elif query.lower() == 'afterglow':
-                        newquery = "afterglow"
-                        charaImageURL = 'https://vignette.wikia.nocookie.net/bandori/images/2/21/Band_2.svg/revision/latest/scale-to-width-down/40?cb=20191102143958'
-                    elif query.lower() == 'hhw':
-                        newquery = "ハロー、ハッピーワールド!"
-                        charaImageURL = 'https://vignette.wikia.nocookie.net/bandori/images/8/82/Band_3.svg/revision/latest/scale-to-width-down/40?cb=20191102143958'
-                    elif query.lower() == 'pasupare':
-                        newquery = "PastelPalettes"
-                        charaImageURL = 'https://vignette.wikia.nocookie.net/bandori/images/3/3e/Band_4.svg/revision/latest/scale-to-width-down/40?cb=20191102143958'
-                    elif query.lower() == 'roselia':
-                        newquery = "roselia"
-                        charaImageURL = 'https://vignette.wikia.nocookie.net/bandori/images/e/ee/Icon_roselia.png/revision/latest/scale-to-width-down/40?cb=20190316121700'
-                else:
-                    r = await GetBestdoriAllCharasAPI()
-                    charaId = False
-                    for x in r:
-                        if charaId:
-                            break
-                        charalist = r[x]['characterName']
-                        if query.capitalize() in charalist[1]:
-                            charaId = x
-                            newquery = "".join(charalist[0].split())
-                            charaImageURL = 'https://bestdori.com/res/icon/chara_icon_%s.png' %charaId
+                for query in queries:
+                    if query.lower() in ['roselia','afterglow','pasupare','popipa','hhw']:
+                        newquery = query.lower()
+                        if query.lower() == 'popipa':
+                            AllQueries.append("Poppin'Party")
+                            CharaImageURLs.append('https://vignette.wikia.nocookie.net/bandori/images/d/d2/Band_1.svg/revision/latest/scale-to-width-down/40?cb=20191102143957')
+                        elif query.lower() == 'afterglow':
+                            AllQueries.append("afterglow")
+                            CharaImageURLs.append('https://vignette.wikia.nocookie.net/bandori/images/2/21/Band_2.svg/revision/latest/scale-to-width-down/40?cb=20191102143958')
+                        elif query.lower() == 'hhw':
+                            AllQueries.append("ハロー、ハッピーワールド!")
+                            CharaImageURLs.append('https://vignette.wikia.nocookie.net/bandori/images/8/82/Band_3.svg/revision/latest/scale-to-width-down/40?cb=20191102143958')
+                        elif query.lower() == 'pasupare':
+                            AllQueries.append("PastelPalettes")
+                            CharaImageURLs.append('https://vignette.wikia.nocookie.net/bandori/images/3/3e/Band_4.svg/revision/latest/scale-to-width-down/40?cb=20191102143958')
+                        elif query.lower() == 'roselia':
+                            AllQueries.append("roselia")
+                            CharaImageURLs.append('https://vignette.wikia.nocookie.net/bandori/images/e/ee/Icon_roselia.png/revision/latest/scale-to-width-down/40?cb=20190316121700')
+                    else:
+                        r = await GetBestdoriAllCharasAPI()
+                        charaId = False
+                        for x in r:
+                            if charaId:
+                                break
+                            charalist = r[x]['characterName']
+                            if query.capitalize() in charalist[1]:
+                                charaId = x
+                                AllQueries.append("".join(charalist[0].split()))
+                                CharaImageURLs.append('https://bestdori.com/res/icon/chara_icon_%s.png' % charaId)
+            for newquery, charaImageURL in zip(AllQueries, CharaImageURLs):
+                db = f'databases/{newquery}.json'
+                with open(db, 'r') as file:
+                    db = json.load(file)
+                pic = random.choice(db[newquery]['pics'])
+                PicID = pic['id']
+                PicURL = pic['image_urls']['large']
+                SavedPicPath = f'imgTmp/{PicID}_p0.jpg'
+                response = requests.get(PicURL, 
+                                        headers={
+                                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36', 
+                                            'referer' : PicURL,
+                                            'scheme' : 'https',
+                                            'accept' : 'image/webp,image/apng,image/*,*/*;q=0.8'
+                                            },
+                                        stream=True)
+                if os.path.exists(SavedPicPath):
+                    os.remove(SavedPicPath)
+                with open(SavedPicPath, 'wb') as Out_file:
+                    response.raw.decode_content = True
+                    Out_file.write(response.content)   
+                    DiscordFileObject = File(SavedPicPath)
+                channel: discord.TextChannel = self.bot.get_channel(712732064381927515)  # Change this channel to the channel you want the bot to send images to so it can grab a URL for the embed
+                fileSend: discord.Message = await channel.send(file=DiscordFileObject)
+                #os.remove(SavedPicPath)
 
-            db = f'databases/{newquery}.json'
-            with open(db, 'r') as file:
-                db = json.load(file)
-            pic = random.choice(db[newquery]['pics'])
-            PicID = pic['id']
-            PicURL = pic['image_urls']['large']
-            SavedPicPath = f'imgTmp/{PicID}_p0.jpg'
-            response = requests.get(PicURL, 
-                                    headers={
-                                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36', 
-                                        'referer' : PicURL,
-                                        'scheme' : 'https',
-                                        'accept' : 'image/webp,image/apng,image/*,*/*;q=0.8'
-                                        },
-                                    stream=True)
-            if os.path.exists(SavedPicPath):
-                os.remove(SavedPicPath)
-            with open(SavedPicPath, 'wb') as Out_file:
-                response.raw.decode_content = True
-                Out_file.write(response.content)   
-                DiscordFileObject = File(SavedPicPath)
-            channel: discord.TextChannel = self.bot.get_channel(712732064381927515)  # Change this channel to the channel you want the bot to send images to so it can grab a URL for the embed
-            fileSend: discord.Message = await channel.send(file=DiscordFileObject)
-            os.remove(SavedPicPath)
-
-            
-            TitleURL = f"https://www.pixiv.net/en/artworks/{PicID}"
+                
+                TitleURL = f"https://www.pixiv.net/en/artworks/{PicID}"
 
 
-            embed=discord.Embed(title=pic['title'],url=TitleURL,color=discord.Color.blue())
-            embed.set_thumbnail(url=charaImageURL)
-            embed.set_image(url=fileSend.attachments[0].url)
-            embed.add_field(name='Artist',value=pic['user']['name'],inline=True)
-            embed.add_field(name='Date',value=pic['create_date'],inline=True)
-            await ctx.send(embed=embed)
+                embed=discord.Embed(title=pic['title'],url=TitleURL,color=discord.Color.blue())
+                embed.set_thumbnail(url=charaImageURL)
+                embed.set_image(url=fileSend.attachments[0].url)
+                embed.add_field(name='Artist',value=pic['user']['name'],inline=True)
+                embed.add_field(name='Date',value=pic['create_date'],inline=True)
+                await ctx.send(embed=embed)
         except:
             await ctx.send('Failed posting image. Please use the `notify` command if this keeps happening')
                    
@@ -542,7 +581,7 @@ class Fun(commands.Cog):
                 output = f"Successfully added user `{Name}` to the birthdays list with date `{Date}`"
             except:
                 output = "Failed adding user to the birthdays list. Please use the `notify` command if this keeps happening"
-        elif add[0] == 'del':
+        if add and add[0] == 'del':
             user = self.bot.get_user(ctx.message.author.id)
             Name = user.name + '#' + user.discriminator
             ServerID = ctx.message.guild.id

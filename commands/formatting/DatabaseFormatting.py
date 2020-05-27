@@ -19,6 +19,64 @@ t100DB = 'databases/t100DB.json'
 t1000DB = 'databases/t1000DB.json'
 jp2MinuteTracking = 'databases/jp2MinuteTrackingDB.json'
 jp1HourTracking = 'databases/jp1HourTrackingDB.json'
+botupdatesDB = 'databases/botupdates.json'
+
+#######################
+#     Bot Updates     #
+#######################
+
+
+def AddChannelToBotUpdatesDatabase(channel: TextChannel):
+    db = TinyDB(botupdatesDB)
+    success = True
+    try:
+        db.upsert({'name': channel.name,
+                   'guild': channel.guild.id,
+                   'guildName': channel.guild.name,
+                   'id': channel.id
+                   }, where('id') == channel.id)
+    except Exception as e:
+        print(e)
+        success = False
+
+    if success:
+        text = "Channel " + channel.name + \
+            " will receive bot updates" 
+    else:
+        text = "Failed adding " + channel.name + \
+            " to the bot updates list" 
+    return text
+
+
+def RemoveChannelFromBotUpdatesDatabase(channel: TextChannel):
+    db = TinyDB(botupdatesDB)
+    success = True
+    try:
+        db.remove((where('id') == channel.id) & (
+            where('guild') == channel.guild.id))
+    except Exception as e:
+        print(e)
+        success = False
+
+    if success:
+        text = "Channel " + channel.name + \
+            " removed from receiving bot updates" 
+    else:
+        text = "Failed removing " + channel.name + \
+            " from receiving bot updates" 
+    return text
+
+
+def GetBotChannelsToPost():
+    db = TinyDB(botupdatesDB)
+    ids = list()
+    try:
+        saved = db.all()
+        for i in saved:
+            ids.append(i['id'])
+    except Exception as e:
+        print(e)
+    return ids
 
 #######################
 #     T10 Updates     #

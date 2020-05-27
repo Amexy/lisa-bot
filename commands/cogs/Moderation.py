@@ -11,8 +11,18 @@ class Servers(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-
-
+    @commands.command(name='setprefix',
+                      description='Sets the command prefix the bot will use',
+                      help='Example: .setprefix !')
+    async def setprefix(self, ctx, prefix: str):
+        from commands.formatting.DatabaseFormatting import addPrefixToDatabase
+        if ctx.message.author.guild_permissions.administrator:
+            guild = ctx.message.guild
+            await ctx.send(addPrefixToDatabase(guild, prefix))
+        else:
+            msg = "You must have administrator rights to run this command, {0.author.mention}".format(
+                ctx.message)
+            await ctx.send(msg)
 
     @commands.command(name='newrole',
                       aliases=['nr','addrole'],
@@ -84,7 +94,31 @@ class Servers(commands.Cog):
                 await ctx.send("Role not found or isn't assignable")
         except Exception:
             pass
-        
+    
+    @commands.command(name='sendupdate',
+                      aliases=['update'],
+                      hidden=True)
+    async def sendupdate(self,ctx,*message):
+        ValidUsers = [158699060893581313]
+        if ctx.message.author.id not in ValidUsers:
+            await ctx.send('You are not authorized to use this command')
+        else:
+            from commands.formatting.DatabaseFormatting import GetBotChannelsToPost, RemoveChannelFromBotUpdatesDatabase
+            MessageToSend = ''
+            for x in message:
+                MessageToSend += " %s" % x
+            ids = GetBotChannelsToPost()
+            for i in ids:
+                channel = self.bot.get_channel(i)
+                if channel != None:
+                    try:
+                        await channel.send(MessageToSend)
+                    except (commands.BotMissingPermissions, discord.errors.NotFound):
+                        LoopRemovalUpdates = self.bot.get_channel(
+                            523339468229312555)
+                        await LoopRemovalUpdates.send('Removing bot upates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
+                        RemoveChannelFromBotUpdatesDatabase(channel)
+
     @commands.command(name='getroles',
                       aliases=['gr'],
                       description='Lists all self assignable roles in the server')
@@ -97,5 +131,9 @@ class Servers(commands.Cog):
         except Exception as e:
             pass
 
+    @setprefix.error
+    async def setprefix_error(self, ctx, error):
+        if isinstance(error, commands.MissingPermissions):
+            await ctx.send("You must have administrator rights on the servers to run this command.")
 def setup(bot):
     bot.add_cog(Servers(bot))

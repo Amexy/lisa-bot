@@ -13,12 +13,49 @@ class Updates(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+
+    #################
+    #  Bot Updates  #
+    #################
+    @commands.command(name='addbotupdates',
+                      aliases=['abu'],
+                      description="(Requires Admin Privileges) Given a channel input, this channel will receive bot updates/notifications",
+                      help="You can specify either the channel's id, or by using the full channel name (e.g. #lisabot-updates\n\n.addbotupdates (defaults to channel the command was ran in\n.abu #lisabot-updates")
+    async def addbotupdates(self, ctx, channel: TextChannel = None):
+        from commands.formatting.DatabaseFormatting import AddChannelToBotUpdatesDatabase
+        if ctx.message.author.guild_permissions.administrator:
+            if(channel == None):
+                channel = ctx.channel
+            await ctx.send(AddChannelToBotUpdatesDatabase(channel))
+        else:
+            msg = "You must have administrator rights to run this command, {0.author.mention}".format(ctx.message)  
+            await ctx.send(msg)
+
+    @commands.command(name='removebotupdates',
+                      aliases=['rbu'],
+                      description="(Requires Admin Privileges) Given a channel input, this channel will receive bot updates/notifications",
+                      help="You can specify either the channel's id, or by using the full channel name (e.g. #lisabot-updates\n\n.addbotupdates (defaults to channel the command was ran in\n.abu #lisabot-updates")
+    async def removebotupdates(self, ctx, channel: TextChannel = None):
+        from commands.formatting.DatabaseFormatting import RemoveChannelFromBotUpdatesDatabase
+        if ctx.message.author.guild_permissions.administrator:
+            if(channel == None):
+                channel = ctx.channel
+            await ctx.send(RemoveChannelFromBotUpdatesDatabase(channel))
+        else:
+            msg = "You must have administrator rights to run this command, {0.author.mention}".format(
+                ctx.message)
+            await ctx.send(msg)
+
+
+
+
+
     #################
     #  Patch Notes  #
     #################
     @commands.command(name='addpatchupdates',
                       description="(Requires Admin Privileges) Given a server and channel input, this channel will receive updates patch notes from Bestdori",
-                      help=".addpatchupdates (defaults to all servers and  thechannel command was ran in)\n.addpatchupdates en\n.addpatchupdates jp 523339468229312555")
+                      help="You can specify either the channel's id, or by using the full channel name (e.g. #bestdori-updates)\n\n.addpatchupdates (defaults to all servers and thechannel command was ran in)\n.addpatchupdates en\n.addpatchupdates en #bestdori-updates\n.addpatchupdates jp 523339468229312555")
     async def addpatchtracking(self, ctx, server: str = 'all', channel: TextChannel = None):
         if ctx.message.author.guild_permissions.administrator:
             if(channel == None):
@@ -31,7 +68,7 @@ class Updates(commands.Cog):
     
     @commands.command(name='removepatchupdates',
                       description="(Requires Admin Privileges) Given a server and channel input, this channel will stop receiving updates patch notes from Bestdori",
-                      help=".removepatchupdates (defaults to all servers and  thechannel command was ran in)\n.removepatchupdates en\n.removepatchupdates jp 523339468229312555")
+                      help="You can specify either the channel's id, or by using the full channel name (e.g. #bestdori-updates)\n\n.removepatchupdates (defaults to all servers and  thechannel command was ran in)\n.removepatchupdates en\n.removepatchupdates en #bestdori-updates\n.removepatchupdates jp 523339468229312555")
     async def removepatchtracking(self, ctx, server: str = 'all', channel: TextChannel = None):
         if ctx.message.author.guild_permissions.administrator:
             if(channel == None):
@@ -46,7 +83,7 @@ class Updates(commands.Cog):
     ###################
     @commands.command(name='addupdates',
                       description="(Requires Admin Privileges) Given a channel input and server input (EN, JP, or empty), this channel will receive event time left and start reminders",
-                      help=".addupdates (this defaults to EN and the channel the command is ran in)\n.addupdates en\n.addupdates jp 523339468229312555")
+                      help="You can specify either the channel's id, or by using the full channel name (e.g. #updates)\n\n.addupdates (this defaults to EN and the channel the command is ran in)\n.addupdates en\n.addupdates en #updates\n.addupdates jp 523339468229312555")
     async def addupdates(self, ctx, server: str = 'en',channel: TextChannel = None):
         if ctx.message.author.guild_permissions.administrator:
             if(channel == None):
@@ -58,7 +95,7 @@ class Updates(commands.Cog):
 
     @commands.command(name='removeupdates',
                       description="Given a channel input and server input (EN, JP, or empty), this channel will stop receiving event time left and start reminders",
-                      help=".removeupdates (this defaults to 1 hour and channel the command is ran in)\n.removeupdates 523339468229312555 en")
+                      help="You can specify either the channel's id, or by using the full channel name (e.g. #updates)\n\n.removeupdates (this defaults to 1 hour and channel the command is ran in)\n.removeupdates en #updates\n.removeupdates jp 551119118976286730")
     async def removeupdates(self, ctx,server: str = 'en',channel: TextChannel = None):
         if ctx.message.author.guild_permissions.administrator:
             if(channel == None):
@@ -71,7 +108,7 @@ class Updates(commands.Cog):
     @commands.command(name='addcutoffupdates',
                       aliases=['acu'],
                       description="(Requires Admin Privileges) Given a channel and tier input, this channel will receive updated cutoff values from Bestdori\n",
-                      help=".addcutoffupdates (defaults to T100 and T1000 updates + channel command was sent in)\n.addcutoffupdates 100\n.addcutoffupdates 1000 523339468229312555")
+                      help="You can specify either the channel's id, or by using the full channel name (e.g. #cutoffs)\n\n.addcutoffupdates (defaults to T100 and T1000 updates + channel command was sent in)\n.acu 100\n.acu 100 #cutoffs\n.acu 1000 523339468229312555")
     async def addt100updates(self, ctx, tier: int = 0, channel: TextChannel = None):
         if ctx.message.author.guild_permissions.administrator:
             if(channel == None):
@@ -88,12 +125,16 @@ class Updates(commands.Cog):
     @commands.command(name='removecutoffupdates',
                       aliases=['rmcu','rmcutoffupdates'],
                       description="Given a channel and tier input, this channel will stop receiving updated cutoff values from Bestdori",
-                      help=".removecutoffupdates (defaults to T100 and T1000 updates + channel command was sent in)\n.rmcu 100\n.rmcu 1000 523339468229312555")
-    async def rmt100updates(self, ctx, tier: int = 100, channel: TextChannel = None):
+                      help="You can specify either the channel's id, or by using the full channel name (e.g. #cutoffs)\n\n.removecutoffupdates (defaults to T100 and T1000 updates + channel command was sent in)\n.rmcu 100\n.rmcu 1000 #cutoffs\n.rmcu 1000 523339468229312555")
+    async def rmt100updates(self, ctx, tier: int = None, channel: TextChannel = None):
         if ctx.message.author.guild_permissions.administrator:
             if(channel == None):
                 channel = ctx.channel
-            await ctx.send(rmChannelFromCutoffDatabase(channel, tier))
+            if tier == None:
+                await ctx.send(rmChannelFromCutoffDatabase(channel, 100))
+                await ctx.send(rmChannelFromCutoffDatabase(channel, 1000))
+            else:
+                await ctx.send(rmChannelFromCutoffDatabase(channel, tier))
         else:
             msg = "You must have administrator rights to run this command, {0.author.mention}".format(ctx.message)  
             await ctx.send(msg)
@@ -103,7 +144,7 @@ class Updates(commands.Cog):
     #######################
     @commands.command(name='addtracking',
                       description="Given a channel, interval (2min or 1hour), and server input (en or jp), this channel will receive t10 updates in regular intervals",
-                      help=".addtracking 523339468229312555 2\n.addtracking 523339468229312555 3600 en\n.addtracking (this defaults to 1 hour and channel the command is ran in)")
+                      help="You can specify either the channel's id, or by using the full channel name (e.g. #2min)\n\n.addtracking #2min-updates 2\n.addtracking 523339468229312555 3600 en\n.addtracking (this defaults to 1 hour and channel the command is ran in)")
     async def addTracking(self, ctx, channel: TextChannel = None, interval: int = 3600, server: str = 'en'):
         if ctx.message.author.guild_permissions.administrator:
             ValidIntervals = [2,60,3600]
@@ -121,7 +162,7 @@ class Updates(commands.Cog):
     
     @commands.command(name='removetracking',
                       description="Given a channel, interval (2min or 1hour), and server input, this channel will be removed from t10 tracking updates",
-                      help=".removetracking 523339468229312555 2\n.removetracking 523339468229312555 60 en\n.removetracking (this defaults to 1 hour and channel the command is ran in")
+                      help="You can specify either the channel's id, or by using the full channel name (e.g. #2min)\n\n.removetracking #2min-updates 2\n.removetracking 523339468229312555 60 en\n.removetracking (this defaults to 1 hour and channel the command is ran in")
     async def removeTracking(self, ctx, channel: TextChannel = None, interval: int = 3600, server: str = 'en'):
         if ctx.message.author.guild_permissions.administrator:
             ValidIntervals = [2,60,3600]
@@ -140,7 +181,7 @@ class Updates(commands.Cog):
     @commands.command(name='addsongupdates',
                       aliases=['asu'],
                       description="Given a channel input, this channel will receive t10 song + member info updates in a 1 mintue interval for the EN server",
-                      help=".addsongupdates (this defaults to the channel the command is ran in)\n.addsongupdates 523339468229312555)")
+                      help="You can specify either the channel's id, or by using the full channel name (e.g. #2min)\n\n.addsongupdates (this defaults to the channel the command is ran in)\n.addsongupdates #song-updates)\n.asu 523339468229312555")
     async def addsongupdates(self, ctx, channel: TextChannel = None,):
         if ctx.message.author.guild_permissions.administrator or ctx.message.author.id == 158699060893581313:
             if(channel == None):
@@ -153,7 +194,7 @@ class Updates(commands.Cog):
     @commands.command(name='removesongupdates',
                       aliases=['rmsu','rmsongupdates'],
                       description="Given a channel input, this channel will be removed from t10 song + member info updates",
-                      help=".removetracking (this defaults to the channel the command is ran in) 2\n.removetracking 523339468229312555")
+                      help="You can specify either the channel's id, or by using the full channel name (e.g. #2min)\n\n.removesongupdates (this defaults to the channel the command is ran in)\n.removesongupdates #song-updates\n.rmsu 523339468229312555")
     async def rmsongupdates(self, ctx, channel: TextChannel = None):
         if ctx.message.author.guild_permissions.administrator:
             if(channel == None):

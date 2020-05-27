@@ -30,24 +30,38 @@ class Misc(commands.Cog):
     
     @commands.command(name='reload',
                      description='In the event that the loops (in particular 2 minute/1hr t10 posting) stop working, run this command to restart that process. If you want access to this command, please use the .notify command')
-    async def reload(self, ctx):
-        ValidUsers = [99640840929943552, 158699060893581313, 202289392394436609, 102201838752784384, 358733607151599636, 229933911717707776, 181690542730641408, 154997108603224064]
-        if ctx.message.author.id not in ValidUsers:
-            await ctx.send("You are not authorized to use this command. If you'd like access, please use the .notify command requesting access")
-        else: 
-            for task in asyncio.Task.all_tasks():
-                if 'post' in str(task):
-                    task.cancel()
-                    print('Cancelled task ' + str(task._coro))
-            try:
-                from commands.cogs.Loops import Loops
-                Loops(self.bot)
-                c = self.bot.get_cog("Loops")
-                self.bot.remove_cog(c)
-                self.bot.add_cog(c)
-                await ctx.send("Successfully reloaded the Loops cog")
-            except:
-                await ctx.send("Failed reloading the Loops cog. Please use the `.notify` command to let Josh know")
+    async def reload(self, ctx, cog: str = ''):
+        if not cog: #By default, it will reload the Loops command since this is the most common one that fails and users need access to
+            ValidUsers = [99640840929943552, 158699060893581313, 202289392394436609, 102201838752784384, 358733607151599636, 229933911717707776, 181690542730641408, 154997108603224064]
+            if ctx.message.author.id not in ValidUsers:
+                await ctx.send("You are not authorized to use this command. If you'd like access, please use the .notify command requesting access")
+            else: 
+                for task in asyncio.Task.all_tasks():
+                    if 'post' in str(task):
+                        task.cancel()
+                        print('Cancelled task ' + str(task._coro))
+                try:
+                    from commands.cogs.Loops import Loops
+                    Loops(self.bot)
+                    c = self.bot.get_cog("Loops")
+                    self.bot.remove_cog(c)
+                    self.bot.add_cog(c)
+                    await ctx.send("Successfully reloaded the Loops cog")
+                except:
+                    await ctx.send("Failed reloading the Loops cog. Please use the `.notify` command to let Josh know")
+        else:
+            ValidUsers = [158699060893581313]
+            if ctx.message.author.id not in ValidUsers:
+                await ctx.send("You are not authorized to use this command. If you'd like access, please use the .notify command requesting access")
+            else:
+                try:
+                    cog = f"commands.cogs.{cog}"
+                    self.bot.unload_extension(cog)
+                    self.bot.load_extension(cog)
+                    await ctx.send(f"Successfully reloaded the {cog} cog")
+                except:
+                    await ctx.send(f"Failed reloading the {cog} cog.")
+
             
     @commands.command(name='gt',
                     hidden=True)
@@ -76,6 +90,17 @@ class Misc(commands.Cog):
             await ctx.send("Notification sent")
         else:
             await ctx.send('Please enter your notification')
+
+    @commands.command(name='nickchange',
+                    hidden=True)
+    async def dsd(self,ctx, nick):
+        ValidUsers = [158699060893581313]
+        if ctx.message.author.id not in ValidUsers:
+            await ctx.send("You are not authorized to use this command")
+        else:
+            await self.bot.user.edit(username=nick)
+
+
 
     @commands.command(name='avatar',
                     aliases=['a'],
@@ -109,15 +134,22 @@ class Misc(commands.Cog):
                       aliases=['t'],
                       description='Translates the message given. Autodetects language',
                       help='.translate 今井リサ')
-    async def translate(self, ctx, language, *message):
-        FullMessage = message[0]
-        for x in message:
-            if x == FullMessage:
-                continue
-            FullMessage += " %s" % x
-        translator = Translator()
-        TranslatedMessage = translator.translate(FullMessage)
-        await ctx.send(TranslatedMessage.text)
+    async def translate(self, ctx,  *message):
+        if not message:
+            output = 'Please enter a message to translate'
+        else:
+            try:
+                FullMessage = message[0]
+                for x in message:
+                    if x == FullMessage:
+                        continue
+                    FullMessage += " %s" % x
+                translator = Translator()
+                TranslatedMessage = translator.translate(FullMessage)
+                output = TranslatedMessage.text
+            except:
+                output = 'Failed translating message. Please use the `notify` command if this keeps happening'
+        await ctx.send(output)
  
     @commands.command(name='invite',
                       description='Posts the invite link for Lisabot')
