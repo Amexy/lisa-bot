@@ -1,3 +1,5 @@
+from urllib.request import urlopen
+from requests_html import AsyncHTMLSession, HTML
 from discord.ext import commands
 from commands.formatting.GameCommands import GetCoastingOutput
 from commands.formatting.EventCommands import GetCutoffFormatting, GetCurrentEventID
@@ -31,22 +33,13 @@ class Event(commands.Cog):
             self.ValidT10EventsJP = asyncio.run(self.GetT10Events('jp'))
         else:
             print("Not loading Valid T10 Events")
-
+    
     async def GetT10Events(self, server):
-        from commands.apiFunctions import GetBestdoriAllEventsAPI
-        from protodefs.ranks import t10ranks
-        api = await GetBestdoriAllEventsAPI()
-        print(f'Grabbing events for {server}')
-        ValidEvents = []
-        if server == 'en':
-            ice = enICEObject
-        else:
-            ice = jpICEObject
-        for x in range(1, (len(api) + 1)):
-            ret = await t10ranks(ice, server, x)
-            if ret.top_10.contents:
-                print(f'Adding {x}')
-                ValidEvents.append(x)
+        # After running this command for a few weeks, only the current and previous 5 events are returned so may as well hard code it
+        from commands.formatting.EventCommands import GetCurrentEventID
+        CurrentEventID = int(await GetCurrentEventID(server))
+        ValidEvents = [CurrentEventID, CurrentEventID-1, CurrentEventID -
+                       2, CurrentEventID-3, CurrentEventID-4, CurrentEventID-5]
         return ValidEvents
 
 
@@ -77,6 +70,10 @@ class Event(commands.Cog):
         try:
             if server not in self.ValidT10Servers:
                 await ctx.send('This function only works for the `EN` and `JP` servers')
+            ValidJPIDUsers = [158699060893581313,
+                                365863959527555082, 384333652344963074, 385264382935957504]
+            if server == 'jp' and ctx.message.author.id not in ValidJPIDUsers:
+                output = 'This command has been temporarily disabled / このコマンドは現在無効になっています'
             else:
                 FileToAttach = await GetT10ArchiveFile(int(eventid), server)
                 if FileToAttach:
@@ -126,21 +123,26 @@ class Event(commands.Cog):
         else:
             server = server.lower()
             if server not in self.ValidT10Servers:
-                await ctx.send('This function only works for the `EN` and `JP` servers')
+                output = 'This function only works for the `EN` and `JP` servers'
             else:
-                try:
-                    if(eventid == 0):
-                        eventid = await GetCurrentEventID(server)
-                    else:
-                        eventid = eventid
-                    if(songs):
-                        output = await t10songsformatting(server, eventid, True)
-                        output = ''.join(output)
-                    else:
-                        output = await t10formatting(server, eventid, True)
-                    await ctx.send(output)
-                except:
-                    await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify` command to let Josh know")
+                ValidJPIDUsers = [158699060893581313,
+                                  365863959527555082, 384333652344963074, 385264382935957504]
+                if server == 'jp' and ctx.message.author.id not in ValidJPIDUsers:
+                    output = 'This command has been temporarily disabled / このコマンドは現在無効になっています'
+                else:
+                    try:
+                        if(eventid == 0):
+                            eventid = await GetCurrentEventID(server)
+                        else:
+                            eventid = eventid
+                        if(songs):
+                            output = await t10songsformatting(server, eventid, True)
+                            output = ''.join(output)
+                        else:
+                            output = await t10formatting(server, eventid, True)
+                    except:
+                        output = f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify` command to let Josh know"
+                await ctx.send(output)
 
     @commands.command(name='t10members',
                     aliases=['t10m'],
@@ -155,12 +157,13 @@ class Event(commands.Cog):
                 await ctx.send('This function only works for the `EN` and `JP` servers')
             else:
                 try:
+                    UserID = ctx.message.author.id
                     if(eventid == 0):
                         eventid = await GetCurrentEventID(server)
                     else:
                         eventid = eventid
                     if(songs):
-                        output = await t10membersformatting(server, eventid, True)
+                        output = await t10membersformatting(server, eventid, True, UserID)
                         if 'No data found for event' in output: # Very scuffed way of doing this, but I don't feel like messing with errors (if that'd even work)
                             await ctx.send(output)
                         else:
@@ -168,7 +171,7 @@ class Event(commands.Cog):
                             for x in output:
                                 await ctx.send(x)
                     else:
-                        output = await t10membersformatting(server, eventid, False)
+                        output = await t10membersformatting(server, eventid, False,)
                         await ctx.send(output)
                 except:
                     await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify` command to let Josh know")
@@ -236,19 +239,18 @@ class Event(commands.Cog):
             await ctx.send(f"Couldn't find cutoff history for server `{server}` tier `{tier}`")
 
     @commands.command(name='cutoff',
-                     aliases=['t100','t1000','t2000'],
-                     description="Cutoff estimate for t10, t100, t1000, and t2000. Input the tier and server (defaulted to en and 100)\n\nNote: t100 and t1000 can only be used for en, and t2000 for jp\n\nCurrently using https://bestdori.com/tool/eventtracker/, all credit goes to Burrito",
-                     help=".cutoff 100\n.cutoff 1000 en\n.cutoff 2000 jp")
+                      aliases=['t100', 't1000', 't2000'],
+                      description="Cutoff estimate for t100, t1000, and t2000. Input the tier and server (defaulted to en and 100)\n\nNote: t100 and t1000 aliases can only be used for en, and t2000 for jp",
+                      help=".cutoff 100\n.cutoff 1000 en\n.cutoff 2000 jp")
     async def cutoff(self, ctx, tier: int = 100, server: str = 'en'):
-        from startup.OpenWebdrivers import enDriver, jpDriver, cnDriver, twkrDriver
-        ValidTiers = [100,1000,2000]
+        ValidTiers = [100, 1000, 2000]
         if tier not in ValidTiers:
             await ctx.send(f"{tier} isn't supported")
         else:
             server = server.lower()
-            ValidT2000 = ['jp','cn']
-            ValidT1000 = ['en','jp','cn']
-            ValidT10 = ['en','jp']
+            ValidServer = ['jp', 'cn', 'en', 'tw', 'kr']
+            ValidT2000 = ['jp', 'cn']
+            ValidT1000 = ['en', 'jp', 'cn']
             output = ''
             ctx.invoked_with = ctx.invoked_with.lower()
             if 't1000' in ctx.invoked_with:
@@ -257,36 +259,22 @@ class Event(commands.Cog):
                 tier = 100
             elif 't2000' in ctx.invoked_with:
                 tier = 2000
-            if tier == 10 and server not in ValidT10:
-                output = 'T10 is only valid for EN and JP'
-            if tier == 2000 and server not in ValidT2000:
-                output = 'T2000 is only valid for JP and CN'
-            if tier == 1000 and server not in ValidT1000:
-                output = 'T1000 is only valid for EN, JP, and CN'
-            if output:
-                await ctx.send(output)
+
+            if server not in ValidServer:
+                output = 'You did not specify a valid server'
             else:
-                if server == 'en':
-                    driver = enDriver
-                elif server == 'jp':
-                    driver = jpDriver
-                elif server == 'cn':
-                    driver = cnDriver 
+                if tier == 2000 and server not in ValidT2000:
+                    output = 'T2000 is only valid for JP and CN'
+                if tier == 1000 and server not in ValidT1000:
+                    output = 'T1000 is only valid for EN, JP, and CN'
+                if output:
+                    await ctx.send(output)
                 else:
-                    driver = twkrDriver
-                try:
-                    output = await GetCutoffFormatting(driver, server, tier)
-                    await ctx.send(embed=output)
-                except selenium.common.exceptions.ElementNotInteractableException:
-                    await ctx.send("Failed getting cutoff data because Chrome likely crashed. Please wait a few seconds and run the command again")
-                    from startup.OpenWebdrivers import LoadWebDrivers
-                    LoadWebDrivers(server)
-                except selenium.common.exceptions.WebDriverException:
-                    await ctx.send("Failed getting cutoff data because Chrome likely crashed. Please wait a few seconds and run the command again")
-                    from startup.OpenWebdrivers import LoadWebDrivers
-                    LoadWebDrivers(server)
-                except IndexError:
-                    await ctx.send('Failed getting cutoff data, there is likely no data available yet on Bestdori')
+                    try:
+                        output = await GetCutoffFormatting(server, tier)
+                        await ctx.send(embed=output)
+                    except IndexError:
+                        await ctx.send('Failed getting cutoff data, there is likely no data available yet on Bestdori')
 
     @coasting.error
     async def coasting_error(self, ctx, error):

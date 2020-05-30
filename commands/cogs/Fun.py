@@ -292,7 +292,7 @@ class Fun(commands.Cog):
             if args:
                 args = list(args)
                 for x in args:
-                    if '/' in x:
+                    if '/' in x: # /\\
                         args.remove(x)
                         x = re.sub('[^A-Za-z0-9]+', ' ', x)
                         SplitAmount = 0
@@ -332,6 +332,8 @@ class Fun(commands.Cog):
                                     Characters.append('hagumi')
                                 elif x.lower() in ['npc','tsugu']:
                                     Characters.append('tsugumi')
+                                elif x.lower() in ['saaya']:
+                                    Characters.append('saya')
                                 elif x.lower() in ['josh', 'john']: #for you qwewqa
                                     Characters.append('lisa')
                                 else:
@@ -417,17 +419,19 @@ class Fun(commands.Cog):
             new_im.save(SavedFile)
             DiscordFileObject = File(SavedFile,filename=FileName)
             RolledStats = self.GetRollStats(ctx.message.author.id)
-
+            
             await asyncio.sleep(.5)
             embed=discord.Embed(title=Title,color=discord.Color.blue())
             embed.set_thumbnail(url=RolledStats[5])
             embed.add_field(name='Total Cards Rolled',value=RolledStats[0],inline=True)
-            embed.add_field(name='4* Rate',value=RolledStats[4],inline=True)
-            embed.add_field(name='\u200b', value='\u200b', inline=True)
-            embed.add_field(name='2* Rolled',value=RolledStats[1],inline=True)
-            embed.add_field(name='3* Rolled',value=RolledStats[2],inline=True)
-            embed.add_field(name='4* Rolled',value=RolledStats[3],inline=True) 
+            embed.add_field(name='Total 4* Rolled',
+                            value=RolledStats[3], inline=True)
+            embed.add_field(name='4* Rate', value=RolledStats[4], inline=True)
+            embed.add_field(name='2* Rolled',value=TwoStarsRolled,inline=True)
+            embed.add_field(name='3* Rolled',value=ThreeStarsRolled,inline=True)
+            embed.add_field(name='4* Rolled',value=FourStarsRolled,inline=True) 
             embed.set_image(url=f"attachment://{FileName}")
+            embed.set_footer(text="Want to see all your stats? Use the rollstats command")
             await ctx.send(file=DiscordFileObject, embed=embed)
         except Exception as e:
             print(str(e))
@@ -571,7 +575,7 @@ class Fun(commands.Cog):
                       description="Note: This data may be publicly accessible\n\nIf you're like me and easily forget birthdays, you can use this command to add birthday entries and grab them as needed. Entries are server specific",
                       help='.birthdays (this returns all birthdays for the server the command was ran in\n.bdays add "10 Aug" (adds an entry to the list for the user running the command\n.bdays del (removes the user running the command from the database)' )
     async def bdays(self,ctx,*add):
-        if add and add[0] != 'del':
+        if add and add[0] == 'add':
             user = self.bot.get_user(ctx.message.author.id)
             Name = user.name + '#' + user.discriminator
             ServerID = ctx.message.guild.id
@@ -581,7 +585,7 @@ class Fun(commands.Cog):
                 output = f"Successfully added user `{Name}` to the birthdays list with date `{Date}`"
             except:
                 output = "Failed adding user to the birthdays list. Please use the `notify` command if this keeps happening"
-        if add and add[0] == 'del':
+        elif add and add[0] == 'del':
             user = self.bot.get_user(ctx.message.author.id)
             Name = user.name + '#' + user.discriminator
             ServerID = ctx.message.guild.id

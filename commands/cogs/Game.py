@@ -205,7 +205,7 @@ class Game(commands.Cog):
                 bannerName = bannerAPI['assetBundleName']
                 eventUrl = 'https://bestdori.com/info/events/' + str(EventID)
                 thumbnail = 'https://bestdori.com/assets/%s/event/%s/images_rip/logo.png'  %(server,bannerName)
-                embed=discord.Embed(title=EventName, url=eventUrl, color=embedColor)
+                embed=discord.Embed(title=f"{EventName} [{EventID}]", url=eventUrl, color=embedColor)
                 embed.set_thumbnail(url=thumbnail)
                 embed.add_field(name='Attribute', value=str(attribute).capitalize(), inline=True)
                 embed.add_field(name='Event Type', value=str(eventType).capitalize(), inline=True)

@@ -22,3 +22,4 @@ startup/google.py
 rolls/*
 
 commands/cogs/Music.py
+commands/formatting/Estimate.py

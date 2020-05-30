@@ -449,7 +449,7 @@ def GetAllRoles(GuildID: int):
         Roles.append([x['RoleName']])
     return Roles
 
-def AddRoleToDatabase(channel: TextChannel, server: str, role: str):
+def AddRoleToDatabase(channel: TextChannel, role: str):
     success = True
     db = TinyDB('databases/selfassignableroles.json') 
     try:
@@ -463,9 +463,11 @@ def AddRoleToDatabase(channel: TextChannel, server: str, role: str):
         success = False
 
     if success:
-        text = "Role %s successfully added to the self assignable roles for %s" %(role, server)
+        text = "Role %s successfully added to the self assignable roles for %s" % (
+            role, channel.guild.name)
     else:
-        text = "Failed adding role %s to the self assignable roles for %s" %(role, server)
+        text = "Failed adding role %s to the self assignable roles for %s" % (
+            role, channel.guild.name)
     return text
 
 

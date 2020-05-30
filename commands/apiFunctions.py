@@ -11,20 +11,37 @@ async def getBandoriGAAPI(server: str):
             return await BandoriGAAPI.json()
 """
 
+
+async def GetBestdoriRateAPI():
+    async with aiohttp.ClientSession() as session:
+        api = 'https://bestdori.com/api/tracker/rates.json'
+        async with session.get(api) as r:
+            return await r.json()
+
 async def GetBestdoriEventAPI(EventID: int):
     async with aiohttp.ClientSession() as session:
         api = 'https://bestdori.com/api/events/%s.json' %str(EventID)
         async with session.get(api) as CurrentEventAPI:
             return await CurrentEventAPI.json()
 
-async def GetBestdoriCutoffAPI(tier: int):
+async def GetTierKey(tier):
+    if tier == 100:
+        tier = '0'
+    elif tier == 1000:
+        tier = '1'
+    else:
+        tier = '2'
+    return int(tier)
+
+
+async def GetBestdoriCutoffAPI(server: int, tier: int):
     async with aiohttp.ClientSession() as session:
         from commands.formatting.EventCommands import GetCurrentEventID
-        eventId = await GetCurrentEventID('en')
-        if tier == 100:
-            api = 'https://bestdori.com/api/tracker/data?server=1&event=%s&tier=0' %str(eventId)
-        else:
-            api = 'https://bestdori.com/api/tracker/data?server=1&event=%s&tier=1' %str(eventId)
+        EventID = await GetCurrentEventID(server)
+        tier = await GetTierKey(tier)
+        ServerKey = await GetServerAPIKey(server)
+        api = 'https://bestdori.com/api/tracker/data?server={}&event={}&tier={}'.format(
+            ServerKey, str(EventID), tier)
         async with session.get(api) as r:
             return await r.json()
 

@@ -91,7 +91,7 @@ class Loops(commands.Cog):
             if JPEventID:
                 timeLeftJp = await GetEventTimeLeftSeconds('jp', JPEventID)
                 if(timeLeftJp > 0):
-                    JPMessage = await t10formatting('jp', JPEventID, True)
+                    JPMessage = await t10formatting('jp', JPEventID, False)
                     ids = getChannelsToPost(2, 'jp')
                     for i in ids:
                         channel = self.bot.get_channel(i)
@@ -142,7 +142,7 @@ class Loops(commands.Cog):
             if JPEventID:
                 timeLeftJp = await GetEventTimeLeftSeconds('jp', JPEventID)
                 if(timeLeftJp > 0):
-                    JPMessage = await t10formatting('jp', JPEventID, True)
+                    JPMessage = await t10formatting('jp', JPEventID, False)
                     ids = getChannelsToPost(3600, 'jp')
                     for i in ids:
                         channel = self.bot.get_channel(i)
@@ -164,7 +164,7 @@ class Loops(commands.Cog):
             if EnEventID:
                 timeLeft = await GetEventTimeLeftSeconds('en', EnEventID)
                 if(timeLeft > 0):
-                    message = await t10membersformatting('en', EnEventID, True)
+                    message = await t10membersformatting('en', EnEventID, True, 158699060893581313)
                     if message != "This event doesn't have a song ranking.":
                         #await t10logging('en', eventid, True)
                         ids = getChannelsToPost(1, 'en')
@@ -195,10 +195,9 @@ class Loops(commands.Cog):
                 if(timeLeft > 0):
                     ids = getCutoffChannels(100)
                     initialT100Cutoffs = self.initialT100Cutoffs
-                    cutoffAPI = await GetBestdoriCutoffAPI(100)
+                    cutoffAPI = await GetBestdoriCutoffAPI('en', 100)
                     if(sorted(initialT100Cutoffs.items()) != sorted(cutoffAPI.items())):
-                        from startup.OpenWebdrivers import enDriver      
-                        output = await GetCutoffFormatting(enDriver, 'en', 100)
+                        output = await GetCutoffFormatting('en', 100)
                         ids = getCutoffChannels(100)
                         for i in ids:
                             channel = self.bot.get_channel(i)
@@ -225,10 +224,9 @@ class Loops(commands.Cog):
                 if(timeLeft > 0):
                     ids = getCutoffChannels(1000)
                     initialT1000Cutoffs = self.initialT1000Cutoffs  
-                    cutoffAPI = await GetBestdoriCutoffAPI(1000)
+                    cutoffAPI = await GetBestdoriCutoffAPI('en', 1000)
                     if(sorted(initialT1000Cutoffs.items()) != sorted(cutoffAPI.items())):
-                        from startup.OpenWebdrivers import enDriver      
-                        output = await GetCutoffFormatting(enDriver, 'en', 1000)
+                        output = await GetCutoffFormatting('en', 1000)
                         ids = getCutoffChannels(1000)
                         for i in ids:
                             channel = self.bot.get_channel(i)

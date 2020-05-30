@@ -45,7 +45,7 @@ class Servers(commands.Cog):
                 await ctx.send('Role `%s` created' %(rolename))
                 if selfassignable:
                     Channel = self.bot.get_channel(523339468229312555)
-                    await Channel.send(AddRoleToDatabase(ctx.channel, ctx.guild.name, rolename))                
+                    await Channel.send(AddRoleToDatabase(ctx.channel, rolename))                
         
             except Exception:
                 pass
