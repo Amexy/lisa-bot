@@ -31,63 +31,68 @@ class Game(commands.Cog):
                       description="Gives info on the current gachas. Doesn't show the gachas that are always available (new player, 3+ ticket, etc)",
                       help=".gacha en\n.gacha (defaults to en)")
     async def gacha(self, ctx, server: str = 'en'):
+        from PIL import Image
+        from PIL.ImageDraw import Draw
+        from PIL.ImageFont import truetype
+        from commands.apiFunctions import GetServerAPIKey
         api = await GetBestdoriAllGachasAPI()
         gachas = []
         gachasEnd = []
         cardDetails = []
+        CardIds = []
+        CardCharaNames = []
         currentTime = await GetCurrentTime()
+        ServerKey = await GetServerAPIKey(server)
         for x in list(api):
-            if(server == 'en'):
-                if api[str(x)]['gachaName'][1] and api[str(x)]['closedAt'][1] and api[str(x)]['publishedAt'][1]:
-                    closedAt = int(api[str(x)]['closedAt'][1])
-                    startAt = int(api[str(x)]['publishedAt'][1])
-                    gachaName = api[str(x)]['gachaName'][1]
-                    gachaNameAndChars = gachaName
-                    if 'Beginners' not in gachaName and '3+' not in gachaName and 'Head Start' not in gachaName:
-                        if(closedAt > currentTime and currentTime > startAt):
-                            gachaAPI = await GetBestdoriGachaAPI(x)
+            if api[str(x)]['gachaName'][ServerKey] and api[str(x)]['closedAt'][ServerKey] and api[str(x)]['publishedAt'][ServerKey]:
+                closedAt = int(api[str(x)]['closedAt'][ServerKey])
+                startAt = int(api[str(x)]['publishedAt'][ServerKey])
+                gachaName = api[str(x)]['gachaName'][ServerKey]
+                if 'Beginners' not in gachaName and '3+' not in gachaName and 'Head Start' not in gachaName:
+                    if(closedAt > currentTime and currentTime > startAt):
+                        gachaAPI = await GetBestdoriGachaAPI(x)
+                        if gachaAPI['details'][0]:
                             for y in list(gachaAPI['details'][0]):
                                 if(gachaAPI['details'][0][str(y)]['weight'] == 5000):
-                                    cardApi = await GetBestdoriCardAPI(y)
-                                    cardChara = cardApi['characterId']
-                                    cardAttr = cardApi['attribute']
-                                    cardType = cardApi['type']
+                                    CardApi = await GetBestdoriCardAPI(y)
+                                    CardIds.append(y)
+                                    cardChara = CardApi['characterId']
+                                    cardAttr = CardApi['attribute']
+                                    cardType = CardApi['type']
                                     charaApi = await GetBestdoriCharasAPI(cardChara)
-                                    charaName = charaApi['characterName'][1]
+                                    charaName = charaApi['characterName'][1] # icons are stored in their english name
                                     cardInfo = cardType.capitalize() + " " + cardAttr.capitalize() + " " + charaName 
+                                    CardCharaNames.append(charaName.split()[0])
                                     cardDetails.append(cardInfo)
-                            gachas.append(gachaName)
-                            gachasEnd.append(time.strftime("%d %b %Y", time.localtime(int(closedAt / 1000))))
-            if(server == 'jp'):
-                if api[str(x)]['gachaName'][0] and api[str(x)]['closedAt'][0] and api[str(x)]['publishedAt'][0]:
-                    closedAt = int(api[str(x)]['closedAt'][0])
-                    startAt = int(api[str(x)]['publishedAt'][0])
-                    gachaName = api[str(x)]['gachaName'][1]
-                    if gachaName is None:
-                        gachaName = api[str(x)]['gachaName'][0]
-                    #gachaNameAndChars = gachaName
-                    if 'Beginners' not in gachaName and '3+' not in gachaName and 'Head Start' not in gachaName:
-                        if(closedAt > currentTime and currentTime > startAt):
-                            gachaAPI = await GetBestdoriGachaAPI(x)
-                            for y in list(gachaAPI['details'][0]):
-                                if(gachaAPI['details'][0][str(y)]['weight'] == 5000):
-                                    cardApi = await GetBestdoriCardAPI(y)
-                                    cardChara = cardApi['characterId']
-                                    cardAttr = cardApi['attribute']
-                                    cardType = cardApi['type']
-                                    charaApi = await GetBestdoriCharasAPI(cardChara)
-                                    charaName = charaApi['characterName'][1]
-                                    cardInfo = cardType.capitalize() + " " + cardAttr.capitalize() + " " + charaName 
-                                    cardDetails.append(cardInfo)
-                            gachas.append(gachaName)
-                            gachasEnd.append(time.strftime("%d %b %Y", time.localtime(int(closedAt / 1000))))
+                                    cardDetails.append(f'https://bestdori.com/info/cards/{y}')
+                        gachas.append(gachaName)
+                        gachasEnd.append(time.strftime("%d %b %Y", time.localtime(int(closedAt / 1000))))        
+        IconPaths = []
+        for chara, id in zip(CardCharaNames, CardIds):
+            IconPaths.append(f"icons/{chara.lower()}/4/{id}.png")
+        images = [Image.open(x) for x in IconPaths]
+        widths, heights = zip(*(i.size for i in images))
+        total_width = sum(widths) 
+        max_height = max(heights)
+        new_im = Image.new('RGB', (int(total_width), max_height))
+        x_offset = 0
+        for im in images:
+            new_im.paste(im, (x_offset, 0))
+            x_offset += im.size[0]
+        from discord import File
+        import uuid
+        FileName = str(uuid.uuid4()) + '.png'
+        SavedFile = "imgTmp/" + FileName
+        new_im.save(SavedFile)
+        DiscordFileObject = File(SavedFile, filename=FileName)
+        os.remove(SavedFile)
         embed=discord.Embed()
         embed.add_field(name='Gacha', value='\n'.join(gachas), inline=True)
         embed.add_field(name='End', value='\n'.join(gachasEnd), inline=True)
         embed.add_field(name='Cards', value='\n'.join(cardDetails), inline=False)
+        embed.set_image(url=f"attachment://{FileName}")
+        await ctx.send(file=DiscordFileObject, embed=embed)
 
-        await ctx.send(embed=embed)
-        #await ctx.send("```" + tabulate(gachas,tablefmt="plain",headers=["Gacha","Ends"]) + "```")
 
     @commands.command(name='character',
                       aliases=['chara','c'],
