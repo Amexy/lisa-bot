@@ -512,7 +512,11 @@ class Fun(commands.Cog):
                 pic = random.choice(db[newquery]['pics'])
                 PicID = pic['id']
                 PicURL = pic['image_urls']['large']
-                SavedPicPath = f'imgTmp/{PicID}_p0.jpg'
+                if charaId == '23':
+                    SaveImage = True
+                    SavedPicPath = f'pfps/{PicID}_p0.jpg'
+                else:
+                    SavedPicPath = f'imgTmp/{PicID}_p0.jpg'
                 response = requests.get(PicURL, 
                                         headers={
                                             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36', 
@@ -523,15 +527,20 @@ class Fun(commands.Cog):
                                         stream=True)
                 if os.path.exists(SavedPicPath):
                     os.remove(SavedPicPath)
-                with open(SavedPicPath, 'wb') as Out_file:
+                with open(SavedPicPath, 'ab') as Out_file:
                     response.raw.decode_content = True
                     Out_file.write(response.content)   
                     DiscordFileObject = File(SavedPicPath)
+                
+                if SaveImage:
+                    from PIL import Image
+                    # Since the original image is saved as corrupt, save it this way
+                    SavedPFP = Image.open(SavedPicPath)
+                    SavedPFP.save(SavedPicPath)
+
                 channel: discord.TextChannel = self.bot.get_channel(712732064381927515)  # Change this channel to the channel you want the bot to send images to so it can grab a URL for the embed
                 fileSend: discord.Message = await channel.send(file=DiscordFileObject)
-                #os.remove(SavedPicPath)
 
-                
                 TitleURL = f"https://www.pixiv.net/en/artworks/{PicID}"
 
 
