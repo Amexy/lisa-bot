@@ -1,5 +1,3 @@
-from urllib.request import urlopen
-from requests_html import AsyncHTMLSession, HTML
 from discord.ext import commands
 from commands.formatting.GameCommands import GetCoastingOutput
 from commands.formatting.EventCommands import GetCutoffFormatting, GetCurrentEventID

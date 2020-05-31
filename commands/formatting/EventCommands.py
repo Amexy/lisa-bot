@@ -287,12 +287,16 @@ async def CalculatecutoffEstimates(server, tier, EventID):
         TotalWeight += x[0]
         TotalTime += x[1]
 
-    EstimateNoSmoothing = math.floor(
-        GetNonSmoothingEstimate(TimeEntries, EPEntries, Rate)[0])
-    try:
-        EstimateSmoothing = math.floor(TotalWeight / TotalTime)
-    except ZeroDivisionError:
-        EstimateSmoothing = 0
+    if TimeEntries and EPEntries:
+        EstimateNoSmoothing = math.floor(
+            GetNonSmoothingEstimate(TimeEntries, EPEntries, Rate)[0])
+        try:
+            EstimateSmoothing = math.floor(TotalWeight / TotalTime)
+        except ZeroDivisionError:
+            EstimateSmoothing = 0
+    else:
+        EstimateSmoothing = '?'
+        EstimateNoSmoothing = '?'
     LastUpdatedTime = CutoffAPI['cutoffs'][-1]['time']
     ElapsedTimeHours = (LastUpdatedTime - EventStartTime) / 1000 / 3600
     EPPerHour = math.floor(LastUpdatedCutoff / ElapsedTimeHours)
@@ -320,7 +324,6 @@ async def GetCutoffFormatting(server: str, tier: int):
     EventName = f"T{tier}: {EventAPI['eventName'][Key]}"
 
     LastUpdatedValues = GetUpdatedValues(server, tier, EventID, 'last')
-    
     if LastUpdatedValues:
         if LastUpdatedValues[0] == LastUpdatedCutoff:
             EstimateSmoothing = LastUpdatedValues[1]
@@ -438,6 +441,9 @@ async def GetCutoffFormatting(server: str, tier: int):
     eventUrl = 'https://bestdori.com/info/events/' + str(EventID)
     thumbnail = 'https://bestdori.com/assets/%s/event/%s/images_rip/logo.png'  %(server,bannerName)
     
+    if EstimateSmoothing == '0':
+        EstimateSmoothing = '?'
+        EstimateNoSmoothing = '?'
     embed=discord.Embed(title=EventName, url=eventUrl, color=0x09d9fd)
     embed.set_thumbnail(url=thumbnail)
     embed.add_field(name='Current', value=LastUpdatedCutoff, inline=True)

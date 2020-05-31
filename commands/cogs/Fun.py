@@ -516,6 +516,7 @@ class Fun(commands.Cog):
                     SaveImage = True
                     SavedPicPath = f'pfps/{PicID}_p0.jpg'
                 else:
+                    SaveImage = False
                     SavedPicPath = f'imgTmp/{PicID}_p0.jpg'
                 response = requests.get(PicURL, 
                                         headers={
