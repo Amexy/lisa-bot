@@ -2,6 +2,7 @@ from tinydb import TinyDB, where, Query
 from tabulate import tabulate
 from discord.channel import TextChannel
 from discord.guild import Guild
+from discord import RawReactionActionEvent
 
 # Databases
 eventCheckDb2min = 'databases/eventCheckDb2min.json'
@@ -408,6 +409,20 @@ def getNewsChannelsToPost(server: str):
 ##################
 #     Roles      #
 ##################
+def CheckMessageForReactAssignment(msgID: int):
+    db = TinyDB('databases/reactbasedroles.json')
+    queryBuilder = Query()
+    if db.contains(queryBuilder.msgID == msgID):
+        return True
+    else:
+        return False
+
+def GetReactAssignmentList(msgID: int):
+    db = TinyDB('databases/reactbasedroles.json')
+    queryBuilder = Query()
+    document = db.get(queryBuilder.msgID == msgID)
+    return document['reactList']
+
 def CheckRoleForAssignability(RoleName: str, GuildID: int):
     db = TinyDB('databases/selfassignableroles.json')
     QueryBuilder = Query()
@@ -422,7 +437,6 @@ def CheckRoleForAssignability(RoleName: str, GuildID: int):
         else:
             RoleFound = False
     return RoleFound
-    
 
 def RemoveRoleFromAssingability(RoleName: str, GuildID: int):
     db = TinyDB('databases/selfassignableroles.json')
@@ -470,6 +484,39 @@ def AddRoleToDatabase(channel: TextChannel, role: str):
             role, channel.guild.name)
     return text
 
+def AddReactToDatabase(msgID: int, data: dict):
+    success = True
+    db = TinyDB('databases/reactbasedroles.json')
+    try:
+        db.upsert({'msgID': msgID,
+                'reactList': data
+                }, where('msgID') == msgID)
+
+    except Exception as e:
+        print(e)
+        success = False
+
+    if success:
+        text = f"Message {msgID} enabled for reaction based role assignment. Stored values for valid roles and emoji."
+    else:
+        text = f"Failed to add message {msgID} for reaction based role assignment."
+    return text
+
+def RemoveReactFromDatabase(msgID: int):
+    success = True
+    db = TinyDB('databases/reactbasedroles.json')
+    try:
+        db.remove(where('msgID') == msgID)
+
+    except Exception as e:
+        print(e)
+        success = False
+
+    if success:
+        text = f"Message {msgID} disabled for reaction based role assignment. Stored values for valid roles and emoji."
+    else:
+        text = f"Failed to remove message {msgID} for reaction based role assignment."
+    return text
 
 ##################
 #     Misc       #
