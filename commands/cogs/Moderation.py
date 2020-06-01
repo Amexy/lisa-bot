@@ -97,93 +97,103 @@ class Servers(commands.Cog):
 
     @commands.command(name='rroleconfig',
                       description= 'Configures reaction-based role assignment.',
-                      help = 'Example: .rroleconfig [enable/disable/add/edit/remove] <message ID> "<role name>, <emoji>" "<role name>, <emoji>" ...')
+                      help = '.rroleconfig [disable/add/edit/remove] <message ID> "<role name>, <emoji>" "<role name>, <emoji>" ...\nExamples:\n\n.rroleconfig add 76504 "testRole, :apple:" "testRole2, :cat:"\n.rroleconfig remove 76504 "testRole, :apple:"\n.rroleconfig disable 76504')
     async def rroleconfig(self, ctx, *args):
         if ctx.message.author.guild_permissions.manage_roles:
-            validOptions = ['enable', 'disable', 'add', 'edit', 'remove']
+            validOptions = ['disable', 'add', 'edit', 'remove']
             args = list(args)
-            option = args.pop(0)
+
+            try:
+                option = args.pop(0)
+            except IndexError:
+                await ctx.send("Oops! No parameters found. Did you forget to add them?")
+
             option = option.lower()
             post = {}
             if option in validOptions:
+                # Check for message ID parameter. 
+                # IndexError means nothing else was supplied, ValueError means order is incorrect or an invalid message ID
                 try:
                     msgid = int(args.pop(0))
                 except IndexError:
-                        await ctx.send("Please supply a valid message ID!")
-
-                if option == 'enable':
-                    try:
-                        msg = await ctx.channel.fetch_message(int(msgid))
-                        msgid = msg.id
-                    
-                    except discord.Forbidden:
-                        await ctx.send("I don't have permissions to read message history in that channel.")
-
-                    except discord.NotFound:
-                        await ctx.send("Message not found. Check the message id?")
-
-                    if CheckMessageForReactAssignment(msgid) == False:
-                        for arg in args:
-                            arg = arg.split(", ")
-                            if len(arg) == 2:
-                                role = discord.utils.find(lambda r: r.name == arg[0], ctx.guild.roles)
-                                if role:
-                                    post[role.name] = arg[1] 
-                                else:
-                                    await ctx.send("Role {} not found! Did you spell it wrong?")
-
-                        output = AddReactToDatabase(msgid, post)
-                        await ctx.send(output)
-
-                    else:
-                        await ctx.send("Message is already enabled for reaction-based role assignment. Use option 'add/edit/remove'")
-
-                elif option == 'add' or option == 'edit':
-                    if CheckMessageForReactAssignment(msgid):
-                        post = GetReactAssignmentList(msgid)
-                        for arg in args:
-                            arg = arg.split(", ")
-                            if len(arg) == 2:
-                                role = discord.utils.find(lambda r: r.name == arg[0], ctx.guild.roles)
-                                if role:
-                                    post[role.name] = arg[1]
-                                else:
-                                    await ctx.send("Role {} not found! Did you spell it wrong?")
-
-                        output = AddReactToDatabase(msgid, post)
-                        await ctx.send(output)
-
-                    else:
-                        await ctx.send("Message has not been enabled for reaction-based role assignment. Use option 'enable'")
-
-                elif option == 'remove':
-                    if CheckMessageForReactAssignment(msgid):
-                        post = GetReactAssignmentList(msgid)
-                        for arg in args:
-                            arg = arg.split(", ")
-                            if len(arg) == 2:
-                                role = discord.utils.find(lambda r: r.name == arg[0], ctx.guild.roles)
-                                if role:
-                                    post.pop(role.name)
-                                else:
-                                    await ctx.send("Role {} not found! Did you spell it wrong?")
-
-                        output = AddReactToDatabase(msgid, post)
-                        await ctx.send(output)
-
-                    else:
-                        await ctx.send("Message has not been enabled for reaction-based role assignment. Use option 'enable'")
+                    await ctx.send("No message ID detected. Perhaps you forgot to specify a message ID?")
+                except ValueError:
+                    await ctx.send("Did not recognize the message ID. Perhaps your parameters are in the wrong order, or you forgot to specify a message ID.")
                 
-                else:
-                    if CheckMessageForReactAssignment(msgid):
-                        output = RemoveReactFromDatabase(msgid)
-                        await ctx.send(output)
+                    if option == 'add' or option == 'edit':
+                        # If the value isn't in the database already, then it's a new entry.
+                        # Check to see if the bot has proper permissions to track reacts from the message, and that the message exists
+                        if CheckMessageForReactAssignment(msgid) == False:
+                            try:
+                                msg = await ctx.channel.fetch_message(int(msgid))
+                                msgid = msg.id
+                        
+                            except discord.Forbidden:
+                                await ctx.send("I don't have permissions to read message history in that channel.")
+
+                            except discord.NotFound:
+                                await ctx.send("Message not found. The command must be ran in the same channel the message you're enabling was sent.")
+
+                        else:
+                            post = GetReactAssignmentList(msgid)
+                            
+                            # Check that there is at least one pair supplied
+                            if len(args) > 0:
+                                for arg in args:
+                                    # Separate role name and emoji
+                                    # The comma is needed due to role names being able to have a space in them, so we can't use it as a delimiter
+                                    arg = arg.split(", ")
+                                    # Check for proper formatting
+                                    if len(arg) == 2:
+                                        role = discord.utils.find(lambda r: r.name == arg[0], ctx.guild.roles)
+                                        if role:
+                                            post[role.name] = arg[1]
+                                        else:
+                                            await ctx.send(f"Role {arg[0]} not found! Did you spell it wrong?")
+                                    else:
+                                        await ctx.send('Incorrect command formatting. Make sure role/emoji pairs are entered like `"<rolename>, <emoji>"`')
+
+                                output = AddReactToDatabase(msgid, post)
+                                await ctx.send(output)
+                            else:
+                                await ctx.send("No role/emoji pairs were given. Please specify the role you want to add.")
+                        else:
+                            await ctx.send("Message has not been enabled for reaction-based role assignment. Use option 'enable'")
+
+                    elif option == 'remove':
+                        if CheckMessageForReactAssignment(msgid):
+                            post = GetReactAssignmentList(msgid)
+                            
+                            if len(args) > 0:
+                                for arg in args:
+                                    arg = arg.split(", ")
+                                    if len(arg) == 2:
+                                        role = discord.utils.find(lambda r: r.name == arg[0], ctx.guild.roles)
+                                        if role:
+                                            post.pop(role.name)
+                                        else:
+                                            await ctx.send(f"Role {arg[0]} not found! Did you spell it wrong?")
+                                    else:
+                                        await ctx.send('Incorrect command formatting. Make sure role/emoji pairs are entered like `"<rolename>, <emoji>"`')
+                                
+                                output = AddReactToDatabase(msgid, post)
+                                await ctx.send(output)
+                            else:
+                                await ctx.send("No role/emoji pairs were given. Please specify the role you want to remove.")
+                        else:
+                            await ctx.send("Message has not been enabled for reaction-based role assignment. Use option 'enable'")
+                    
+                    # Option must be 'disable', let's delete the entry from the DB
                     else:
-                        await ctx.send("Message was not enabled for reaction-based role assignment!")
+                        if CheckMessageForReactAssignment(msgid):
+                            output = RemoveReactFromDatabase(msgid)
+                            await ctx.send(output)
+                        else:
+                            await ctx.send("Message was not enabled for reaction-based role assignment!")
             else:
                 await ctx.send("Please supply a valid option.")
         else:
-            msg = "You must have `manage_roles` rights to run this command, {0.author.mention}".format(ctx.message)  
+            msg = f"You must have `manage_roles` rights to run this command, {ctx.author}"
             await ctx.send(msg)
     
     @commands.command(name='sendupdate',
