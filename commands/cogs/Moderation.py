@@ -137,28 +137,26 @@ class Servers(commands.Cog):
                         else:
                             post = GetReactAssignmentList(msgid)
                             
-                            # Check that there is at least one pair supplied
-                            if len(args) > 0:
-                                for arg in args:
-                                    # Separate role name and emoji
-                                    # The comma is needed due to role names being able to have a space in them, so we can't use it as a delimiter
-                                    arg = arg.split(", ")
-                                    # Check for proper formatting
-                                    if len(arg) == 2:
-                                        role = discord.utils.find(lambda r: r.name == arg[0], ctx.guild.roles)
-                                        if role:
-                                            post[role.name] = arg[1]
-                                        else:
-                                            await ctx.send(f"Role {arg[0]} not found! Did you spell it wrong?")
+                        # Check that there is at least one pair supplied
+                        if len(args) > 0:
+                            for arg in args:
+                                # Separate role name and emoji
+                                # The comma is needed due to role names being able to have a space in them, so we can't use it as a delimiter
+                                arg = arg.split(", ")
+                                # Check for proper formatting
+                                if len(arg) == 2:
+                                    role = discord.utils.find(lambda r: r.name == arg[0], ctx.guild.roles)
+                                    if role:
+                                        post[role.name] = arg[1]
                                     else:
-                                        await ctx.send('Incorrect command formatting. Make sure role/emoji pairs are entered like `"<rolename>, <emoji>"`')
+                                        await ctx.send(f"Role {arg[0]} not found! Did you spell it wrong?")
+                                else:
+                                    await ctx.send('Incorrect command formatting. Make sure role/emoji pairs are entered like `"<rolename>, <emoji>"`')
 
-                                output = AddReactToDatabase(msgid, post)
-                                await ctx.send(output)
-                            else:
-                                await ctx.send("No role/emoji pairs were given. Please specify the role you want to add.")
+                            output = AddReactToDatabase(msgid, post)
+                            await ctx.send(output)
                         else:
-                            await ctx.send("Message has not been enabled for reaction-based role assignment. Use option 'enable'")
+                            await ctx.send("No role/emoji pairs were given. Please specify the role you want to add.")
 
                     elif option == 'remove':
                         if CheckMessageForReactAssignment(msgid):
