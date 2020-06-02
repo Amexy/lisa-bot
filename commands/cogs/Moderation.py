@@ -120,74 +120,74 @@ class Servers(commands.Cog):
                 except ValueError:
                     await ctx.send("Did not recognize the message ID. Perhaps your parameters are in the wrong order, or you forgot to specify a message ID.")
                 
-                    if option == 'add' or option == 'edit':
-                        # If the value isn't in the database already, then it's a new entry.
-                        # Check to see if the bot has proper permissions to track reacts from the message, and that the message exists
-                        if CheckMessageForReactAssignment(msgid) == False:
-                            try:
-                                msg = await ctx.channel.fetch_message(int(msgid))
-                                msgid = msg.id
+                if option == 'add' or option == 'edit':
+                    # If the value isn't in the database already, then it's a new entry.
+                    # Check to see if the bot has proper permissions to track reacts from the message, and that the message exists
+                    if CheckMessageForReactAssignment(msgid) == False:
+                        try:
+                            msg = await ctx.channel.fetch_message(int(msgid))
+                            msgid = msg.id
+                    
+                        except discord.Forbidden:
+                            await ctx.send("I don't have permissions to read message history in that channel.")
+
+                        except discord.NotFound:
+                            await ctx.send("Message not found. The command must be ran in the same channel the message you're enabling was sent.")
+
+                    else:
+                        post = GetReactAssignmentList(msgid)
                         
-                            except discord.Forbidden:
-                                await ctx.send("I don't have permissions to read message history in that channel.")
+                    # Check that there isg at least one pair supplied
+                    if len(args) > 0:
+                        for arg in args:
+                            # Separate role name and emoji
+                            # The comma is needed due to role names being able to have a space in them, so we can't use it as a delimiter
+                            arg = arg.split(", ")
+                            # Check for proper formatting
+                            if len(arg) == 2:
+                                role = discord.utils.find(lambda r: r.name == arg[0], ctx.guild.roles)
+                                if role:
+                                    post[role.name] = arg[1]
+                                else:
+                                    await ctx.send(f"Role {arg[0]} not found! Did you spell it wrong?")
+                            else:
+                                await ctx.send('Incorrect command formatting. Make sure role/emoji pairs are entered like `"<rolename>, <emoji>"`')
 
-                            except discord.NotFound:
-                                await ctx.send("Message not found. The command must be ran in the same channel the message you're enabling was sent.")
+                        output = AddReactToDatabase(msgid, post)
+                        await ctx.send(output)
+                    else:
+                        await ctx.send("No role/emoji pairs were given. Please specify the role you want to add.")
 
-                        else:
-                            post = GetReactAssignmentList(msgid)
-                            
-                        # Check that there is at least one pair supplied
+                elif option == 'remove':
+                    if CheckMessageForReactAssignment(msgid):
+                        post = GetReactAssignmentList(msgid)
+                        
                         if len(args) > 0:
                             for arg in args:
-                                # Separate role name and emoji
-                                # The comma is needed due to role names being able to have a space in them, so we can't use it as a delimiter
                                 arg = arg.split(", ")
-                                # Check for proper formatting
                                 if len(arg) == 2:
                                     role = discord.utils.find(lambda r: r.name == arg[0], ctx.guild.roles)
                                     if role:
-                                        post[role.name] = arg[1]
+                                        post.pop(role.name)
                                     else:
                                         await ctx.send(f"Role {arg[0]} not found! Did you spell it wrong?")
                                 else:
                                     await ctx.send('Incorrect command formatting. Make sure role/emoji pairs are entered like `"<rolename>, <emoji>"`')
-
+                            
                             output = AddReactToDatabase(msgid, post)
                             await ctx.send(output)
                         else:
-                            await ctx.send("No role/emoji pairs were given. Please specify the role you want to add.")
-
-                    elif option == 'remove':
-                        if CheckMessageForReactAssignment(msgid):
-                            post = GetReactAssignmentList(msgid)
-                            
-                            if len(args) > 0:
-                                for arg in args:
-                                    arg = arg.split(", ")
-                                    if len(arg) == 2:
-                                        role = discord.utils.find(lambda r: r.name == arg[0], ctx.guild.roles)
-                                        if role:
-                                            post.pop(role.name)
-                                        else:
-                                            await ctx.send(f"Role {arg[0]} not found! Did you spell it wrong?")
-                                    else:
-                                        await ctx.send('Incorrect command formatting. Make sure role/emoji pairs are entered like `"<rolename>, <emoji>"`')
-                                
-                                output = AddReactToDatabase(msgid, post)
-                                await ctx.send(output)
-                            else:
-                                await ctx.send("No role/emoji pairs were given. Please specify the role you want to remove.")
-                        else:
-                            await ctx.send("Message has not been enabled for reaction-based role assignment. Use option 'enable'")
-                    
-                    # Option must be 'disable', let's delete the entry from the DB
+                            await ctx.send("No role/emoji pairs were given. Please specify the role you want to remove.")
                     else:
-                        if CheckMessageForReactAssignment(msgid):
-                            output = RemoveReactFromDatabase(msgid)
-                            await ctx.send(output)
-                        else:
-                            await ctx.send("Message was not enabled for reaction-based role assignment!")
+                        await ctx.send("Message has not been enabled for reaction-based role assignment. Use option 'enable'")
+                
+                # Option must be 'disable', let's delete the entry from the DB
+                else:
+                    if CheckMessageForReactAssignment(msgid):
+                        output = RemoveReactFromDatabase(msgid)
+                        await ctx.send(output)
+                    else:
+                        await ctx.send("Message was not enabled for reaction-based role assignment!")
             else:
                 await ctx.send("Please supply a valid option.")
         else:

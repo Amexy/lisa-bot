@@ -497,9 +497,9 @@ def AddReactToDatabase(msgID: int, data: dict):
         success = False
 
     if success:
-        text = f"Message {msgID} enabled for reaction based role assignment. Stored values for valid roles and emoji."
+        text = f"Updated values for valid roles and emoji for message {msgID}."
     else:
-        text = f"Failed to add message {msgID} for reaction based role assignment."
+        text = f"Failed to update/enable message {msgID} for reaction based role assignment."
     return text
 
 def RemoveReactFromDatabase(msgID: int):
