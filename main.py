@@ -85,7 +85,8 @@ async def on_raw_reaction_add(payload):
                 role = discord.utils.find(lambda r: r.name == rolename, payload.member.guild.roles)
                 if role:
                     try:
-                        await payload.member.add_roles(role)
+                        if not payload.member.bot:
+                            await payload.member.add_roles(role)
                         return
                     except:
                         print("Could not complete action for react based role assignment.")
@@ -100,13 +101,14 @@ async def on_raw_reaction_remove(payload):
                 # this is literally the saddest thing :eve:
                 guild = bot.get_guild(payload.guild_id)
                 member = guild.get_member(payload.user_id)
-                role = discord.utils.find(lambda r: r.name == rolename, guild.roles)
-                if role:
-                    try:
-                        await member.remove_roles(role)
-                        return
-                    except:
-                        print("Could not complete action for react based role assignment.")
+                if not member.bot:
+                    role = discord.utils.find(lambda r: r.name == rolename, guild.roles)
+                    if role:
+                        try:
+                            await member.remove_roles(role)
+                            return
+                        except:
+                            print("Could not complete action for react based role assignment.")
 
 
 bot.remove_command('help')
