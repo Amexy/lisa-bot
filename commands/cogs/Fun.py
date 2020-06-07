@@ -18,7 +18,7 @@ class Fun(commands.Cog):
         self.api = AppPixivAPI()
         self.api.login(pixiv_username,pixiv_pw)
         # Uncomment this to load new images
-        # self.AllPics = asyncio.run(self.GetImages())
+        # asyncio.run(self.GetImages())
         
     async def GetImages(self):
         import json
@@ -39,7 +39,7 @@ class Fun(commands.Cog):
             Pics = []
             pics = api.search_illust(chara)
             for pic in pics.illusts:
-                if pic['total_bookmarks'] > 200 and pic['sanity_level'] < 3 and pic['page_count'] == 1:
+                if pic['total_bookmarks'] > 100 and pic['sanity_level'] < 3 and pic['page_count'] == 1 and pic['type'] == 'illust':
                     Pics.append(pic)
             ContinueSearching = True
             while ContinueSearching:
@@ -47,7 +47,7 @@ class Fun(commands.Cog):
                 pics = api.search_illust(**next_page)
                 if 'illusts' in pics.keys():
                     for pic in pics.illusts:
-                        if pic['total_bookmarks'] > 200 and pic['sanity_level'] < 3 and pic['page_count'] == 1:
+                        if pic['total_bookmarks'] > 100 and pic['sanity_level'] < 3 and pic['page_count'] == 1 and pic['type'] == 'illust':
                             Pics.append(pic)
                     if pics.next_url:
                         ContinueSearching = True
@@ -62,7 +62,7 @@ class Fun(commands.Cog):
             f = open(f"{chara}.json","a")
             f.write(newfile)
             f.close()
-            await asyncio.sleep(60)
+            await asyncio.sleep(300)
         return AllPics
 
     def GetCards(self):
@@ -240,7 +240,7 @@ class Fun(commands.Cog):
                     Title = "Roll Stats"
 
                 elif user == 'total':
-                    user = self.bot.get_user(523337807847227402)   
+                    user = self.bot.get_user(523337807847227402)
                     id = 'overall'
                     Title = "Total Roll Stats"
             else:
@@ -255,20 +255,28 @@ class Fun(commands.Cog):
         try:
             with open('databases/rolls.json') as file:
                 api = json.load(file)
-            TotalRolled = str(api[str(id)]['TotalRolls'] * 10)
+            TotalRolls = api[str(id)]['TotalRolls'] 
+
+            TotalRolledCards = api[str(id)]['TotalRolls'] * 10
             TwoStarsRolled = api[str(id)]['TwoStars']
             ThreeStarsRolled = api[str(id)]['ThreeStars']
             FourStarsRolled = api[str(id)]['FourStars']
-            FourStarRate = str(round(((int(FourStarsRolled) / (int(TotalRolled))) * 100), 2)) + '%'
+            FourStarRate = str(
+                round(((FourStarsRolled / (TotalRolledCards)) * 100), 2)) + '%'
             Icon = user.avatar_url.BASE + user.avatar_url._url
             embed=discord.Embed(title=Title,color=discord.Color.blue())
             embed.set_thumbnail(url=Icon)
-            embed.add_field(name='Total Cards Rolled',value=TotalRolled,inline=True)
-            embed.add_field(name='4* Rate',value=FourStarRate,inline=True)
-            embed.add_field(name='\u200b', value='\u200b', inline=True)
-            embed.add_field(name='2* Rolled',value=TwoStarsRolled,inline=True)
-            embed.add_field(name='3* Rolled',value=ThreeStarsRolled,inline=True)
-            embed.add_field(name='4* Rolled',value=FourStarsRolled,inline=True)
+            embed.add_field(name='Total Cards Rolled',
+                            value="{:,}".format(TotalRolledCards), inline=True)
+            embed.add_field(name='Total Rolls',
+                            value="{:,}".format(TotalRolls), inline=True)
+            embed.add_field(name='4* Rate', value=FourStarRate, inline=True)
+            embed.add_field(name='2* Rolled',
+                            value="{:,}".format(TwoStarsRolled), inline=True)
+            embed.add_field(name='3* Rolled',
+                            value="{:,}".format(ThreeStarsRolled), inline=True)
+            embed.add_field(name='4* Rolled',
+                            value="{:,}".format(FourStarsRolled), inline=True)
             await ctx.send(embed=embed)
         except KeyError:
             await ctx.send('No stats found for that user')
