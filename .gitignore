@@ -1,4 +1,3 @@
-chibis/
 *.pyc
 config.json
 t10archives/
@@ -20,6 +19,7 @@ commands/cogs/Servers.py
 *.DS_STORE
 startup/google.py
 rolls/*
-
+img/graphs/*
 commands/cogs/Music.py
 commands/formatting/Estimate.py
+temp-plot.html

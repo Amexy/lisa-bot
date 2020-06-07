@@ -155,6 +155,7 @@ class Fun(commands.Cog):
         from PIL.ImageDraw import Draw
         from PIL.ImageFont import truetype
         from io import BytesIO
+        from os import path
         CardAPI = await GetBestdoriAllCardsAPI()
         CharaAPI = await GetBestdoriAllCharactersAPI()
         for x in CardAPI:
@@ -165,63 +166,67 @@ class Fun(commands.Cog):
                 Rarity = str(CardAPI[x]['rarity'])  
                 Attribute = str(CardAPI[x]['attribute'])      
                 CharacterID = str(CardAPI[x]['characterId'])
-                IconsPath = f"icons/{CharacterID}/{Rarity}/{x}.png"
                 BandID = CharaAPI[CharacterID]['bandId']
-                AllowedTypes = ['limited','permanent']     
-                if Rarity != '1':
-                    
-                    if CardAPI[x]['type'] in AllowedTypes:
-                        if CardAPI[x]['type'] == 'others':
-                                IconURL = f'https://bestdori.com/assets/jp/thumb/chara/card000{Folder}_rip/{ResourceSetName}_after_training.png'    
-                        elif CardAPI[x]['type'] == 'campaign': 
-                            IconURL = f'https://bestdori.com/assets/cn/thumb/chara/card000{Folder}_rip/{ResourceSetName}_normal.png'    
-                        else:
-                            IconURL = f'https://bestdori.com/assets/jp/thumb/chara/card000{Folder}_rip/{ResourceSetName}_normal.png'    
-                        image = requests.get(IconURL)
-                        image = Image.open(BytesIO(image.content))
-                        im.paste(image)
-
-                        if Rarity == '2':
-                            rarityPng = "img/2star.png"
-                            starPng = "img/star2.png"
-                        elif Rarity == '3':
-                            rarityPng = "img/3star.png"
-                            starPng = "img/star3.png"
-                        else:
-                            rarityPng = "img/4star.png"
-                            starPng = "img/star4.png"
-                        rarityBg = Image.open(rarityPng)
-                        starBg = Image.open(starPng)
-                        im.paste(starBg, (5,50), mask=starBg)
-                        im.paste(rarityBg, mask=rarityBg)
-                    
-                        if Attribute == 'powerful':
-                            attrPng = "img/power2.png"
-                        elif Attribute == 'cool':
-                            attrPng = "img/cool2.png"
-                        elif Attribute == 'pure':
-                            attrPng = "img/pure2.png"
-                        else:
-                            attrPng = "img/happy2.png"
-                        attrBg = Image.open(attrPng)
-                        im.paste(attrBg, (132, 2), mask=attrBg)
+                CharaName = CharaAPI[CharacterID]['characterName'][1]
+                SplitList = CharaName.split(' ', 1)
+                CharaName = SplitList[0].lower()
+                IconsPath = f"icons/{CharaName}/{Rarity}/{x}.png"
+                AllowedTypes = ['limited','permanent']
+                if not path.exists(IconsPath):
+                    if Rarity != '1':
                         
-                        if BandID == 1:
-                            bandPng = "img/band_1.png"
-                        elif BandID == 2:
-                            bandPng = "img/band_2.png"
-                        elif BandID == 3:
-                            bandPng = "img/band_3.png"
-                        elif BandID == 4:
-                            bandPng = "img/band_4.png"
-                        elif BandID == 21:
-                            bandPng = "img/band_21.png"
-                        else:
-                            bandPng = "img/band_5.png"
-                        bandBg = Image.open(bandPng)
-                        im.paste(bandBg, (1, 2), mask=bandBg)
+                        if CardAPI[x]['type'] in AllowedTypes:
+                            if CardAPI[x]['type'] == 'others':
+                                    IconURL = f'https://bestdori.com/assets/jp/thumb/chara/card000{Folder}_rip/{ResourceSetName}_after_training.png'    
+                            elif CardAPI[x]['type'] == 'campaign': 
+                                IconURL = f'https://bestdori.com/assets/cn/thumb/chara/card000{Folder}_rip/{ResourceSetName}_normal.png'    
+                            else:
+                                IconURL = f'https://bestdori.com/assets/jp/thumb/chara/card000{Folder}_rip/{ResourceSetName}_normal.png'    
+                            image = requests.get(IconURL)
+                            image = Image.open(BytesIO(image.content))
+                            im.paste(image)
 
-                        im.save(IconsPath)
+                            if Rarity == '2':
+                                rarityPng = "img/2star.png"
+                                starPng = "img/star2.png"
+                            elif Rarity == '3':
+                                rarityPng = "img/3star.png"
+                                starPng = "img/star3.png"
+                            else:
+                                rarityPng = "img/4star.png"
+                                starPng = "img/star4.png"
+                            rarityBg = Image.open(rarityPng)
+                            starBg = Image.open(starPng)
+                            im.paste(starBg, (5,50), mask=starBg)
+                            im.paste(rarityBg, mask=rarityBg)
+                        
+                            if Attribute == 'powerful':
+                                attrPng = "img/power2.png"
+                            elif Attribute == 'cool':
+                                attrPng = "img/cool2.png"
+                            elif Attribute == 'pure':
+                                attrPng = "img/pure2.png"
+                            else:
+                                attrPng = "img/happy2.png"
+                            attrBg = Image.open(attrPng)
+                            im.paste(attrBg, (132, 2), mask=attrBg)
+                            
+                            if BandID == 1:
+                                bandPng = "img/band_1.png"
+                            elif BandID == 2:
+                                bandPng = "img/band_2.png"
+                            elif BandID == 3:
+                                bandPng = "img/band_3.png"
+                            elif BandID == 4:
+                                bandPng = "img/band_4.png"
+                            elif BandID == 21:
+                                bandPng = "img/band_21.png"
+                            else:
+                                bandPng = "img/band_5.png"
+                            bandBg = Image.open(bandPng)
+                            im.paste(bandBg, (1, 2), mask=bandBg)
+
+                            im.save(IconsPath)
             except:
                 print(f"Failed adding card with ID {x}")
                 pass
@@ -524,6 +529,7 @@ class Fun(commands.Cog):
                     SaveImage = True
                     SavedPicPath = f'pfps/{PicID}_p0.jpg'
                 else:
+                    SaveImage = False
                     SavedPicPath = f'imgTmp/{PicID}_p0.jpg'
                 response = requests.get(PicURL, 
                                         headers={

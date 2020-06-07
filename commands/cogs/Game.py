@@ -280,7 +280,7 @@ class Game(commands.Cog):
     @commands.command(name='card',
                       aliases=['cards', 'ci', 'cardinfo'],
                       description="Provides embedded image of card with specified filters",
-                      help="Enter the character with optional filters to see card information\n\n.card kokoro 2 - Second Kokoro SSR\n.card lisa df - Lisa Dreamfes card\n.card moca last ssr - Last released SSR of Moca\n.card hina last sr happy - Last released happy SR of Hina\n.card title maritime decective - Lookup card with title \"Maritime Detective\"")
+                      help="There are several filters one can use to search. Rarity goes bEnter the character with optional filters to see card information\n\n.card lisa - Most recent Lisa 4* Card\n.card lisa df - Lisa Dreamfes Card\n.card lisa last - Last released Lisa 4*\n.card lisa last sr happy - Last released happy 3* Lisa\n.card title maritime detective - Lookup card with title \"Maritime Detective\"")
     async def card(self, ctx: discord.abc.Messageable, *args):
         resultFilteredArguments = filterArguments(*args)
         if resultFilteredArguments.failure:
@@ -294,12 +294,7 @@ class Game(commands.Cog):
         card: Card = resultCard.success
         palette = Palette(card.attribute)
         imagePath = generateImage(card, palette)
-        channel: discord.TextChannel = self.bot.get_channel(523339468229312555)  # Change this channel to the channel you want the bot to send images to so it can grab a URL for the embed
-        fileSend: discord.Message = await channel.send(file=discord.File(imagePath))
-        embed = discord.Embed(colour=palette.primaryInt)
-        embed.set_image(url=fileSend.attachments[0].url)
-        os.remove(imagePath)
-        await ctx.send(embed=embed)
+        await ctx.send(file=discord.File(imagePath))
 
     @songinfo.error
     async def songinfo_error(self, ctx, error):

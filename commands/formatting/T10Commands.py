@@ -1,6 +1,7 @@
 import requests
 import asyncio
 import json
+import re
 from datetime import datetime
 from datetime import timedelta
 from pytz import timezone
@@ -469,10 +470,11 @@ async def t10membersformatting(server: str, eventid: int, songs: bool, userid):
 
 
 def stringCheck(string: str):
-    if "```" in string:
-        string = string.replace('```','')
-    if "?" in string:
-        string = string.replace("?",'')
+    import re
+    string = string.replace('```','')
+    string = string.replace("?",'')
+    string = re.sub('(\[\w{6}\])','', string)
+    string = re.sub('\[([cibsu]|(sup|sub){1})\]', '', string)
     return string
 
 
