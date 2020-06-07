@@ -17,8 +17,8 @@ class Loops(commands.Cog):
         with open("config.json") as file:
             config_json = json.load(file)
             loops_enabled = config_json['loops_enabled']
-        self.initialT100Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=79&tier=0').json()
-        self.initialT1000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=79&tier=1').json()
+        self.initialT100Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=80&tier=0').json()
+        self.initialT1000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=80&tier=1').json()
         self.firstAPI = requests.get('https://bestdori.com/api/news/all.5.json').json()
 
         if loops_enabled == 'true':
@@ -197,14 +197,14 @@ class Loops(commands.Cog):
                     initialT100Cutoffs = self.initialT100Cutoffs
                     cutoffAPI = await GetBestdoriCutoffAPI('en', 100)
                     if(sorted(initialT100Cutoffs.items()) != sorted(cutoffAPI.items())):
-                        output = await GetCutoffFormatting('en', 100)
+                        output = await GetCutoffFormatting('en', 100, True)
                         ids = getCutoffChannels(100)
                         for i in ids:
                             channel = self.bot.get_channel(i)
                             if channel != None:
                                 try:
                                     await channel.send('T100 update found!')
-                                    await channel.send(embed=output)
+                                    await channel.send(file=output[1], embed=output[0])                                
                                 except (commands.BotMissingPermissions, discord.errors.NotFound): 
                                     LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
                                     await LoopRemovalUpdates.send('Removing t100 updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
@@ -226,14 +226,14 @@ class Loops(commands.Cog):
                     initialT1000Cutoffs = self.initialT1000Cutoffs  
                     cutoffAPI = await GetBestdoriCutoffAPI('en', 1000)
                     if(sorted(initialT1000Cutoffs.items()) != sorted(cutoffAPI.items())):
-                        output = await GetCutoffFormatting('en', 1000)
+                        output = await GetCutoffFormatting('en', 1000, True)
                         ids = getCutoffChannels(1000)
                         for i in ids:
                             channel = self.bot.get_channel(i)
                             if channel != None:
                                 try:
                                     await channel.send('T1000 update found!')
-                                    await channel.send(embed=output)
+                                    await channel.send(file=output[1], embed=output[0])                                
                                 except (commands.BotMissingPermissions, discord.errors.NotFound): 
                                     LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
                                     await LoopRemovalUpdates.send('Removing t1000 updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))

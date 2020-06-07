@@ -238,9 +238,9 @@ class Event(commands.Cog):
 
     @commands.command(name='cutoff',
                       aliases=['t100', 't1000', 't2000'],
-                      description="Cutoff estimate for t100, t1000, and t2000. Input the tier and server (defaulted to en and 100)\n\nNote: t100 and t1000 aliases can only be used for en, and t2000 for jp",
-                      help=".cutoff 100\n.cutoff 1000 en\n.cutoff 2000 jp")
-    async def cutoff(self, ctx, tier: int = 100, server: str = 'en'):
+                      description="Cutoff estimate for t100, t1000, and t2000. Input the tier and server (defaulted to en and 100) Add graph to the end to see a graph (doesn't work for t100/t1000/t2000)\n\nNote: t100 and t1000 aliases can only be used for en, and t2000 for jp",
+                      help=".cutoff 100\n.cutoff 1000 en\n.cutoff 2000 jp graph")
+    async def cutoff(self, ctx, tier: int = 100, server: str = 'en', graph: str = ''):
         ValidTiers = [100, 1000, 2000]
         if tier not in ValidTiers:
             await ctx.send(f"{tier} isn't supported")
@@ -269,11 +269,15 @@ class Event(commands.Cog):
                     await ctx.send(output)
                 else:
                     try:
-                        output = await GetCutoffFormatting(server, tier)
-                        await ctx.send(embed=output)
+                        if graph:
+                            output = await GetCutoffFormatting(server, tier, True)
+                            await ctx.send(file=output[1], embed=output[0])
+                        else:
+                            output = await GetCutoffFormatting(server, tier, False)
+                            await ctx.send(embed=output)
                     except IndexError:
-                        await ctx.send('Failed getting cutoff data, there is likely no data available yet on Bestdori')
-
+                        await ctx.send('Failed getting cutoff data')
+                        
     @coasting.error
     async def coasting_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):

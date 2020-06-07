@@ -4,7 +4,8 @@ from protodefs.ranks import t10ranks
 from startup.login import enICEObject, jpICEObject
 from datetime import datetime
 from pytz import timezone
-import discord, asyncio, time, json
+import discord, asyncio, time, json, sys
+
 
 def getICEObject(server: str):
     if server == 'en':
@@ -251,15 +252,22 @@ async def CalculatecutoffEstimates(server, tier, EventID):
     TimeEntries = []
     EPEntries = []
     Weights = []
+    Ests = [] # Used for graph making
     Slopes = []
     Intercepts = []
     NonSmoothingEstimates = []
+    AllTimeEntires = []
+    AllEPEntries = []
+    EstTimes = []
     for x in CutoffAPI['cutoffs']:
+        AllEPEntries.append(x['ep'])
         TimeEntry = int(x['time'])
+        TimeDifference = TimeEntry - EventStartTime
+        PercentIntoEvent = TimeDifference / Duration
+        AllTimeEntires.append(PercentIntoEvent * 100)
+
         # Store all values past 12 hour mark and 1 day before event ends
         if TimeEntry >= TwelveHoursPast and TimeEntry <= TwentyFourHoursBeforeEnd:
-            TimeDifference = TimeEntry - EventStartTime
-            PercentIntoEvent = TimeDifference / Duration
             TimeEntries.append(PercentIntoEvent)
             EPEntries.append(x['ep'])
         if TimeEntry >= TwentyFourHoursPast and TimeEntry <= TwentyFourHoursBeforeEnd and len(EPEntries) >= 5:
@@ -272,6 +280,8 @@ async def CalculatecutoffEstimates(server, tier, EventID):
                 TimeEntries, EPEntries, Rate)[2])
             Weights.append(
                 [estimate * PercentIntoEvent**2, PercentIntoEvent**2])
+            EstTimes.append(PercentIntoEvent * 100)
+            Ests.append(estimate[0])
         if TimeEntry >= TwentyFourHoursBeforeEnd:
             # Calculate the last estimate, but use a new weight
             estimate = (Intercepts[-1] + Slopes[-1] + (Rate * Slopes[-1]))
@@ -300,12 +310,83 @@ async def CalculatecutoffEstimates(server, tier, EventID):
     LastUpdatedTime = CutoffAPI['cutoffs'][-1]['time']
     ElapsedTimeHours = (LastUpdatedTime - EventStartTime) / 1000 / 3600
     EPPerHour = math.floor(LastUpdatedCutoff / ElapsedTimeHours)
-    return EstimateSmoothing, EstimateNoSmoothing, EPPerHour
+    return EstimateSmoothing, EstimateNoSmoothing, EPPerHour, Ests,AllTimeEntires, AllEPEntries,EstTimes
 
-async def GetCutoffFormatting(server: str, tier: int):
+async def CreateGraph(Server, EventID, Tier, CurrentEPValues, CurrentTimes, EstimateEPValues, EstimateTimes):
+    import plotly.graph_objects as go
+    import os, plotly
+    from selenium import webdriver
+    import plotly.offline as offline
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(go.Scatter(x=CurrentTimes,y=CurrentEPValues)))
+    fig.add_trace(go.Scatter(go.Scatter(x=EstimateTimes,y=EstimateEPValues)))
+    fig.update_xaxes(range=[0,100])
+    fig.update_layout(
+        xaxis=dict(
+            title='Event Progress (%)',
+            showline=True,
+            showgrid=False,
+            showticklabels=True,
+            linecolor='rgb(204, 204, 204)',
+            linewidth=2,
+            ticks='outside',
+            tickfont=dict(
+                family='Arial',
+                size=12,
+                color='rgb(82, 82, 82)',
+            ),
+        ),
+        yaxis=dict(
+            title='EP Values',
+            showgrid=False,
+            zeroline=False,
+            showline=True,
+            ticks='outside',
+            tickfont=dict(
+                family='Arial',
+                size=12,
+                color='rgb(82, 82, 82)',
+            ),
+
+        ),
+        autosize=False,
+        margin=dict(
+            autoexpand=False,
+            l=100,
+            r=20,
+            t=110,
+        ),
+        showlegend=False,
+        template='plotly_dark'
+    )
+    FileName = f"{EventID}_{Server}_{Tier}.png"
+    SavedFile = f"img/graphs/{FileName}"
+
+    with open("config.json") as file:
+        config_json = json.load(file)
+        driverPath = config_json["chromeDriverPath"]
+    offline.plot(fig, image='svg', auto_open=False)
+    
+    # Just when I thought I was done with this shit
+    options = webdriver.ChromeOptions()
+    options.add_argument('--ignore-certificate-errors')
+    options.add_argument('--ignore-ssl-errors')
+    options.add_argument('--headless')
+    Driver = webdriver.Chrome(options=options,executable_path=driverPath)
+    Driver.set_window_size(1000, 800)
+    Driver.get('temp-plot.html')
+    await asyncio.sleep(1)
+    img = Driver.find_element_by_class_name('svg-container')
+    img.screenshot(SavedFile)
+    Driver.close()
+    from discord import File
+    DiscordFileObject = File(SavedFile,filename=FileName)
+    return FileName, DiscordFileObject
+
+async def GetCutoffFormatting(server: str, tier: int, graph: bool):
     from commands.apiFunctions import GetBestdoriEventAPI, GetBestdoriBannersAPI, GetBestdoriCutoffAPI, GetBestdoriRateAPI, GetTierKey, GetServerAPIKey
     from commands.formatting.TimeCommands import GetTimeLeftString, GetEventProgress, GetEventTimeLeftSeconds, GetEventLengthSeconds, GetEventStartTime
-    import math, time
+    import math, time, os
     EventID = await GetCurrentEventID(server)
 
     CutoffAPI = await GetBestdoriCutoffAPI(server, tier)
@@ -324,6 +405,8 @@ async def GetCutoffFormatting(server: str, tier: int):
     EventName = f"T{tier}: {EventAPI['eventName'][Key]}"
 
     LastUpdatedValues = GetUpdatedValues(server, tier, EventID, 'last')
+    if graph:
+        GraphInfo = []
     if LastUpdatedValues:
         if LastUpdatedValues[0] == LastUpdatedCutoff:
             EstimateSmoothing = LastUpdatedValues[1]
@@ -377,6 +460,18 @@ async def GetCutoffFormatting(server: str, tier: int):
                 EstimateSmoothing = "{:,}".format(EstimateSmoothing)
                 EstimateNoSmoothing = "{:,}".format(EstimateNoSmoothing)
                 EPPerHour = "{:,}".format(EPPerHour)
+            if graph:
+                FileName = f"{EventID}_{server}_{tier}.png"
+                SavedFile = f"img/graphs/{FileName}"
+                if os.path.exists(SavedFile):
+                    from discord import File
+                    DiscordFileObject = File(SavedFile,filename=FileName)
+                    GraphInfo.append(FileName)
+                    GraphInfo.append(DiscordFileObject)
+                else:
+                    Estimates = await CalculatecutoffEstimates(server,tier,EventID)
+                    GraphInfo = await CreateGraph(server, EventID, tier, Estimates[5],Estimates[4],Estimates[3],Estimates[6])
+    
         else:
             LastCurrent = LastUpdatedValues[0]
             LastEstimateSmoothing = LastUpdatedValues[1]
@@ -416,10 +511,14 @@ async def GetCutoffFormatting(server: str, tier: int):
             EstimateSmoothing = f'{EstimateSmoothing} ({EstimateSmoothingDifference})'
             EstimateNoSmoothing = f'{EstimateNoSmoothing} ({EstimateNoSmoothingDifference})'
             EPPerHour = f"{'{:,}'.format(EPPerHour)} ({EPPerHourDifference})"
+            
+            # If this else is hit, that means there was an update and the graph needs updated regardless if the user requested it
+            GraphInfo = await CreateGraph(server, EventID, tier, Estimates[5],Estimates[4],Estimates[3],Estimates[6])
 
     else:
         # Returns Smoothing / No Smoothing / EPPerHour
         Estimates = await CalculatecutoffEstimates(server, tier, EventID)
+        
         EstimateSmoothing = Estimates[0]
         EstimateNoSmoothing = Estimates[1]
         EPPerHour = Estimates[2]
@@ -430,7 +529,9 @@ async def GetCutoffFormatting(server: str, tier: int):
         EstimateSmoothing = "{:,}".format(EstimateSmoothing)
         EstimateNoSmoothing = "{:,}".format(EstimateNoSmoothing)
         EPPerHour = "{:,}".format(EPPerHour)
-
+        if graph:
+            GraphInfo = await CreateGraph(server, EventID, tier, Estimates[5],Estimates[4],Estimates[3],Estimates[6])
+        
     fmt = "%Y-%m-%d %H:%M:%S %Z%z"
     now_time = datetime.now(timezone('US/Eastern'))
     timeLeft = await GetTimeLeftString(server,EventID)
@@ -444,6 +545,8 @@ async def GetCutoffFormatting(server: str, tier: int):
     if EstimateSmoothing == '0':
         EstimateSmoothing = '?'
         EstimateNoSmoothing = '?'
+        
+
     embed=discord.Embed(title=EventName, url=eventUrl, color=0x09d9fd)
     embed.set_thumbnail(url=thumbnail)
     embed.add_field(name='Current', value=LastUpdatedCutoff, inline=True)
@@ -456,10 +559,14 @@ async def GetCutoffFormatting(server: str, tier: int):
     embed.add_field(name='Last Updated', value=LastUpdated, inline=True)
     embed.add_field(name='Time Left', value=timeLeft, inline=True)
     embed.add_field(name='Progress', value=prog, inline=True)
-    embed.set_footer(text=now_time.strftime(fmt))
-    output = embed
-    return output
-
+    if graph:
+        embed.set_image(url=f"attachment://{GraphInfo[0]}")
+        embed.set_footer(text=f"{now_time.strftime(fmt)}")
+        DiscordFileObject = GraphInfo[1]
+        return embed, DiscordFileObject
+    else:
+        embed.set_footer(text=f"\nWant a graph? Try cutoff {tier} {server} graph\n\n{now_time.strftime(fmt)}")
+        return embed
 
 
 
