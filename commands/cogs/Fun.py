@@ -18,7 +18,7 @@ class Fun(commands.Cog):
         self.api = AppPixivAPI()
         self.api.login(pixiv_username,pixiv_pw)
         # Uncomment this to load new images
-        # self.AllPics = asyncio.run(self.GetImages())
+        # asyncio.run(self.GetImages())
         
     async def GetImages(self):
         import json
@@ -31,40 +31,38 @@ class Fun(commands.Cog):
             if charalist[1]:
                 name = "".join(charalist[0].split())
                 AllCharacters.append(name)
-        AllCharacters = AllCharacters[0:25] # Because the API has a lot more than the 25 main characters
-        chara = '湊友希那 今井リサ'
-        chara = 'リサゆき'
-        # for chara in AllCharacters:
-        AllPics = {}
-        
-        print(f'Grabbing pictures for {chara}')
-        Pics = []
-        pics = api.search_illust(chara)
-        for pic in pics.illusts:
-            if pic['total_bookmarks'] > 150 and pic['sanity_level'] < 3 and pic['page_count'] == 1:
-                Pics.append(pic)
-        ContinueSearching = True
-        while ContinueSearching:
-            next_page = api.parse_qs(pics.next_url)
-            pics = api.search_illust(**next_page)
-            if 'illusts' in pics.keys():
-                for pic in pics.illusts:
-                    if pic['total_bookmarks'] > 150 and pic['sanity_level'] < 3 and pic['page_count'] == 1:
-                        Pics.append(pic)
-                if pics.next_url:
-                    ContinueSearching = True
+        #AllCharacters = AllCharacters[0:25] # Because the API has a lot more than the 25 main characters
+        for chara in AllCharacters:
+            AllPics = {}
+            
+            print(f'Grabbing pictures for {chara}')
+            Pics = []
+            pics = api.search_illust(chara)
+            for pic in pics.illusts:
+                if pic['total_bookmarks'] > 100 and pic['sanity_level'] < 3 and pic['page_count'] == 1 and pic['type'] == 'illust':
+                    Pics.append(pic)
+            ContinueSearching = True
+            while ContinueSearching:
+                next_page = api.parse_qs(pics.next_url)
+                pics = api.search_illust(**next_page)
+                if 'illusts' in pics.keys():
+                    for pic in pics.illusts:
+                        if pic['total_bookmarks'] > 100 and pic['sanity_level'] < 3 and pic['page_count'] == 1 and pic['type'] == 'illust':
+                            Pics.append(pic)
+                    if pics.next_url:
+                        ContinueSearching = True
+                    else:
+                        ContinueSearching = False
                 else:
                     ContinueSearching = False
-            else:
-                ContinueSearching = False
-        data = {chara: {
-        "pics" : Pics}}
-        AllPics.update(data)
-        newfile = json.dumps(AllPics)
-        f = open(f"{chara}.json","a")
-        f.write(newfile)
-        f.close()
-        await asyncio.sleep(60)
+            data = {chara: {
+            "pics" : Pics}}
+            AllPics.update(data)
+            newfile = json.dumps(AllPics)
+            f = open(f"{chara}.json","a")
+            f.write(newfile)
+            f.close()
+            await asyncio.sleep(300)
         return AllPics
 
     def GetCards(self):
