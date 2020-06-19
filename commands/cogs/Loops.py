@@ -31,6 +31,7 @@ class Loops(commands.Cog):
             self.bot.loop.create_task(self.postT100CutoffUpdates())
             self.bot.loop.create_task(self.postBestdoriNews())
             self.bot.loop.create_task(self.UpdateAvatar())
+            # self.bot.loop.create_task(self.PostYukiLisa())
         else:
             print('Not loading loops')
         print('Successfully loaded Loops cog')
@@ -62,12 +63,71 @@ class Loops(commands.Cog):
         self.bot.loop.create_task(self.postEventNotif('jp'))
         self.bot.loop.create_task(self.postBestdoriNews())
         self.bot.loop.create_task(self.UpdateAvatar())
-     
+        # self.bot.loop.create_task(self.PostYukiLisa())
+
+    # This was for NR1 server, but I'll leave it for now incase I feel like reusing it
+    async def PostYukiLisa(self):
+        await self.bot.wait_until_ready()
+        while not self.bot.is_closed():
+            import os, random
+            from discord import File
+            newquery = 'リサゆき'
+            CharaImageURLs = ('https://bestdori.com/res/icon/chara_icon_23.png')
+            charaId = '23'
+            db = f'databases/{newquery}.json'
+            with open(db, 'r') as file:
+                db = json.load(file)
+            pic = random.choice(db[newquery]['pics'])
+            PicID = pic['id']
+            PicURL = pic['image_urls']['large']
+            if charaId == '23':
+                SaveImage = True
+                SavedPicPath = f'pfps/{PicID}_p0.jpg'
+            else:
+                SaveImage = False
+                SavedPicPath = f'imgTmp/{PicID}_p0.jpg'
+            response = requests.get(PicURL, 
+                                    headers={
+                                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36', 
+                                        'referer' : PicURL,
+                                        'scheme' : 'https',
+                                        'accept' : 'image/webp,image/apng,image/*,*/*;q=0.8'
+                                        },
+                                    stream=True)
+            if os.path.exists(SavedPicPath):
+                os.remove(SavedPicPath)
+            with open(SavedPicPath, 'ab') as Out_file:
+                response.raw.decode_content = True
+                Out_file.write(response.content)   
+                DiscordFileObject = File(SavedPicPath)
+            
+            if SaveImage:
+                from PIL import Image
+                # Since the original image is saved as corrupt, save it this way
+                SavedPFP = Image.open(SavedPicPath)
+                SavedPFP.save(SavedPicPath)
+
+            channel: discord.TextChannel = self.bot.get_channel(712732064381927515)  # Change this channel to the channel you want the bot to send images to so it can grab a URL for the embed
+            fileSend: discord.Message = await channel.send(file=DiscordFileObject)
+
+            TitleURL = f"https://www.pixiv.net/en/artworks/{PicID}"
+
+
+            embed=discord.Embed(title=pic['title'],url=TitleURL,color=discord.Color.blue())
+            embed.set_thumbnail(url=CharaImageURLs)
+            embed.set_image(url=fileSend.attachments[0].url)
+            embed.add_field(name='Artist',value=pic['user']['name'],inline=True)
+            embed.add_field(name='Date',value=pic['create_date'],inline=True)
+            channel = self.bot.get_channel(523339468229312555)
+            await channel.send(embed=embed)
+            await asyncio.sleep(180)
+
     async def postEventT102min(self):
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
             try:
                 EnEventID = await GetCurrentEventID('en')
+                JPEventID = await GetCurrentEventID('jp')
             except Exception as e:
                 print('Failed posting 2 minute data. Exception: ' + str(e))            
             if EnEventID:
@@ -86,8 +146,6 @@ class Loops(commands.Cog):
                                 LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
                                 await LoopRemovalUpdates.send('Removing 2 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                                 removeChannelFromDatabase(channel, 2, 'en')
-                                
-            JPEventID = await GetCurrentEventID('jp')
             if JPEventID:
                 timeLeftJp = await GetEventTimeLeftSeconds('jp', JPEventID)
                 if(timeLeftJp > 0):
@@ -109,7 +167,7 @@ class Loops(commands.Cog):
                 timeFinish = (timeStart + timedelta(minutes=2)).replace(second=0, microsecond=0).timestamp()
             timeStart = timeStart.timestamp()
             await asyncio.sleep(timeFinish - timeStart)
-
+            
     async def postEventT101hr(self):
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():

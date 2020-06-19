@@ -98,8 +98,12 @@ async def GetCurrentEventID(server: str):
     if not CurrentEventID:
         try:
             for event in api:
-                if float(api[event]['endAt'][TimeKey]) < currentTime < float(api[str(int(event) + 1)]['endAt'][TimeKey]): #In jp's case, there may not be an entry for the next event yet
-                    CurrentEventID = event
+                try:
+                    if float(api[event]['endAt'][TimeKey]) < currentTime < float(api[str(int(event) + 1)]['endAt'][TimeKey]): #In jp's case, there may not be an entry for the next event yet
+                        CurrentEventID = event
+                        break
+                except TypeError: # For between events
+                    CurrentEventID = int(event)
                     break
         except KeyError:
             CurrentEventID = list(api.keys())[-1]
@@ -305,8 +309,8 @@ async def CalculatecutoffEstimates(server, tier, EventID):
         except ZeroDivisionError:
             EstimateSmoothing = 0
     else:
-        EstimateSmoothing = '?'
-        EstimateNoSmoothing = '?'
+        EstimateSmoothing = 0
+        EstimateNoSmoothing = 0
     LastUpdatedTime = CutoffAPI['cutoffs'][-1]['time']
     ElapsedTimeHours = (LastUpdatedTime - EventStartTime) / 1000 / 3600
     EPPerHour = math.floor(LastUpdatedCutoff / ElapsedTimeHours)
