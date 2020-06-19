@@ -31,38 +31,40 @@ class Fun(commands.Cog):
             if charalist[1]:
                 name = "".join(charalist[0].split())
                 AllCharacters.append(name)
-        #AllCharacters = AllCharacters[0:25] # Because the API has a lot more than the 25 main characters
-        for chara in AllCharacters:
-            AllPics = {}
-            
-            print(f'Grabbing pictures for {chara}')
-            Pics = []
-            pics = api.search_illust(chara)
-            for pic in pics.illusts:
-                if pic['total_bookmarks'] > 200 and pic['sanity_level'] < 3 and pic['page_count'] == 1:
-                    Pics.append(pic)
-            ContinueSearching = True
-            while ContinueSearching:
-                next_page = api.parse_qs(pics.next_url)
-                pics = api.search_illust(**next_page)
-                if 'illusts' in pics.keys():
-                    for pic in pics.illusts:
-                        if pic['total_bookmarks'] > 200 and pic['sanity_level'] < 3 and pic['page_count'] == 1:
-                            Pics.append(pic)
-                    if pics.next_url:
-                        ContinueSearching = True
-                    else:
-                        ContinueSearching = False
+        AllCharacters = AllCharacters[0:25] # Because the API has a lot more than the 25 main characters
+        chara = '湊友希那 今井リサ'
+        chara = 'リサゆき'
+        # for chara in AllCharacters:
+        AllPics = {}
+        
+        print(f'Grabbing pictures for {chara}')
+        Pics = []
+        pics = api.search_illust(chara)
+        for pic in pics.illusts:
+            if pic['total_bookmarks'] > 150 and pic['sanity_level'] < 3 and pic['page_count'] == 1:
+                Pics.append(pic)
+        ContinueSearching = True
+        while ContinueSearching:
+            next_page = api.parse_qs(pics.next_url)
+            pics = api.search_illust(**next_page)
+            if 'illusts' in pics.keys():
+                for pic in pics.illusts:
+                    if pic['total_bookmarks'] > 150 and pic['sanity_level'] < 3 and pic['page_count'] == 1:
+                        Pics.append(pic)
+                if pics.next_url:
+                    ContinueSearching = True
                 else:
                     ContinueSearching = False
-            data = {chara: {
-            "pics" : Pics}}
-            AllPics.update(data)
-            newfile = json.dumps(AllPics)
-            f = open(f"{chara}.json","a")
-            f.write(newfile)
-            f.close()
-            await asyncio.sleep(60)
+            else:
+                ContinueSearching = False
+        data = {chara: {
+        "pics" : Pics}}
+        AllPics.update(data)
+        newfile = json.dumps(AllPics)
+        f = open(f"{chara}.json","a")
+        f.write(newfile)
+        f.close()
+        await asyncio.sleep(60)
         return AllPics
 
     def GetCards(self):
@@ -87,18 +89,25 @@ class Fun(commands.Cog):
 
         return AllTwoStarCards, AllThreeStarCards, AllFourStarCards
 
-    def GetRollStats(self, user):
+    def GetRollStats(self, user, *Chara):
         import json
         try:
-            with open('databases/rolls.json') as file:
+            if Chara:
+                Chara = Chara[0] 
+                FileName = f'databases/rolls/{Chara}.json'
+            else:
+                FileName = 'databases/rolls/rolls.json'
+            with open(FileName) as file:
                 api = json.load(file)
             user = self.bot.get_user(user)
             Rolled = []
-            Rolled.append(str(api[str(user.id)]['TotalRolls'] * 10))
+            # Character specific roll databases store the amount of cards rolled for that character, not how many rolls have been done total, hence this logic below
+            TotalRolls = api[str(user.id)]['TotalRolls'] * 10 if not Chara else api[str(user.id)]['TotalRolls']
+            Rolled.append(TotalRolls)
             Rolled.append(api[str(user.id)]['TwoStars'])
             Rolled.append(api[str(user.id)]['ThreeStars'])
             Rolled.append(api[str(user.id)]['FourStars'])
-            Rolled.append(str(round(((int(api[str(user.id)]['FourStars']) / (int(str(api[str(user.id)]['TotalRolls'] * 10)))) * 100), 2)) + '%')
+            Rolled.append(str(round(((Rolled[3] / Rolled[0]) * 100), 2)) + '%')
             Rolled.append(user.avatar_url.BASE + user.avatar_url._url)
             return Rolled
         except KeyError:
@@ -106,9 +115,62 @@ class Fun(commands.Cog):
         except:
             return 'Unknown error. If this keeps happening please use the `notify` command to let Josh know'
 
+    def UpdateCharaRollsJSON(self, UserIDOrOverall, Name, Chara, CardType):
+        import json
+        FileName = f'databases/rolls/{Chara}.json'
+        try:
+            with open(FileName) as file:
+                api = json.load(file)
+        except (json.JSONDecodeError, FileNotFoundError):
+            # Create the file and add an empty dict to it so we can load the json file
+            with open(FileName, 'a+') as file:
+                data = {}
+                json.dump(data, file, indent=2)
+            
+            # Load the newly created file
+            with open(FileName) as file:
+                api = json.load(file)
+        if str(UserIDOrOverall) in api:
+            if CardType == '2':
+                Key = 'TwoStars'
+            elif CardType == '3':
+                Key = 'ThreeStars'
+            elif CardType == '4':
+                Key = 'FourStars'
+            api[str(UserIDOrOverall)][Key] += 1  
+            api[str(UserIDOrOverall)]['TotalRolls'] += 1
+
+            if 'Name' not in api[str(UserIDOrOverall)]:
+                api[str(UserIDOrOverall)].update({'Name' : Name})
+            with open(FileName, 'w') as f:
+                json.dump(api, f)
+        # This adds a new key to the dictionary
+        else:
+            TwoStars = 0
+            ThreeStars = 0
+            FourStars = 0
+            if CardType == '2':
+                TwoStars += 1
+            elif CardType == '3':
+                ThreeStars += 1
+            elif CardType == '4':
+                FourStars += 1
+  
+            data = {UserIDOrOverall: {
+                            "TotalRolls" : 1,
+                            "TwoStars" : TwoStars,
+                            "ThreeStars" : ThreeStars,
+                            "FourStars" : FourStars,
+                            "Name" : Name
+                            }
+                    }
+            with open(FileName, 'w') as f:
+                api.update(data)
+                json.dump(api, f)
+
     def UpdateRollsJSON(self, UserIDOrOverall, Name, TwoStars, ThreeStars, FourStars):
         import json
-        FileName = 'databases/rolls.json'
+        FileName = 'databases/rolls/rolls.json'
         try:
             with open(FileName) as file:
                 api = json.load(file)
@@ -148,7 +210,7 @@ class Fun(commands.Cog):
 
     @commands.command(name='updatecards',
                       hidden=True,
-                      enabled=False)
+                      enabled=True)
     async def GetIcons(self, ctx):
         from commands.apiFunctions import GetBestdoriAllCardsAPI, GetBestdoriAllCharactersAPI        
         from PIL import Image
@@ -211,18 +273,7 @@ class Fun(commands.Cog):
                             attrBg = Image.open(attrPng)
                             im.paste(attrBg, (132, 2), mask=attrBg)
                             
-                            if BandID == 1:
-                                bandPng = "img/band_1.png"
-                            elif BandID == 2:
-                                bandPng = "img/band_2.png"
-                            elif BandID == 3:
-                                bandPng = "img/band_3.png"
-                            elif BandID == 4:
-                                bandPng = "img/band_4.png"
-                            elif BandID == 21:
-                                bandPng = "img/band_21.png"
-                            else:
-                                bandPng = "img/band_5.png"
+                            bandPng = f"img/band_{BandID}.png"
                             bandBg = Image.open(bandPng)
                             im.paste(bandBg, (1, 2), mask=bandBg)
 
@@ -234,8 +285,8 @@ class Fun(commands.Cog):
     @commands.command(name='rollstats',
                      aliases=['rs'],
                      description='Returns the stats from the roll command for a particular user',
-                     help='.rollstats (this defaults to the user running the command)\n\n.rollstats @Lisa#4081\n\n.rollstats Lisa (this searches all the users with Lisa as their Discord name and returns the first user found)\n\n.rs 158699060893581313\n\n.rs total (returns ALL stats accumulated so far)')
-    async def rollstats(self, ctx, user: Union[discord.Member, str, int]=None):
+                     help='.rollstats (this defaults to the user running the command)\n.rollstats @Lisa#4081\n.rollstats Lisa (this searches all the users with Lisa as their Discord name and returns the first user found)\n.rs Lisa Rinko (returns the stats for user Lisa and character Rinko)\n.rs total (returns ALL stats accumulated so far)')
+    async def rollstats(self, ctx, user: Union[discord.Member, str, int]=None, *Chara):
         import json
         if user:
             if not isinstance(user, discord.Member):
@@ -246,11 +297,11 @@ class Fun(commands.Cog):
 
                 elif user == 'total':
                     user = self.bot.get_user(523337807847227402)   
-                    id = 'overall'
-                    Title = "Total Roll Stats"
+                    id = user.id
+                    Title = "Total Roll Stats" if not Chara else f"{Chara[0].capitalize()} Total Roll Stats"
             else:
                 id = user.id
-                Title = f"{user.display_name}#{user.discriminator}'s Roll Stats"
+                Title = f"{user.display_name}#{user.discriminator}'s Roll Stats" if not Chara else f"{user.display_name}#{user.discriminator}'s {Chara[0].capitalize()} Roll Stats"
 
         elif user is None:
             user = self.bot.get_user(ctx.message.author.id)   
@@ -258,29 +309,33 @@ class Fun(commands.Cog):
             Title = f"{user.display_name}#{user.discriminator}'s Roll Stats"
      
         try:
-            with open('databases/rolls.json') as file:
-                api = json.load(file)
-            TotalRolled = str(api[str(id)]['TotalRolls'] * 10)
-            TwoStarsRolled = api[str(id)]['TwoStars']
-            ThreeStarsRolled = api[str(id)]['ThreeStars']
-            FourStarsRolled = api[str(id)]['FourStars']
-            FourStarRate = str(round(((int(FourStarsRolled) / (int(TotalRolled))) * 100), 2)) + '%'
-            Icon = user.avatar_url.BASE + user.avatar_url._url
+            if Chara:
+                RolledStats = self.GetRollStats(ctx.message.author.id, Chara[0])
+            else:
+                RolledStats = self.GetRollStats(id)
+                
+            TotalRolled = RolledStats[0]
+            TwoStarsRolled = RolledStats[1]
+            ThreeStarsRolled = RolledStats[2]
+            FourStarsRolled = RolledStats[3]
+            FourStarRate = RolledStats[4]
+            Icon = RolledStats[5]
             embed=discord.Embed(title=Title,color=discord.Color.blue())
             embed.set_thumbnail(url=Icon)
-            embed.add_field(name='Total Cards Rolled',value=TotalRolled,inline=True)
+            embed.add_field(name='Total Cards Rolled',value="{:,}".format(TotalRolled),inline=True)
             embed.add_field(name='4* Rate',value=FourStarRate,inline=True)
             embed.add_field(name='\u200b', value='\u200b', inline=True)
-            embed.add_field(name='2* Rolled',value=TwoStarsRolled,inline=True)
-            embed.add_field(name='3* Rolled',value=ThreeStarsRolled,inline=True)
-            embed.add_field(name='4* Rolled',value=FourStarsRolled,inline=True)
+            embed.add_field(name='2* Rolled',value="{:,}".format(TwoStarsRolled),inline=True)
+            embed.add_field(name='3* Rolled',value="{:,}".format(ThreeStarsRolled),inline=True)
+            embed.add_field(name='4* Rolled',value="{:,}".format(FourStarsRolled),inline=True)
             await ctx.send(embed=embed)
+        except discord.errors.HTTPException:
+            await ctx.send('No stats found for that user and character')
         except KeyError:
             await ctx.send('No stats found for that user')
         except:
             await ctx.send('Unknown error. If this keeps happening please use the `notify` command to let Josh know')
         
-
     @commands.command(name='roll',
                       description='Simulates a 10 roll using the default rates and all the permanent/limited cards that have been released in JP so far. Event cards are not included. Add df and/or the bands/characters names to the input to simulate increased rates/only roll those cards.',
                       help='For bands, the values below are valid, if an invalid value is entered, the command will fail\n\nRoselia\nAfterglow\nPopipa\nPasupare\nHHW\nMorfonica\n\n.roll\n.roll df\n.roll lisa\n.roll df yukina lisa\n.roll roselia\n.roll roselia popipa')
@@ -319,7 +374,7 @@ class Fun(commands.Cog):
 
                     for x in args:
                         if x.lower() not in Characters:                  
-                            if x.lower() in ['roselia','popipa','hhw','pasupare','afterglow','morfonica']:
+                            if x.lower() in ['roselia','popipa','hhw','pasupare','afterglow','morfonica','ras']:
                                 if x.lower() == 'roselia':
                                     Characters.extend(('lisa','yukina','sayo','ako','rinko'))
                                 elif x.lower() == 'popipa':
@@ -332,9 +387,15 @@ class Fun(commands.Cog):
                                     Characters.extend(('ran', 'moca', 'himari', 'tsugumi', 'tomoe'))
                                 elif x.lower() == 'morfonica':
                                     Characters.extend(('mashiro', 'nanami', 'toko', 'rui', 'tsukushi'))
+                                elif x.lower() == 'ras':
+                                    Characters.extend(('chiyu', 'reona', 'masuki', 'rokka', 'rei'))
                             else:
                                 if x.lower() in ['rinboi','rin boi']:
                                     Characters.append('hagumi')
+                                elif x.lower() in ['rock','rokku','lock','rokka','locku']:
+                                    Characters.append('rokka')
+                                elif x.lower() in ['chu','chu2']:
+                                    Characters.append('chiyu')
                                 elif x.lower() in ['npc','tsugu']:
                                     Characters.append('tsugumi')
                                 elif x.lower() in ['saaya']:
@@ -387,6 +448,10 @@ class Fun(commands.Cog):
                 else:
                     random.shuffle(AllFourStarCards)
                     CardsRolled.append(str(AllFourStarCards[0]))
+        
+        
+        
+
             FirstHalfCardsRolled = CardsRolled[:len(CardsRolled)//2]        
             SecondtHalfCardsRolled = CardsRolled[len(CardsRolled)//2:]
 
@@ -407,8 +472,19 @@ class Fun(commands.Cog):
                 new_im.paste(im, (x_offset,180))
                 x_offset += im.size[0]        
             
+            
+            
+            # Update roll database
             user = self.bot.get_user(ctx.message.author.id)
             user = user.name + '#' + user.discriminator
+
+            for chara in CardsRolled:
+                search = re.search('/([a-zA-Z]*)\/([0-9]*)', chara)
+                name = search[1]
+                cardtype = search[2]
+                self.UpdateCharaRollsJSON('overall', 'self', name, cardtype)
+                self.UpdateCharaRollsJSON(ctx.message.author.id, user, name, cardtype)
+
             self.UpdateRollsJSON('overall', 'self', TwoStarsRolled, ThreeStarsRolled, FourStarsRolled)
             self.UpdateRollsJSON(ctx.message.author.id, user, TwoStarsRolled, ThreeStarsRolled, FourStarsRolled)
 
@@ -428,7 +504,7 @@ class Fun(commands.Cog):
             await asyncio.sleep(.5)
             embed=discord.Embed(title=Title,color=discord.Color.blue())
             embed.set_thumbnail(url=RolledStats[5])
-            embed.add_field(name='Total Cards Rolled',value=RolledStats[0],inline=True)
+            embed.add_field(name='Total Cards Rolled',value="{:,}".format(RolledStats[0]),inline=True)
             embed.add_field(name='Total 4* Rolled',
                             value=RolledStats[3], inline=True)
             embed.add_field(name='4* Rate', value=RolledStats[4], inline=True)
@@ -436,8 +512,10 @@ class Fun(commands.Cog):
             embed.add_field(name='3* Rolled',value=ThreeStarsRolled,inline=True)
             embed.add_field(name='4* Rolled',value=FourStarsRolled,inline=True) 
             embed.set_image(url=f"attachment://{FileName}")
-            embed.set_footer(text="Want to see all your stats? Use the rollstats command")
+            embed.set_footer(text="Want to see all your stats? Use the rollstats command\nWant to check the leaderboards? Use the rolllb command")
             await ctx.send(file=DiscordFileObject, embed=embed)
+        except IndexError:
+            await ctx.send("Failed generating a roll. This is likely because the bot rolled a card that doesn't exist (e.g. 3* rokka)")
         except Exception as e:
             print(str(e))
             await ctx.send('Failed generating a roll. If this keeps happening, please use the `notify` command to let Josh know')
@@ -480,6 +558,12 @@ class Fun(commands.Cog):
                 AllQueries.append('バンドリ')
                 CharaImageURLs.append(
                     'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/BanG_Dream%21_logo.svg/1200px-BanG_Dream%21_logo.svg.png')
+            elif queries[0] == 'yukilisa':
+                newquery = 'リサゆき'
+                AllQueries.append('リサゆき')
+                CharaImageURLs.append('https://bestdori.com/res/icon/chara_icon_23.png')
+                charaId = '23'
+
             else:
                 for query in queries:
                     if query.lower() in ['roselia','afterglow','pasupare','popipa','hhw']:
@@ -561,34 +645,44 @@ class Fun(commands.Cog):
                    
     @commands.command(name='rolllb',
                       aliases=['rlb'],
-                      description='Shows the top 20 leaderboards for the roll command')
-    async def rolllb(self, ctx):
+                      description='Shows the top 20 leaderboards for the roll command',
+                      help='You can specify which leaderboard you want to check by including the character name at the end, if omitted, it will return the overall leaderboards\n\n.rolllb\n.rlb lisa')
+    async def rolllb(self, ctx, *Chara):
         try:
             from operator import itemgetter
             from tabulate import tabulate
-            with open('databases/rolls.json') as file:
+            if Chara:
+                Chara = Chara[0] 
+                FileName = f'databases/rolls/{Chara}.json'
+            else:
+                FileName = 'databases/rolls/rolls.json'
+            with open(FileName) as file:
                 api = json.load(file)
             Rolls = []
             for key in api:
-                if key != 'overall':
+                if key != '523337807847227402' and key != 'overall':
                     if 'Name' in api[key]:
                         Name = api[key]['Name']
                     else:
                         Name = key
-                    FourStarPercent = str(round((((int(api[key]['FourStars']) / (int(api[key]['TotalRolls'] * 10)))) * 100), 2)) + '%'
+                    TotalRolled = int(api[key]['TotalRolls']) * 10 if not Chara else int(api[key]['TotalRolls'])
+                    #FourStarPercent = str(round((((int(api[key]['FourStars']) / TotalRolled ) * 100), 2)) + '%')
+                    FourStarPercent = str(round(((int(api[key]['FourStars']) / TotalRolled) * 100), 2)) + '%'
                     Rolls.append([Name,api[key]['TotalRolls'],api[key]['FourStars'],FourStarPercent])
                     Rolls = sorted(Rolls,key=itemgetter(1),reverse=True)
             Rolls = Rolls[0:20]
-            output = "```" + tabulate(Rolls,headers=['User','Total Rolls','Total 4*','4* %'],tablefmt='plain') + "```"
-        except:
+            RollsHeader = 'Total Rolls' if not Chara else f"Total {Chara.capitalize()}'s rolled"
+            output = "```" + tabulate(Rolls,headers=['User',RollsHeader,'Total 4*','4* %'],tablefmt='plain') + "```"
+        except FileNotFoundError:
+            output = 'No rolls have been generated for that character yet'
+        except Exception as e:
             output = 'Failed getting the roll leaderboards. Please use the `notify` command if this keeps happening'
         await ctx.send(output)
         
-
     @commands.command(name='birthdays',
                       aliases=['bdays','bday'],
                       description="Note: This data may be publicly accessible\n\nIf you're like me and easily forget birthdays, you can use this command to add birthday entries and grab them as needed. Entries are server specific",
-                      help='.birthdays (this returns all birthdays for the server the command was ran in\n.bdays add "10 Aug" (adds an entry to the list for the user running the command\n.bdays del (removes the user running the command from the database)' )
+                      help='.birthdays (this returns all birthdays for the server the command was ran in\n.bdays add Aug 25 (adds an entry to the list for the user running the command\n.bdays del (removes the user running the command from the database)' )
     async def bdays(self,ctx,*add):
         if add and add[0] == 'add':
             user = self.bot.get_user(ctx.message.author.id)
