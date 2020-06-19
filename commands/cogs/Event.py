@@ -241,7 +241,6 @@ class Event(commands.Cog):
                       description="Cutoff estimate for t100, t1000, and t2000. Input the tier and server (defaulted to en and 100) Add graph to the end to see a graph (doesn't work for t100/t1000/t2000)\n\nNote: t100 and t1000 aliases can only be used for en, and t2000 for jp",
                       help=".cutoff 100\n.cutoff 1000 en\n.cutoff 2000 jp graph")
     async def cutoff(self, ctx, tier: int = 100, server: str = 'en', graph: str = ''):
-        await ctx.send("I would like to start tracking t10/5/2.5k for EN (likely after NR1). If you'd like to help with tracking this info (by providing or inputting) please let Josh#1373 know!")
         ValidTiers = [100, 1000, 2000]
         if tier not in ValidTiers:
             await ctx.send(f"{tier} isn't supported")
