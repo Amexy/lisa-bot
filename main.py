@@ -61,7 +61,6 @@ async def on_member_join(member):
 async def on_message(message):
     ctx = await bot.get_context(message)
     await bot.invoke(ctx)
-\
 
 @bot.event
 async def on_command_error(ctx, error):
