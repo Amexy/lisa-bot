@@ -112,32 +112,101 @@ async def GetCurrentEventID(server: str):
     else:
         return 0
 
+def GetManualCutoffJSONFile(Server, Tier, EventID):
+    if Server == 'en':
+        if Tier == 2500:
+            FileName = f'databases/{EventID}_ent2500.json'
+        elif Tier == 5000:
+            FileName = f'databases/{EventID}_ent5000.json'
+        elif Tier == 10000:
+            FileName = f'databases/{EventID}_ent10000.json'
+    # elif Server == 'jp':
+    #     if Tier == 100:
+    #         FileName = f'databases/{EventID}_jpt100.json'
+    #     elif Tier == 1000:
+    #         FileName = f'databases/{EventID}_jpt1000.json'
+    #     else:
+    #         FileName = f'databases/{EventID}_jpt2000.json'
+    # elif Server == 'cn':
+    #     if Tier == 100:
+    #         FileName = f'databases/{EventID}_cnt100.json'
+    #     elif Tier == 1000:
+    #         FileName = f'databases/{EventID}_cnt1000.json'
+    #     else:
+    #         FileName = f'databases/{EventID}_cnt2000.json'
+    # elif Server == 'tw':
+    #     FileName = f'databases/{EventID}_twt100.json'
+    # else:
+    #     FileName = f'databases/{EventID}_krt100.json'
+    return FileName
+
 def GetCutoffJSONFile(Server, Tier):
     if Server == 'en':
         if Tier == 100:
-            FileName = 'databases/ent100.json'
+            FileName = f'databases/ent100.json'
+        elif Tier == 1000:
+            FileName = f'databases/ent1000.json'
+        elif Tier == 2500:
+            FileName = f'databases/ent2500.json'
+        elif Tier == 5000:
+            FileName = f'databases/ent5000.json'
+        elif Tier == 10000:
+            FileName = f'databases/ent10000.json'
         else:
-            FileName = 'databases/ent1000.json'
+            FileName = f'databases/ent100.json'
     elif Server == 'jp':
         if Tier == 100:
-            FileName = 'databases/jpt100.json'
+            FileName = f'databases/jpt100.json'
         elif Tier == 1000:
-            FileName = 'databases/jpt1000.json'
+            FileName = f'databases/jpt1000.json'
         else:
-            FileName = 'databases/jpt2000.json'
+            FileName = f'databases/jpt2000.json'
     elif Server == 'cn':
         if Tier == 100:
-            FileName = 'databases/cnt100.json'
+            FileName = f'databases/cnt100.json'
         elif Tier == 1000:
-            FileName = 'databases/cnt1000.json'
+            FileName = f'databases/cnt1000.json'
         else:
-            FileName = 'databases/cnt2000.json'
+            FileName = f'databases/cnt2000.json'
     elif Server == 'tw':
-        FileName = 'databases/twt100.json'
+        FileName = f'databases/twt100.json'
     else:
-        FileName = 'databases/krt100.json'
+        FileName = f'databases/krt100.json'
     return FileName
 
+def UpdateManualTrackingCutoffJSON(Server, Tier, EventID, Current, Epoch):
+    FileName = GetManualCutoffJSONFile(Server, Tier, EventID)
+    try:
+        with open(FileName) as file:
+            api = json.load(file)
+    except (json.JSONDecodeError, FileNotFoundError):
+        # Create the file and add an empty dict to it so we can load the json file
+        with open(FileName, 'a+') as file:
+            data = {}
+            json.dump(data, file, indent=2)
+        
+        # Load the newly created file
+        with open(FileName) as file:
+            api = json.load(file)
+            
+    if 'cutoffs' in api:
+        api['cutoffs'].append({"ep": Current, "time": Epoch})
+        #api['cutoffs'].append(Epoch)
+        with open(FileName, 'w') as f:
+            json.dump(api, f)
+        # This adds a new key to the dictionary
+    else:
+        data = {
+                    "cutoffs": [
+                        {
+                            "ep" : Current,
+                            "time" : Epoch
+                        }]
+                }
+        with open(FileName, 'w') as f:
+            api.update(data)
+            json.dump(api, f)
+ 
 def UpdateCutoffJSON(Server, Tier, EventID, Current, Estimate, SmoothingEstimate, EPPerHour):
     FileName = GetCutoffJSONFile(Server, Tier)
     try:
@@ -246,6 +315,14 @@ async def CalculatecutoffEstimates(server, tier, EventID):
     for x in RatesAPI:
         if x['type'] == EventType and x['server'] == Key and x['tier'] == TierKey:
             Rate = x['rate']
+    if not Rate:
+        Rate = .01
+    if tier in [100,1000,2000]:
+        CutoffAPI = await GetBestdoriCutoffAPI(server, tier)
+    else:
+        FileName = GetManualCutoffJSONFile(server, tier, EventID)
+        with open(FileName) as file:
+            CutoffAPI = json.load(file)
     LastUpdatedCutoff = CutoffAPI['cutoffs'][-1]['ep']
     EventStartTime = int(EventAPI['startAt'][Key])
     EventEndTime = int(EventAPI['endAt'][Key])
@@ -393,7 +470,13 @@ async def GetCutoffFormatting(server: str, tier: int, graph: bool):
     import math, time, os
     EventID = await GetCurrentEventID(server)
 
-    CutoffAPI = await GetBestdoriCutoffAPI(server, tier)
+    if tier in [100,1000,2000]:
+        CutoffAPI = await GetBestdoriCutoffAPI(server, tier)
+    else:
+        FileName = GetManualCutoffJSONFile(server, tier, EventID)
+        with open(FileName) as file:
+            CutoffAPI = json.load(file)
+
     EventAPI = await GetBestdoriEventAPI(EventID)
     Key = await GetServerAPIKey(server)
 

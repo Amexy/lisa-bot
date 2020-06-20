@@ -280,6 +280,7 @@ class Fun(commands.Cog):
                 print(f"Failed adding card with ID {x}")
                 pass
 
+
     @commands.command(name='rollstats',
                      aliases=['rs'],
                      description='Returns the stats from the roll command for a particular user',
@@ -480,10 +481,10 @@ class Fun(commands.Cog):
                 search = re.search('/([a-zA-Z]*)\/([0-9]*)', chara)
                 name = search[1]
                 cardtype = search[2]
-                self.UpdateCharaRollsJSON('overall', 'self', name, cardtype)
+                self.UpdateCharaRollsJSON(523337807847227402, 'self', name, cardtype)
                 self.UpdateCharaRollsJSON(ctx.message.author.id, user, name, cardtype)
 
-            self.UpdateRollsJSON('overall', 'self', TwoStarsRolled, ThreeStarsRolled, FourStarsRolled)
+            self.UpdateRollsJSON(523337807847227402, 'self', TwoStarsRolled, ThreeStarsRolled, FourStarsRolled)
             self.UpdateRollsJSON(ctx.message.author.id, user, TwoStarsRolled, ThreeStarsRolled, FourStarsRolled)
 
             if 4 not in Rolled:

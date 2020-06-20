@@ -236,48 +236,77 @@ class Event(commands.Cog):
         except:
             await ctx.send(f"Couldn't find cutoff history for server `{server}` tier `{tier}`")
 
+    @commands.command(name='addcutoff',
+                      hidden=True)
+    async def addcutoff(self, ctx, server, tier, value, time):
+        ValidUsers = [158699060893581313,133048058756726784,246129130154754051,190765214243749888,417667260812099595,598280991248744448]
+        if ctx.message.author.id not in ValidUsers:
+            output = 'You are not authorized to use this command'
+        else:
+            from commands.formatting.EventCommands import UpdateManualTrackingCutoffJSON, GetCurrentEventID
+            from datetime import datetime
+            try:
+                EventID = await GetCurrentEventID(server)
+                UpdateManualTrackingCutoffJSON(server, int(tier), EventID, int(value), int(time))
+                output = 'Successfully added cutoff'
+            except:
+                output = 'Failed adding cutoff'
+        await ctx.send(output)
     @commands.command(name='cutoff',
-                      aliases=['t100', 't1000', 't2000'],
+                      aliases=['t100', 't1000', 't2000','t2500','t5000','t10000'],
                       description="Cutoff estimate for t100, t1000, and t2000. Input the tier and server (defaulted to en and 100) Add graph to the end to see a graph (doesn't work for t100/t1000/t2000)\n\nNote: t100 and t1000 aliases can only be used for en, and t2000 for jp",
                       help=".cutoff 100\n.cutoff 1000 en\n.cutoff 2000 jp graph")
     async def cutoff(self, ctx, tier: int = 100, server: str = 'en', graph: str = ''):
-        await ctx.send("I would like to start tracking t10/5/2.5k for EN (likely after NR1). If you'd like to help with tracking this info (by providing or inputting) please let Josh#1373 know!")
-        ValidTiers = [100, 1000, 2000]
-        if tier not in ValidTiers:
-            await ctx.send(f"{tier} isn't supported")
+        # await ctx.send("I would like to start tracking t10/5/2.5k for EN (likely after NR1). If you'd like to help with tracking this info (by providing or inputting) please let Josh#1373 know!")
+        # ValidTiers = [100, 1000, 2000]
+        # if tier not in ValidTiers:
+        #     await ctx.send(f"{tier} isn't supported")
+        # else:
+        server = server.lower()
+        ValidServer = ['jp', 'cn', 'en', 'tw', 'kr']
+        ValidT2000 = ['jp', 'cn']
+        ValidT1000 = ['en', 'jp', 'cn']
+        output = ''
+        ctx.invoked_with = ctx.invoked_with.lower()
+        if 't1000' in ctx.invoked_with:
+            tier = 1000
+        elif 't100' in ctx.invoked_with:
+            tier = 100
+        elif 't2000' in ctx.invoked_with:
+            tier = 2000
+        elif 't2500' in ctx.invoked_with:
+            tier = 2500
+        elif 't5000' in ctx.invoked_with:
+            tier = 5000
+        elif 't10000' in ctx.invoked_with:
+            tier = 10000
+            
+        if tier in [100,1000,2000]:
+            import random
+            value = random.random()
+            if value > .5:
+                await ctx.send('Lisa bot is now (experimentally) tracking t2.5k/5k/10k data for the EN server. If you have data you wish to add to the bot, please post in the Lisa bot discord or ping one of the following:\n\nJosh#1373\nNeon#5555\norangejuice#8467\nEndure#9581\nHaruu#6580\n学渣#1424')
+        elif tier in [2500, 5000, 10000]:
+            await ctx.send('This is an experimental feature, expect bugs. If you find any, please use the `.notify` command to let Josh know')
+        if server not in ValidServer:
+            output = 'You did not specify a valid server'
         else:
-            server = server.lower()
-            ValidServer = ['jp', 'cn', 'en', 'tw', 'kr']
-            ValidT2000 = ['jp', 'cn']
-            ValidT1000 = ['en', 'jp', 'cn']
-            output = ''
-            ctx.invoked_with = ctx.invoked_with.lower()
-            if 't1000' in ctx.invoked_with:
-                tier = 1000
-            elif 't100' in ctx.invoked_with:
-                tier = 100
-            elif 't2000' in ctx.invoked_with:
-                tier = 2000
-
-            if server not in ValidServer:
-                output = 'You did not specify a valid server'
+            if tier == 2000 and server not in ValidT2000:
+                output = 'T2000 is only valid for JP and CN'
+            if tier == 1000 and server not in ValidT1000:
+                output = 'T1000 is only valid for EN, JP, and CN'
+            if output:
+                await ctx.send(output)
             else:
-                if tier == 2000 and server not in ValidT2000:
-                    output = 'T2000 is only valid for JP and CN'
-                if tier == 1000 and server not in ValidT1000:
-                    output = 'T1000 is only valid for EN, JP, and CN'
-                if output:
-                    await ctx.send(output)
-                else:
-                    try:
-                        if graph:
-                            output = await GetCutoffFormatting(server, tier, True)
-                            await ctx.send(file=output[1], embed=output[0])
-                        else:
-                            output = await GetCutoffFormatting(server, tier, False)
-                            await ctx.send(embed=output)
-                    except IndexError:
-                        await ctx.send('Failed getting cutoff data')
+                try:
+                    if graph:
+                        output = await GetCutoffFormatting(server, tier, True)
+                        await ctx.send(file=output[1], embed=output[0])
+                    else:
+                        output = await GetCutoffFormatting(server, tier, False)
+                        await ctx.send(embed=output)
+                except IndexError:
+                    await ctx.send('Failed getting cutoff data')
                         
     @coasting.error
     async def coasting_error(self, ctx, error):
