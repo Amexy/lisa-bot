@@ -112,6 +112,12 @@ async def GetBestdoriAllCharasAPI():
         async with session.get(api) as r:
             return await r.json()
 
+async def GetBestdoriAllTitlesAPI():
+    async with aiohttp.ClientSession() as session:
+        api = 'https://bestdori.com/api/degrees/all.3.json'
+        async with session.get(api) as r:
+            return await r.json()
+
 async def GetBestdoriCharasAPI(charaId: int):
     async with aiohttp.ClientSession() as session:
         eventId = str(charaId)

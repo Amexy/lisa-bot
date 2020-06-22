@@ -206,6 +206,7 @@ class Fun(commands.Cog):
                 api.update(data)
                 json.dump(api, f)
 
+    
     @commands.command(name='updatecards',
                       hidden=True,
                       enabled=True)
@@ -230,11 +231,10 @@ class Fun(commands.Cog):
                 CharaName = CharaAPI[CharacterID]['characterName'][1]
                 SplitList = CharaName.split(' ', 1)
                 CharaName = SplitList[0].lower()
-                IconsPath = f"icons/{CharaName}/{Rarity}/{x}.png"
-                AllowedTypes = ['limited','permanent']
-                if not path.exists(IconsPath):
-                    if Rarity != '1':
-                        
+                IconsPath = f"icons/full_icons/{x}.png"
+                AllowedTypes = ['limited','permanent','initial','event']
+                if int(Rarity) > 2:
+                    if not path.exists(IconsPath):
                         if CardAPI[x]['type'] in AllowedTypes:
                             if CardAPI[x]['type'] == 'others':
                                     IconURL = f'https://bestdori.com/assets/jp/thumb/chara/card000{Folder}_rip/{ResourceSetName}_after_training.png'    
@@ -245,8 +245,11 @@ class Fun(commands.Cog):
                             image = requests.get(IconURL)
                             image = Image.open(BytesIO(image.content))
                             im.paste(image)
-
-                            if Rarity == '2':
+                            
+                            if Rarity == '1':
+                                rarityPng = "img/2star.png"
+                                starPng = "img/star1.png"
+                            elif Rarity == '2':
                                 rarityPng = "img/2star.png"
                                 starPng = "img/star2.png"
                             elif Rarity == '3':
@@ -257,7 +260,10 @@ class Fun(commands.Cog):
                                 starPng = "img/star4.png"
                             rarityBg = Image.open(rarityPng)
                             starBg = Image.open(starPng)
-                            im.paste(starBg, (5,50), mask=starBg)
+                            if Rarity == '1':
+                                im.paste(starBg, (5,20), mask=starBg)
+                            else:
+                                im.paste(starBg, (5,50), mask=starBg)
                             im.paste(rarityBg, mask=rarityBg)
                         
                             if Attribute == 'powerful':

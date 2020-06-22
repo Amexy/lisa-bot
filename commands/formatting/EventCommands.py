@@ -312,6 +312,7 @@ async def CalculatecutoffEstimates(server, tier, EventID):
         EventType = 'live_try'
     elif EventType == 'mission':
         EventType = 'mission_live'
+    Rate = ''
     for x in RatesAPI:
         if x['type'] == EventType and x['server'] == Key and x['tier'] == TierKey:
             Rate = x['rate']
