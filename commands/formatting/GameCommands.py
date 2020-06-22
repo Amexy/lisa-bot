@@ -318,6 +318,86 @@ def GetEPGainOutput(yourScore: int, multiScore: int, bpPercent: int, flamesUsed:
             ep = (bbPlaceBonus + math.floor(yourScore / 5500)) * epPerFlame
     return ep
 
+async def GenerateBandandTitlesImage(members: list, titles: list):
+    from PIL import Image
+    from PIL.ImageDraw import Draw
+    from PIL.ImageFont import truetype
+    from io import BytesIO
+    from os import path
+    from commands.apiFunctions import GetBestdoriAllTitlesAPI
+    TitlesAPI = await GetBestdoriAllTitlesAPI()
+    PathToIcons = []
+    for x in members:
+        IconPath = f'icons/full_icons/{x}_trained.png'
+        if path.exists(IconPath):
+            PathToIcons.append(IconPath)
+        else:
+            IconPath = f'icons/full_icons/{x}.png'
+            PathToIcons.append(IconPath)
+    images = [Image.open(x) for x in PathToIcons]
+    widths, heights = zip(*(i.size for i in images))
+    total_width = sum(widths)
+    max_height = max(heights) * 2
+    new_im = Image.new('RGBA', (int(total_width), max_height))
+    x_offset = 0
+    for im in images:
+        new_im.paste(im, (x_offset,0))
+        x_offset += im.size[0]        
+    
+    Tier = ''
+    if len(titles) == 2:
+        x_offset = 0
+        for Title_ID in titles:
+            ImageContents = []
+            titleinfo = TitlesAPI[str(Title_ID)]  
+            EventTitle = f"img/titles/{titleinfo['baseImageName'][1]}.png"
+            ImageContents.append(EventTitle)
+            event = Image.open(ImageContents[0])
+            event = event.resize((368,100), Image.ANTIALIAS)
+            new_im.paste(event, (x_offset,250), event)
+
+            Tier = titleinfo['rank'][1]
+            if Tier != 'none' and Tier != 'normal' and Tier != 'extra':
+                TierTitle = f'img/titles/event_point_{Tier}.png'
+                ImageContents.append(TierTitle)
+                tier = Image.open(ImageContents[1])
+                tier = tier.resize((368,100), Image.ANTIALIAS)
+                new_im.paste(tier, (x_offset,250), tier)
+            elif Tier == 'normal' or Tier == 'extra':
+                TierTitle = f'img/titles/try_clear_{Tier}.png'
+                ImageContents.append(TierTitle)
+                tier = Image.open(ImageContents[1])
+                tier = tier.resize((368,100), Image.ANTIALIAS)
+                new_im.paste(tier, (x_offset,250), tier)
+
+            x_offset += 525
+    else:
+        x_offset = 250
+        ImageContents = []
+        titleinfo = TitlesAPI[str(titles[0])]  
+        EventTitle = f"img/titles/{titleinfo['baseImageName'][1]}.png"
+        ImageContents.append(EventTitle)
+        event = Image.open(ImageContents[0])
+        event = event.resize((368,100), Image.ANTIALIAS)
+        new_im.paste(event, (x_offset,250), event)
+
+        Tier = titleinfo['rank'][1]
+        if Tier != 'none':
+            TierTitle = f'img/titles/event_point_{Tier}.png'
+            ImageContents.append(TierTitle)
+            tier = Image.open(ImageContents[1])
+            tier = tier.resize((368,100), Image.ANTIALIAS)
+            new_im.paste(tier, (x_offset,250), tier)
+
+        
+    
+    import uuid
+    from discord import File
+    FileName = f'{str(uuid.uuid4())}.png'
+    SavedFilePath = f'imgTmp/{FileName}.png'
+    new_im.save(SavedFilePath)
+    return FileName, SavedFilePath
+
 async def characterOutput(character: str):
     from commands.apiFunctions import GetBestdoriAllCharasAPI, GetBestdoriCharasAPI
     r = await GetBestdoriAllCharasAPI()

@@ -18,6 +18,127 @@ class Game(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.command(name='updatecardicons',
+                      aliases=['uci'],
+                      hidden=True,
+                      enabled=False)
+    async def uci(self, ctx):
+        from commands.apiFunctions import GetBestdoriAllCardsAPI, GetBestdoriAllCharactersAPI        
+        CardAPI = await GetBestdoriAllCardsAPI()
+        from PIL import Image
+        from PIL.ImageDraw import Draw
+        from PIL.ImageFont import truetype
+        from io import BytesIO
+        from os import path
+        for x in CardAPI:
+            try:
+                im = Image.new("RGBA", (180, 180))
+                Folder = str(math.floor(int(x) / 50)).zfill(2)
+                ResourceSetName = CardAPI[x]['resourceSetName']
+                IconsPath = f"icons/base_icons/{x}.png"
+                Rarity = str(CardAPI[x]['rarity']) 
+                 
+                if int(Rarity) > 0:
+                    if not path.exists(IconsPath):              
+                        # These urls will need changed around depending if it's a jp/cn limited card and for some reason the card000 part may need changed to card00
+                        if CardAPI[x]['type'] == 'others':
+                            IconURL = f'https://bestdori.com/assets/jp/thumb/chara/card000{Folder}_rip/{ResourceSetName}_normal.png'    
+                        elif CardAPI[x]['type'] == 'campaign': 
+                            IconURL = f'https://bestdori.com/assets/en/thumb/chara/card00{Folder}_rip/{ResourceSetName}_normal.png'    
+                        else:
+                            IconURL = f'https://bestdori.com/assets/jp/thumb/chara/card000{Folder}_rip/{ResourceSetName}_normal.png'    
+                        image = requests.get(IconURL)
+                        image = Image.open(BytesIO(image.content))
+                        im.paste(image)
+                        im.save(IconsPath)
+            except:
+                print(f"Failed adding card with ID {x}")
+                pass
+    
+    @commands.command(name='lookup',
+                      aliases=['find','search','lu'],
+                      description='Searches a player on the specified server by ID',
+                      help='Currently only supports EN. JP functionality coming at a later date.\n\n.lookup en 1540')
+    async def lookup(self, ctx, server: str, id: int):
+        try:
+            from protodefs.ranks import profileinfo
+            from startup.login import enICEObject, jpICEObject
+            from discord import File
+            from commands.formatting.GameCommands import GenerateBandandTitlesImage
+            from commands.formatting.T10Commands import stringCheck
+            if server == 'en':
+                ice = enICEObject
+            else:
+                ice = jpICEObject
+
+            info = await profileinfo(ice, server, id)
+            if info.name == '':
+                info.name = 'No Name Found'
+            info.name = stringCheck(info.name)
+            embed=discord.Embed(title=f'{info.name} [{id}]',color=discord.Color.blue())
+            embed.add_field(name='Description', value=info.description, inline=True)
+            embed.add_field(name='Level', value=info.rank, inline=True)
+            embed.add_field(name='\u200b', value='\u200b', inline=True)
+
+            if info.center_info.card_id == 0:
+                info.center_info.card_id = 1
+            if info.center_info.trained == 'after_training':
+                ProfilePicture = f'{info.center_info.card_id}_trained.png'
+            else:
+                ProfilePicture = f'{info.center_info.card_id}.png'
+            print(info.cleared_songs.song)
+                
+            if len(info.cleared_songs.song) > 0:
+                embed.add_field(name='EX Cleared / FC', value=f'{info.cleared_songs.song._values[2].amount} / {info.fced_songs.song._values[2].amount}', inline=True)
+                embed.add_field(name='SP Cleared / FC', value=f'{info.cleared_songs.song._values[0].amount} / {info.fced_songs.song._values[0].amount}', inline=True)
+
+
+
+            TitlesInfo = []
+            if len(info.equipped_titles.title._values) == 2:
+                TitlesInfo.append(info.equipped_titles.title._values[0].titleinfo.title_id)
+                TitlesInfo.append(info.equipped_titles.title._values[1].titleinfo.title_id)
+            else:
+                TitlesInfo.append(info.equipped_titles.title._values[0].titleinfo.title_id)
+                
+            if len(info.hsr.val1.val) > 0:
+                # I know there's a better way to do this, but whatever
+                hsr = 0
+                hsr += info.hsr.val1.val._values[0].rating
+                hsr += info.hsr.val1.val._values[1].rating
+                hsr += info.hsr.val1.val._values[2].rating
+                hsr += info.hsr.val2.val._values[0].rating
+                hsr += info.hsr.val2.val._values[1].rating
+                hsr += info.hsr.val2.val._values[2].rating
+                hsr += info.hsr.val3.val._values[0].rating
+                hsr += info.hsr.val3.val._values[1].rating
+                hsr += info.hsr.val3.val._values[2].rating
+                hsr += info.hsr.val4.val._values[0].rating
+                hsr += info.hsr.val4.val._values[1].rating
+                hsr += info.hsr.val4.val._values[2].rating
+                hsr += info.hsr.val5.val._values[0].rating
+                hsr += info.hsr.val5.val._values[1].rating
+                hsr += info.hsr.val5.val._values[2].rating
+                hsr += info.hsr.val6.val._values[0].rating
+                hsr += info.hsr.val6.val._values[1].rating
+                #hsr += info.hsr.val6.val._values[2].rating
+                embed.add_field(name='High Score Rating', value=hsr, inline=True)
+            BandMembers = []
+            # Since you can't iterate over it, I think
+            BandMembers.append(info.current_band.card4)
+            BandMembers.append(info.current_band.card2)
+            BandMembers.append(info.current_band.card1)
+            BandMembers.append(info.current_band.card3)
+            BandMembers.append(info.current_band.card5)
+            BandFileName = await GenerateBandandTitlesImage(BandMembers,TitlesInfo)
+            BandImageFile = discord.File(BandFileName[1], filename=BandFileName[0])
+            icon = discord.File(f"icons/base_icons/{ProfilePicture}", filename=f'{ProfilePicture}')
+            embed.set_thumbnail(url=f"attachment://{ProfilePicture}")
+            embed.set_image(url=f"attachment://{BandFileName[0]}")
+
+            await ctx.send(files=[icon,BandImageFile],embed=embed)
+        except:
+            await ctx.send('Failed looking up that player. If you believe this to be a mistake, please use the notify command to let Josh know')
         
     @commands.command(name='level',
                     description='Given a current level, xp earned per song, and the amount of songs played, the end level will be provided',
