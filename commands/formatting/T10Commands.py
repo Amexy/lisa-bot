@@ -473,7 +473,7 @@ def stringCheck(string: str):
     import re
     string = string.replace('```','')
     string = string.replace("?",'')
-    string = re.sub('(\[\w{6}\])','', string)
+    string = re.sub('(\[(\w{6}|\w{2})\])','', string)
     string = re.sub('\[([cibsu]|(sup|sub){1})\]', '', string)
     return string
 
