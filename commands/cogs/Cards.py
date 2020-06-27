@@ -23,7 +23,7 @@ class Character(Enum):
     Himari = ["Himari"]
     Tomoe = ["Tomoe"]
     Tsugumi = ["Tsugumi", "Npc"]
-    Kokoro = ["Kokoro"]
+    Kokoro = ["Kokoro", "Kkr"]
     Kaoru = ["Kaoru"]
     Hagumi = ["Hagumi"]
     Kanon = ["Kanon"]
@@ -33,7 +33,7 @@ class Character(Enum):
     Chisato = ["Chisato", "Cheeto"]
     Maya = ["Maya"]
     Eve = ["Eve"]
-    Yukina = ["Yukina", "Yukinya"]
+    Yukina = ["Yukina", "Yukinya", "Nyan"]
     Sayo = ["Sayo"]
     Lisa = ["Lisa"]
     Ako = ["Ako"]
@@ -43,6 +43,11 @@ class Character(Enum):
     Nanami = ["Nanami"]
     Tsukushi = ["Tsukushi"]
     Rui = ["Rui"]
+    Rei = ["Rei", "Layer"]
+    Rokka = ["Rokka", "Lock"]
+    Masuki = ["Masuki", "Masking"]
+    Reona = ["Reona", "Pareo"]
+    Chiyu = ["Chiyu", "Chu", "Chu²", "ChuChu"]
 
     @staticmethod
     def switch(i: int):
@@ -76,7 +81,12 @@ class Character(Enum):
             27: Character.Toko,
             28: Character.Nanami,
             29: Character.Tsukushi,
-            30: Character.Rui
+            30: Character.Rui,
+            31: Character.Rei,
+            32: Character.Rokka,
+            33: Character.Masuki,
+            34: Character.Reona,
+            35: Character.Chiyu
         }
         return switcher.get(i)
 
