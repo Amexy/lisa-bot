@@ -75,40 +75,84 @@ async def GetSongInfo(songName: str):
     return songInfoOutput
 
 async def GetSongMetaOutput(fever: bool, songs: tuple = []):
+    songNameAPI = await GetSongAPI()
+    songMetaAPI = await GetSongMetaAPI()
+    songWeightList = []
+    addedSongs = []
+
     if songs:
         # Get APIs
-        songNameAPI = await GetSongAPI()
-        songMetaAPI = await GetSongMetaAPI()
         
         # Find the IDs for the input
         #So 5.3.2 = [2.7628, 1.0763, 3.3251, 1.488]
         #Means that song (id = 5) on expert (difficulty = 3) on a 7 second skill (duration = 2 + 5) has those meta numbers.
         #First two = non fever, so if the skill is 60% then song score = 2.7628 + 1.0763 * 60%    
-        songWeightList = []
-        addedSongs = [] # to get rid of duplicate entries since full song names aren't required
         for song in songs:
-            for key in songNameAPI:
-                element = songNameAPI[key]['musicTitle'][1]
-                if(element is None):
-                    element = songNameAPI[key]['musicTitle'][0]
-                if song.lower() in element.lower():
-                    songValues = songMetaAPI[key]["3"]["2"]
-                    songLength = songNameAPI[key]['length']
+            for x in songNameAPI:
+                try:
+                    if song.lower() in (songNameAPI[x]['musicTitle'][1]).lower():
+                        addedSongs.append([songNameAPI[x]['musicTitle'][1],x])
+                        break
+                except:
+                    if song.lower() in (songNameAPI[x]['musicTitle'][0]).lower():
+                        addedSongs.append([songNameAPI[x]['musicTitle'][0],x])
+                        break
+        if addedSongs:
+            for song in addedSongs:
+                if "4" in songMetaAPI[song[1]]:
+                    songValues = songMetaAPI[song[1]]["4"]["7"] 
+                    songLength = songNameAPI[song[1]]['length']
                     songLength = strftime("%H:%M:%S", gmtime(songLength))
-                    if element not in addedSongs:
-                        if fever:
-                            songWeightList.append([element, round(((songValues[2] + songValues[3] * 2) * 1.1) * 100), songLength])
-                        else:
-                            songWeightList.append([element, round(((songValues[0] + songValues[1] * 2) * 1.1) * 100), songLength])
-                        addedSongs.append(element)
-        songWeightList = sorted(songWeightList,key=itemgetter(1),reverse=True)
+                    if fever:
+                        songWeightList.append([song[0] + '(SP)', round(((songValues[2] + songValues[3] * 2) * 1.1) * 100), songLength])
+                    else:
+                        songWeightList.append([song[0] + '(SP)', round(((songValues[0] + songValues[1] * 2) * 1.1) * 100), songLength])
+                songValues = songMetaAPI[song[1]]["3"]["7"] 
+                songLength = songNameAPI[song[1]]['length']
+                songLength = strftime("%H:%M:%S", gmtime(songLength))
+                if fever:
+                    songWeightList.append([song[0], round(((songValues[2] + songValues[3] * 2) * 1.1) * 100), songLength])
+                else:
+                    songWeightList.append([song[0], round(((songValues[0] + songValues[1] * 2) * 1.1) * 100), songLength])
+
+        if songWeightList:
+            songWeightList = sorted(songWeightList,key=itemgetter(1),reverse=True)
         output = ("```" + tabulate(songWeightList,tablefmt="plain",headers=["Song","Score %","Length"]) + "```")
     else:
-        if fever:
-            songWeightList = (["1","Jumpin'"],["2","Unite! From A To Z (EX)"],["3","Guren no Yumiya"],["4","Extra Magic Hour"],["5","Unite! From A To Z (SP)"],["6","Roku Chounen To Ichiya Monogatari (SP)"],["7","Roku Chounen To Ichiya Monogatari (EX)"],["8","BRAVE JEWEL"],["9","PASSIONATE ANTHEM"],["10","Azu no Yozora Shoukaihan"])
-        else:
-            songWeightList = (["1","Unite! From A To Z (EX)"],["2","Roku Chounen To Ichiya Monogatari (SP)"],["3","Guren no Yumiya"],["4","Roku Chounen To Ichiya Monogatari (EX)"],["5","Jumpin'"],["6","Extra Magic Hour"],["7","Azu no Yozora Shoukaihan"],["8","Unite! From A To Z (SP)"],["9","Goka! Gokai!? Phantom Thief!"],["10","Fuwa-Fuwa Time"])       
-        output = ("```" + tabulate(songWeightList,tablefmt="plain",headers=["#","Song"]) + "```")
+        for x in songMetaAPI:
+            if "4" in songMetaAPI[x]:
+                songValues = songMetaAPI[x]["4"]["7"] 
+                try:
+                    if songNameAPI[x]['musicTitle'][1] != None:
+                        songName = songNameAPI[x]['musicTitle'][1]
+                    else:
+                        songName = songNameAPI[x]['musicTitle'][0]
+                except:
+                    songName = songNameAPI[x]['musicTitle'][0]
+                songLength = songNameAPI[x]['length']
+                songLength = strftime("%H:%M:%S", gmtime(songLength))
+                if fever:
+                    songWeightList.append([songName + '(SP)', round(((songValues[2] + songValues[3] * 2) * 1.1) * 100), songLength])
+                else:
+                    songWeightList.append([songName + '(SP)', round(((songValues[0] + songValues[1] * 2) * 1.1) * 100), songLength])
+            songValues = songMetaAPI[x]["3"]["7"] 
+            try:
+                if songNameAPI[x]['musicTitle'][1] != None:
+                    songName = songNameAPI[x]['musicTitle'][1]
+                else:
+                    songName = songNameAPI[x]['musicTitle'][0]
+            except:
+                songName = songNameAPI[x]['musicTitle'][0]
+            songLength = songNameAPI[x]['length']
+            songLength = strftime("%H:%M:%S", gmtime(songLength))
+            if fever:
+                songWeightList.append([songName, round(((songValues[2] + songValues[3] * 2) * 1.1) * 100), songLength])
+            else:
+                songWeightList.append([songName, round(((songValues[0] + songValues[1] * 2) * 1.1) * 100), songLength])
+        if songWeightList:
+            songWeightList = sorted(songWeightList,key=itemgetter(1),reverse=True)
+            songWeightList = songWeightList[:20]
+            output = ("```" + tabulate(songWeightList,tablefmt="plain",headers=["Song","Score %","Length"]) + "```")
     return output
     
 
@@ -124,22 +168,27 @@ async def GetStarsUsedOutput(epPerSong: int, begRank: int, begEP: int, targetEP:
         songsPlayed = (targetEP - begEP) / epPerSong
         
         #beg xp
-        beginningXP = findRank(begRank)
+        if begRank != 300:
+            beginningXP = findRank(begRank)
 
-        #xp gained + end xp 
-        xpGained = xpPerFlame * songsPlayed
-        endingXP = beginningXP + xpGained
-
-        #end rank
-        xpTable = xpTableFnc()
-        for x in range(len(xpTable)):
-            if(endingXP < xpTable[x]):
-                endRank = x-1
-                break
-            elif(endingXP == xpTable[x]):
-                endRank = x
-                break
-
+            #xp gained + end xp 
+            xpGained = xpPerFlame * songsPlayed
+            endingXP = beginningXP + xpGained
+            xpTable = xpTableFnc()
+            
+            if endingXP > xpTable[-1]:
+                endRank = 300
+            else:
+            
+                for x in range(len(xpTable)):
+                    if(endingXP < xpTable[x]):
+                        endRank = x-1
+                        break
+                    elif(endingXP == xpTable[x]):
+                        endRank = x
+                        break
+        else:
+            endRank = 300
         #time
         from commands.formatting.EventCommands import GetCurrentEventID
 
@@ -181,22 +230,25 @@ async def GetStarsUsedOutput(epPerSong: int, begRank: int, begEP: int, targetEP:
     return starsUsedOutputString
 
 async def GetCoastingOutput(server: str, epPerSong: int, currentEP: int):
-    from commands.formatting.EventCommands import GetCurrentEventID
-    EventID = await GetCurrentEventID(server)
-    TimeLeft = await GetEventTimeLeftSeconds(server, EventID)
-    if(TimeLeft < 0):
-        coastingOutputString = "The event is completed."
+    if epPerSong == 0:
+        coastingOutputString = ("```" + tabulate([["Ending EP", "{:,}".format(currentEP)],["Hours Left", "{:,}".format(0)],["Songs Played", "{:,}".format(0)]],tablefmt="plain") + "```")
     else:
-        hours = TimeLeft / 1000 / 60 / 60
-        daysofAds = math.floor(hours / 24)
-        epPerFlame = epPerSong / 3
-        epFromAds = (daysofAds * 5) * epPerFlame
-        naturalSongsLeft = math.floor((2 * hours) / 3)
-        epAtEnd = currentEP + (naturalSongsLeft * epPerSong) + (epFromAds)
-        totalSongs = naturalSongsLeft + ((daysofAds * 5) / 3)
-        epAtEnd = round(epAtEnd)
-        coastingOutputString = ("```" + tabulate([["Ending EP", "{:,}".format(epAtEnd)],["Hours Left", "{:,}".format(math.floor(hours))],["Songs Played", "{:,}".format(totalSongs)]],tablefmt="plain") + "```")
-    return coastingOutputString
+        from commands.formatting.EventCommands import GetCurrentEventID
+        EventID = await GetCurrentEventID(server)
+        TimeLeft = await GetEventTimeLeftSeconds(server, EventID)
+        if(TimeLeft < 0):
+            coastingOutputString = "The event is completed."
+        else:
+            hours = TimeLeft / 60 / 60
+            daysofAds = math.floor(hours / 24)
+            epPerFlame = epPerSong / 3
+            epFromAds = (daysofAds * 5) * epPerFlame
+            naturalSongsLeft = math.floor((2 * hours) / 3)
+            epAtEnd = currentEP + (naturalSongsLeft * epPerSong) + (epFromAds)
+            totalSongs = naturalSongsLeft + ((daysofAds * 5) / 3)
+            epAtEnd = round(epAtEnd)
+            coastingOutputString = ("```" + tabulate([["Ending EP", "{:,}".format(epAtEnd)],["Hours Left", "{:,}".format(math.floor(hours))],["Songs Played", "{:,}".format(round(totalSongs))]],tablefmt="plain") + "```")
+        return coastingOutputString
 
 def GetEPGainOutput(yourScore: int, multiScore: int, bpPercent: int, flamesUsed: int, eventType: int, bbPlace: int = 0): 
 
@@ -266,6 +318,86 @@ def GetEPGainOutput(yourScore: int, multiScore: int, bpPercent: int, flamesUsed:
             ep = (bbPlaceBonus + math.floor(yourScore / 5500)) * epPerFlame
     return ep
 
+async def GenerateBandandTitlesImage(members: list, titles: list):
+    from PIL import Image
+    from PIL.ImageDraw import Draw
+    from PIL.ImageFont import truetype
+    from io import BytesIO
+    from os import path
+    from commands.apiFunctions import GetBestdoriAllTitlesAPI
+    TitlesAPI = await GetBestdoriAllTitlesAPI()
+    PathToIcons = []
+    for x in members:
+        IconPath = f'icons/full_icons/{x}_trained.png'
+        if path.exists(IconPath):
+            PathToIcons.append(IconPath)
+        else:
+            IconPath = f'icons/full_icons/{x}.png'
+            PathToIcons.append(IconPath)
+    images = [Image.open(x) for x in PathToIcons]
+    widths, heights = zip(*(i.size for i in images))
+    total_width = sum(widths)
+    max_height = max(heights) * 2
+    new_im = Image.new('RGBA', (int(total_width), max_height))
+    x_offset = 0
+    for im in images:
+        new_im.paste(im, (x_offset,0))
+        x_offset += im.size[0]        
+    
+    Tier = ''
+    if len(titles) == 2:
+        x_offset = 0
+        for Title_ID in titles:
+            ImageContents = []
+            titleinfo = TitlesAPI[str(Title_ID)]  
+            EventTitle = f"img/titles/{titleinfo['baseImageName'][1]}.png"
+            ImageContents.append(EventTitle)
+            event = Image.open(ImageContents[0])
+            event = event.resize((368,100), Image.ANTIALIAS)
+            new_im.paste(event, (x_offset,250), event)
+
+            Tier = titleinfo['rank'][1]
+            if Tier != 'none' and Tier != 'normal' and Tier != 'extra':
+                TierTitle = f'img/titles/event_point_{Tier}.png'
+                ImageContents.append(TierTitle)
+                tier = Image.open(ImageContents[1])
+                tier = tier.resize((368,100), Image.ANTIALIAS)
+                new_im.paste(tier, (x_offset,250), tier)
+            elif Tier == 'normal' or Tier == 'extra':
+                TierTitle = f'img/titles/try_clear_{Tier}.png'
+                ImageContents.append(TierTitle)
+                tier = Image.open(ImageContents[1])
+                tier = tier.resize((368,100), Image.ANTIALIAS)
+                new_im.paste(tier, (x_offset,250), tier)
+
+            x_offset += 525
+    else:
+        x_offset = 250
+        ImageContents = []
+        titleinfo = TitlesAPI[str(titles[0])]  
+        EventTitle = f"img/titles/{titleinfo['baseImageName'][1]}.png"
+        ImageContents.append(EventTitle)
+        event = Image.open(ImageContents[0])
+        event = event.resize((368,100), Image.ANTIALIAS)
+        new_im.paste(event, (x_offset,250), event)
+
+        Tier = titleinfo['rank'][1]
+        if Tier != 'none':
+            TierTitle = f'img/titles/event_point_{Tier}.png'
+            ImageContents.append(TierTitle)
+            tier = Image.open(ImageContents[1])
+            tier = tier.resize((368,100), Image.ANTIALIAS)
+            new_im.paste(tier, (x_offset,250), tier)
+
+        
+    
+    import uuid
+    from discord import File
+    FileName = f'{str(uuid.uuid4())}.png'
+    SavedFilePath = f'imgTmp/{FileName}.png'
+    new_im.save(SavedFilePath)
+    return FileName, SavedFilePath
+
 async def characterOutput(character: str):
     from commands.apiFunctions import GetBestdoriAllCharasAPI, GetBestdoriCharasAPI
     r = await GetBestdoriAllCharasAPI()
@@ -277,19 +409,32 @@ async def characterOutput(character: str):
         charalist = r[x]['characterName']
         if character in charalist[1]:
             charaId = x
+        elif character in charalist[0]:
+            charaId = x
 
     charaApi = await GetBestdoriCharasAPI(int(charaId))
-    charaNames = charaApi['characterName'][1] + ' / ' + charaApi['characterName'][0] 
-    charaFavFood = '**Favorite Food**: ' + charaApi['profile']['favoriteFood'][1] 
-    charaSeiyuu = '**Seiyuu**: ' + charaApi['profile']['characterVoice'][1] 
-    charaHatedFood = '**Hated Food**: ' + charaApi['profile']['hatedFood'][1] 
-    charaHobbies = '**Hobbies**: ' + charaApi['profile']['hobby'][1] 
-    charaAbout = charaApi['profile']['selfIntroduction'][1] 
-    charaSchool = '**School**: ' + charaApi['profile']['school'][1]
+    charaNames = charaApi['characterName'][1] + ' / ' + charaApi['characterName'][0]
+    try:
+        charaFavFood = '**Favorite Food**: ' + charaApi['profile']['favoriteFood'][1] 
+        charaSeiyuu = '**Seiyuu**: ' + charaApi['profile']['characterVoice'][1] 
+        charaHatedFood = '**Hated Food**: ' + charaApi['profile']['hatedFood'][1] 
+        charaHobbies = '**Hobbies**: ' + charaApi['profile']['hobby'][1] 
+        charaAbout = charaApi['profile']['selfIntroduction'][1] 
+        charaSchool = '**School**: ' + charaApi['profile']['school'][1]
+    except:
+        charaFavFood = '**Favorite Food**: ' + charaApi['profile']['favoriteFood'][0] 
+        charaSeiyuu = '**Seiyuu**: ' + charaApi['profile']['characterVoice'][0] 
+        charaHatedFood = '**Hated Food**: ' + charaApi['profile']['hatedFood'][0] 
+        charaHobbies = '**Hobbies**: ' + charaApi['profile']['hobby'][0] 
+        charaAbout = charaApi['profile']['selfIntroduction'][0] 
+        charaSchool = '**School**: ' + charaApi['profile']['school'][0]
+
     if 'hanasakigawa_high' in charaSchool:
         charaSchool = '**School**: Hanasakigawa High'
     elif 'haneoka_high' in charaSchool:
         charaSchool = '**School**: Haneoka High'
+    elif 'tsukinomori_high' in charaSchool:
+        charaSchool = '**School**: Tsukinomori High'
 
     charaYearAnime = '**Year (anime)**: ' + str(charaApi['profile']['schoolYear'][0])
     charaPosition = '**Position**: ' + charaApi['profile']['part'].capitalize()

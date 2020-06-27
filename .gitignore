@@ -19,4 +19,9 @@ commands/cogs/Servers.py
 *.json
 *.DS_STORE
 startup/google.py
-commands/cogs/Help.py
+rolls/*
+utils/*
+icons/images/*
+commands/cogs/Music.py
+commands/formatting/Estimate.py
+temp-plot.html

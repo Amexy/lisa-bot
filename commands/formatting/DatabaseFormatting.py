@@ -2,6 +2,7 @@ from tinydb import TinyDB, where, Query
 from tabulate import tabulate
 from discord.channel import TextChannel
 from discord.guild import Guild
+from discord import RawReactionActionEvent
 
 # Databases
 eventCheckDb2min = 'databases/eventCheckDb2min.json'
@@ -19,6 +20,64 @@ t100DB = 'databases/t100DB.json'
 t1000DB = 'databases/t1000DB.json'
 jp2MinuteTracking = 'databases/jp2MinuteTrackingDB.json'
 jp1HourTracking = 'databases/jp1HourTrackingDB.json'
+botupdatesDB = 'databases/botupdates.json'
+
+#######################
+#     Bot Updates     #
+#######################
+
+
+def AddChannelToBotUpdatesDatabase(channel: TextChannel):
+    db = TinyDB(botupdatesDB)
+    success = True
+    try:
+        db.upsert({'name': channel.name,
+                   'guild': channel.guild.id,
+                   'guildName': channel.guild.name,
+                   'id': channel.id
+                   }, where('id') == channel.id)
+    except Exception as e:
+        print(e)
+        success = False
+
+    if success:
+        text = "Channel " + channel.name + \
+            " will receive bot updates" 
+    else:
+        text = "Failed adding " + channel.name + \
+            " to the bot updates list" 
+    return text
+
+
+def RemoveChannelFromBotUpdatesDatabase(channel: TextChannel):
+    db = TinyDB(botupdatesDB)
+    success = True
+    try:
+        db.remove((where('id') == channel.id) & (
+            where('guild') == channel.guild.id))
+    except Exception as e:
+        print(e)
+        success = False
+
+    if success:
+        text = "Channel " + channel.name + \
+            " removed from receiving bot updates" 
+    else:
+        text = "Failed removing " + channel.name + \
+            " from receiving bot updates" 
+    return text
+
+
+def GetBotChannelsToPost():
+    db = TinyDB(botupdatesDB)
+    ids = list()
+    try:
+        saved = db.all()
+        for i in saved:
+            ids.append(i['id'])
+    except Exception as e:
+        print(e)
+    return ids
 
 #######################
 #     T10 Updates     #
@@ -227,7 +286,7 @@ def getChannelsToPost(interval: int, server: str):
         if(interval == 2):
             db = TinyDB(eventCheckDb2min)
         if(interval == 1):
-            db = TinyDB(eventCheckDb1min)
+            db = TinyDB(songUpdates1Min)
         if(interval == 3600):
             db = TinyDB(eventCheckDb1hr)
             interval = '1 hour'
@@ -350,6 +409,20 @@ def getNewsChannelsToPost(server: str):
 ##################
 #     Roles      #
 ##################
+def CheckMessageForReactAssignment(msgID: int):
+    db = TinyDB('databases/reactbasedroles.json')
+    queryBuilder = Query()
+    if db.contains(queryBuilder.msgID == msgID):
+        return True
+    else:
+        return False
+
+def GetReactAssignmentList(msgID: int):
+    db = TinyDB('databases/reactbasedroles.json')
+    queryBuilder = Query()
+    document = db.get(queryBuilder.msgID == msgID)
+    return document['reactList']
+
 def CheckRoleForAssignability(RoleName: str, GuildID: int):
     db = TinyDB('databases/selfassignableroles.json')
     QueryBuilder = Query()
@@ -364,7 +437,6 @@ def CheckRoleForAssignability(RoleName: str, GuildID: int):
         else:
             RoleFound = False
     return RoleFound
-    
 
 def RemoveRoleFromAssingability(RoleName: str, GuildID: int):
     db = TinyDB('databases/selfassignableroles.json')
@@ -391,7 +463,7 @@ def GetAllRoles(GuildID: int):
         Roles.append([x['RoleName']])
     return Roles
 
-def AddRoleToDatabase(channel: TextChannel, server: str, role: str):
+def AddRoleToDatabase(channel: TextChannel, role: str):
     success = True
     db = TinyDB('databases/selfassignableroles.json') 
     try:
@@ -405,11 +477,46 @@ def AddRoleToDatabase(channel: TextChannel, server: str, role: str):
         success = False
 
     if success:
-        text = "Role %s successfully added to the self assignable roles for %s" %(role, server)
+        text = "Role %s successfully added to the self assignable roles for %s" % (
+            role, channel.guild.name)
     else:
-        text = "Failed adding role %s to the self assignable roles for %s" %(role, server)
+        text = "Failed adding role %s to the self assignable roles for %s" % (
+            role, channel.guild.name)
     return text
 
+def AddReactToDatabase(msgID: int, data: dict):
+    success = True
+    db = TinyDB('databases/reactbasedroles.json')
+    try:
+        db.upsert({'msgID': msgID,
+                'reactList': data
+                }, where('msgID') == msgID)
+
+    except Exception as e:
+        print(e)
+        success = False
+
+    if success:
+        text = f"Updated values for valid roles and emoji for message {msgID}."
+    else:
+        text = f"Failed to update/enable message {msgID} for reaction based role assignment."
+    return text
+
+def RemoveReactFromDatabase(msgID: int):
+    success = True
+    db = TinyDB('databases/reactbasedroles.json')
+    try:
+        db.remove(where('msgID') == msgID)
+
+    except Exception as e:
+        print(e)
+        success = False
+
+    if success:
+        text = f"Message {msgID} disabled for reaction based role assignment. Stored values for valid roles and emoji."
+    else:
+        text = f"Failed to remove message {msgID} for reaction based role assignment."
+    return text
 
 ##################
 #     Misc       #

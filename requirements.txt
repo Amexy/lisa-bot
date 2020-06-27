@@ -15,3 +15,7 @@ selenium==3.141.0
 tabulate==0.8.3
 tinydb==3.13.0
 webcolors==1.11.1
+google-api-python-client 
+google-auth-httplib2 
+google-auth-oauthlib
+psutil
