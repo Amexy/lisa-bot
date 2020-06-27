@@ -4,5 +4,7 @@
     "webdrivers_enabled" : "true",
     "pickle_path" : "path",
     "loops_enabled" : "true",
-    "load_t10events" : "true"
+    "load_t10events" : "true",
+    "pixiv_username" : "username",
+    "pixiv_pw" : "password"
 }

@@ -18,21 +18,28 @@ class Misc(commands.Cog):
             FileExtension = '.gif'
         else:
             FileExtension = '.png'
-        SavedPicPath = 'imgTmp/' + str(ctx.message.guild.id) + FileExtension
+        SavedPicPath = 'img/imgTmp/' + str(GuildInfo.id) + FileExtension
         response = requests.get(GuildPicURL, stream=True)
         if os.path.exists(SavedPicPath):
             os.remove(SavedPicPath)
         with open(SavedPicPath, 'ab') as Out_file:
             shutil.copyfileobj(response.raw, Out_file)
             DiscordFileObject = File(SavedPicPath)
-        await ctx.send(file=DiscordFileObject)
+        embed = discord.Embed(title=f"{GuildInfo.name}'s Avatar",color=discord.Color.blue())
+        embed.set_image(url=f"attachment://{GuildInfo.id}{FileExtension}")
+        embed.add_field(name='Link', value=GuildPicURL)
+        await ctx.send(embed=embed,file=DiscordFileObject)
         del response
+    
+    
+    
+    
     
     @commands.command(name='reload',
                      description='In the event that the loops (in particular 2 minute/1hr t10 posting) stop working, run this command to restart that process. If you want access to this command, please use the .notify command')
     async def reload(self, ctx, cog: str = ''):
         if not cog: #By default, it will reload the Loops command since this is the most common one that fails and users need access to
-            ValidUsers = [99640840929943552, 158699060893581313, 202289392394436609, 102201838752784384, 358733607151599636, 229933911717707776, 181690542730641408, 154997108603224064]
+            ValidUsers = [119252023395876864,485843748647993375, 99640840929943552, 158699060893581313, 202289392394436609, 102201838752784384, 358733607151599636, 229933911717707776, 181690542730641408, 154997108603224064]
             if ctx.message.author.id not in ValidUsers:
                 await ctx.send("You are not authorized to use this command. If you'd like access, please use the .notify command requesting access")
             else: 
@@ -114,16 +121,23 @@ class Misc(commands.Cog):
             FileExtension = '.gif'
         else:
             FileExtension = '.png'
-        SavedPicPath = 'imgTmp/' + str(user.id) + FileExtension
+        SavedPicPath = 'img/imgTmp/' + str(user.id) + FileExtension
         response = requests.get(UserPicUrl, stream=True)
         if os.path.exists(SavedPicPath):
             os.remove(SavedPicPath)
         with open(SavedPicPath, 'ab') as Out_file:
             shutil.copyfileobj(response.raw, Out_file)
             DiscordFileObject = File(SavedPicPath)
-        await ctx.send(file=DiscordFileObject)
+        embed = discord.Embed(title=f"{user.display_name}'s Avatar",color=discord.Color.blue())
+        embed.set_image(url=f"attachment://{user.id}{FileExtension}")
+        embed.add_field(name='Link', value=UserPicUrl)
+        await ctx.send(embed=embed,file=DiscordFileObject)
         del response
 
+    @getavatar.error
+    async def info_error(self, ctx, error):
+        if isinstance(error, commands.BadArgument):
+            await ctx.send(f'No user found with that name. Names are case sensitive')
     @commands.command(name='about',
                       aliases=['info'],
                       description="Posts info about the bot")

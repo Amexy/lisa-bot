@@ -70,18 +70,18 @@ class Fun(commands.Cog):
         AllThreeStarCards = []
         AllTwoStarCards = []
 
-        for folder in os.listdir("icons/"):
+        for folder in os.listdir("img/icons/"):
             if folder != '.DS_Store':
-                    for subfolder in os.listdir(f"icons/{folder}"):
+                    for subfolder in os.listdir(f"img/icons/{folder}"):
                         if subfolder == '2':
-                            for file in os.listdir(f"icons/{folder}/{subfolder}"):
-                                AllTwoStarCards.append(f"icons/{folder}/{subfolder}/" + file)
+                            for file in os.listdir(f"img/icons/{folder}/{subfolder}"):
+                                AllTwoStarCards.append(f"img/icons/{folder}/{subfolder}/" + file)
                         elif subfolder == '3':
-                            for file in os.listdir(f"icons/{folder}/{subfolder}"):
-                                AllThreeStarCards.append(f"icons/{folder}/{subfolder}/" + file)
+                            for file in os.listdir(f"img/icons/{folder}/{subfolder}"):
+                                AllThreeStarCards.append(f"img/icons/{folder}/{subfolder}/" + file)
                         elif subfolder == '4':
-                            for file in os.listdir(f"icons/{folder}/{subfolder}"):
-                                AllFourStarCards.append(f"icons/{folder}/{subfolder}/" + file)
+                            for file in os.listdir(f"img/icons/{folder}/{subfolder}"):
+                                AllFourStarCards.append(f"img/icons/{folder}/{subfolder}/" + file)
                         else:
                             pass
 
@@ -231,7 +231,7 @@ class Fun(commands.Cog):
                 CharaName = CharaAPI[CharacterID]['characterName'][1]
                 SplitList = CharaName.split(' ', 1)
                 CharaName = SplitList[0].lower()
-                IconsPath = f"icons/full_icons/{x}.png"
+                IconsPath = f"img/icons/full_icons/{x}.png"
                 AllowedTypes = ['limited','permanent','initial','event']
                 if int(Rarity) > 2:
                     if not path.exists(IconsPath):
@@ -410,12 +410,12 @@ class Fun(commands.Cog):
                                 else:
                                     Characters.append(x)
                     for chara in Characters:
-                        for x in os.listdir(f"icons/{chara}/2"):
-                            AllTwoStarCards.append(f"icons/{chara}/2/" + x)
-                        for x in os.listdir(f"icons/{chara}/3"):
-                            AllThreeStarCards.append(f"icons/{chara}/3/" + x)
-                        for x in os.listdir(f"icons/{chara}/4"):
-                            AllFourStarCards.append(f"icons/{chara}/4/" + x),
+                        for x in os.listdir(f"img/icons/{chara}/2"):
+                            AllTwoStarCards.append(f"img/icons/{chara}/2/" + x)
+                        for x in os.listdir(f"img/icons/{chara}/3"):
+                            AllThreeStarCards.append(f"img/icons/{chara}/3/" + x)
+                        for x in os.listdir(f"img/icons/{chara}/4"):
+                            AllFourStarCards.append(f"img/icons/{chara}/4/" + x),
                 else:
                     AllTwoStarCards = self.AllTwoStarCards
                     AllThreeStarCards = self.AllThreeStarCards
@@ -484,7 +484,7 @@ class Fun(commands.Cog):
             user = user.name + '#' + user.discriminator
 
             for chara in CardsRolled:
-                search = re.search('/([a-zA-Z]*)\/([0-9]*)', chara)
+                search = re.search('icons/([a-zA-Z]*)\/([0-9]*)', chara)
                 name = search[1]
                 cardtype = search[2]
                 self.UpdateCharaRollsJSON(523337807847227402, 'self', name, cardtype)
@@ -501,7 +501,7 @@ class Fun(commands.Cog):
             import uuid
             from discord import File
             FileName = str(ctx.message.author.id) + '_' + str(uuid.uuid4()) + '.png'
-            SavedFile = "rolls/" + FileName
+            SavedFile = "img/rolls/" + FileName
             new_im.save(SavedFile)
             DiscordFileObject = File(SavedFile,filename=FileName)
             RolledStats = self.GetRollStats(ctx.message.author.id)
@@ -608,10 +608,10 @@ class Fun(commands.Cog):
                 PicURL = pic['image_urls']['large']
                 if charaId == '23':
                     SaveImage = True
-                    SavedPicPath = f'pfps/{PicID}_p0.jpg'
+                    SavedPicPath = f'img/pfps/{PicID}_p0.jpg'
                 else:
                     SaveImage = False
-                    SavedPicPath = f'imgTmp/{PicID}_p0.jpg'
+                    SavedPicPath = f'img/imgTmp/{PicID}_p0.jpg'
                 response = requests.get(PicURL, 
                                         headers={
                                             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36', 
