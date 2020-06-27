@@ -10,7 +10,7 @@ import asyncio
 import time
 
 # checks prefix database for each message. could probably improve this
-default_prefix = "."
+default_prefix = ","
 
 
 def prefix(bot, message):

@@ -35,7 +35,7 @@ class Game(commands.Cog):
                 im = Image.new("RGBA", (180, 180))
                 Folder = str(math.floor(int(x) / 50)).zfill(2)
                 ResourceSetName = CardAPI[x]['resourceSetName']
-                IconsPath = f"icons/base_icons/{x}.png"
+                IconsPath = f"img/icons/base_icons/{x}.png"
                 Rarity = str(CardAPI[x]['rarity']) 
                  
                 if int(Rarity) > 0:
@@ -132,7 +132,7 @@ class Game(commands.Cog):
             BandMembers.append(info.current_band.card5)
             BandFileName = await GenerateBandandTitlesImage(BandMembers,TitlesInfo)
             BandImageFile = discord.File(BandFileName[1], filename=BandFileName[0])
-            icon = discord.File(f"icons/base_icons/{ProfilePicture}", filename=f'{ProfilePicture}')
+            icon = discord.File(f"img/icons/base_icons/{ProfilePicture}", filename=f'{ProfilePicture}')
             embed.set_thumbnail(url=f"attachment://{ProfilePicture}")
             embed.set_image(url=f"attachment://{BandFileName[0]}")
 
@@ -190,12 +190,12 @@ class Game(commands.Cog):
                         gachasEnd.append(time.strftime("%d %b %Y", time.localtime(int(closedAt / 1000))))        
         IconPaths = []
         for chara, id in zip(CardCharaNames, CardIds):
-            IconPaths.append(f"icons/{chara.lower()}/4/{id}.png")
+            IconPaths.append(f"img/icons/{chara.lower()}/4/{id}.png")
         images = [Image.open(x) for x in IconPaths]
         widths, heights = zip(*(i.size for i in images))
         total_width = sum(widths) 
         max_height = max(heights)
-        new_im = Image.new('RGB', (int(total_width), max_height))
+        new_im = Image.new('RGBA', (int(total_width), max_height))
         x_offset = 0
         for im in images:
             new_im.paste(im, (x_offset, 0))
@@ -203,16 +203,16 @@ class Game(commands.Cog):
         from discord import File
         import uuid
         FileName = str(uuid.uuid4()) + '.png'
-        SavedFile = "imgTmp/" + FileName
+        SavedFile = "img/imgTmp/" + FileName
         new_im.save(SavedFile)
         DiscordFileObject = File(SavedFile, filename=FileName)
-        os.remove(SavedFile)
         embed=discord.Embed()
         embed.add_field(name='Gacha', value='\n'.join(gachas), inline=True)
         embed.add_field(name='End', value='\n'.join(gachasEnd), inline=True)
         embed.add_field(name='Cards', value='\n'.join(cardDetails), inline=False)
         embed.set_image(url=f"attachment://{FileName}")
         await ctx.send(file=DiscordFileObject, embed=embed)
+        os.remove(SavedFile)
 
 
     @commands.command(name='character',
@@ -229,14 +229,16 @@ class Game(commands.Cog):
     @commands.command(name='starsused',
                       aliases=['su'],
                       description="Provides star usage when aiming for a certain amount of EP. Challenge live calculations aren't incorporated yet. I recommended using Bestdori's event calculator",
-                      help=".starsused 9750 100 0 2000000 3 en\n.starsused 9750 100 0 2000000 3 jp\n.starsused 9750 100 0 2000000 3 168\n.su 9750 100 0 2000000 3")
+                      help=".starsused 9750 100 0 2000000 3 en\n.starsused 9750 100 0 2000000 3 jp\n.starsused 9750 100 0 2000000 3 168\n.su 9750 100 0 2000000 3",
+                      enabled=False)
     async def starsused(self, ctx, epPerSong: int, begRank: int, begEP: int, targetEP: int, flamesUsed: int, *ServerOrHoursLeft):
         starsUsedTable = await GetStarsUsedOutput(epPerSong, begRank, begEP, targetEP, flamesUsed, *ServerOrHoursLeft)
         await ctx.send(starsUsedTable)
 
     @commands.command(name='epgain',
                       description="Provides EP gain given user-provided inputs",
-                      help="BPPercent should be between 1 and 150 and in intervals of 10 e.g. 10, 20, 30\n\nNormal Event = 1\nLive Trial = 2\nChallenge = 3\nBand Battle* = 4\n*For Band Battles, specify placement between 1-5.\n\n.epgain 1500000 7500000 150 3 1\n.epgain 1000000 6000000 130 2 4 5")
+                      help="BPPercent should be between 1 and 150 and in intervals of 10 e.g. 10, 20, 30\n\nNormal Event = 1\nLive Trial = 2\nChallenge = 3\nBand Battle* = 4\n*For Band Battles, specify placement between 1-5.\n\n.epgain 1500000 7500000 150 3 1\n.epgain 1000000 6000000 130 2 4 5",
+                      enabled=False)
     async def epgain(self, ctx, yourScore: int, multiScore: int, bpPercent: int, flamesUsed: int, eventType: int, bbPlace: int = 0):
         ep = GetEPGainOutput(yourScore, multiScore, bpPercent, flamesUsed, eventType, bbPlace)
         await ctx.send("EP Gain: " + str(math.floor(ep)))
@@ -403,19 +405,22 @@ class Game(commands.Cog):
                       description="Provides embedded image of card with specified filters",
                       help="There are several filters one can use to search. Rarity goes bEnter the character with optional filters to see card information\n\n.card lisa - Most recent Lisa 4* Card\n.card lisa df - Lisa Dreamfes Card\n.card lisa last - Last released Lisa 4*\n.card lisa last sr happy - Last released happy 3* Lisa\n.card title maritime detective - Lookup card with title \"Maritime Detective\"")
     async def card(self, ctx: discord.abc.Messageable, *args):
-        resultFilteredArguments = filterArguments(*args)
-        if resultFilteredArguments.failure:
-            return await ctx.send(resultFilteredArguments.failure)
-        cardsApi = requests.get('https://bestdori.com/api/cards/all.5.json').json()
-        skillsApi = requests.get('https://bestdori.com/api/skills/all.5.json').json()
-        cards = parseCards(cardsApi, skillsApi)
-        resultCard = findCardFromArguments(cards, resultFilteredArguments.success)
-        if resultCard.failure:
-            return await ctx.send(resultCard.failure)
-        card: Card = resultCard.success
-        palette = Palette(card.attribute)
-        imagePath = generateImage(card, palette)
-        await ctx.send(file=discord.File(imagePath))
+        if not args:
+            await ctx.send('No filters were entered. For help please use `.help card`')
+        else:
+            resultFilteredArguments = filterArguments(*args)
+            if resultFilteredArguments.failure:
+                return await ctx.send(resultFilteredArguments.failure)
+            cardsApi = requests.get('https://bestdori.com/api/cards/all.5.json').json()
+            skillsApi = requests.get('https://bestdori.com/api/skills/all.5.json').json()
+            cards = parseCards(cardsApi, skillsApi)
+            resultCard = findCardFromArguments(cards, resultFilteredArguments.success)
+            if resultCard.failure:
+                return await ctx.send(resultCard.failure)
+            card: Card = resultCard.success
+            palette = Palette(card.attribute)
+            imagePath = generateImage(card, palette)
+            await ctx.send(file=discord.File(imagePath))
 
     @songinfo.error
     async def songinfo_error(self, ctx, error):

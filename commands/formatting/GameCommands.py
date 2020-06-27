@@ -328,11 +328,11 @@ async def GenerateBandandTitlesImage(members: list, titles: list):
     TitlesAPI = await GetBestdoriAllTitlesAPI()
     PathToIcons = []
     for x in members:
-        IconPath = f'icons/full_icons/{x}_trained.png'
+        IconPath = f'img/icons/full_icons/{x}_trained.png'
         if path.exists(IconPath):
             PathToIcons.append(IconPath)
         else:
-            IconPath = f'icons/full_icons/{x}.png'
+            IconPath = f'img/icons/full_icons/{x}.png'
             PathToIcons.append(IconPath)
     images = [Image.open(x) for x in PathToIcons]
     widths, heights = zip(*(i.size for i in images))
@@ -394,7 +394,7 @@ async def GenerateBandandTitlesImage(members: list, titles: list):
     import uuid
     from discord import File
     FileName = f'{str(uuid.uuid4())}.png'
-    SavedFilePath = f'imgTmp/{FileName}.png'
+    SavedFilePath = f'img/imgTmp/{FileName}.png'
     new_im.save(SavedFilePath)
     return FileName, SavedFilePath
 

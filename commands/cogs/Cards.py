@@ -455,12 +455,14 @@ def generateImage(card: Card, palette: Palette) -> str:
         rarityText = rarityText + star
 
     # This font isn't installed by default on macOS. The name must entered exactly how it was installed as well
-    segoe26 = truetype('SEGUISYM.TTF', 26)
+    # seguisym.ttf for Windows
+    # SEGUISYM.TTF for MacOS
+    segoe26 = truetype('seguisym.ttf', 26)
     imageDraw.text((290, 3), rarityText, font=segoe26, fill="white", stroke_width=1, stroke_fill="black")
 
-    segoe18 = truetype('SEGUISYM.TTF', 18)
-    segoe16 = truetype('SEGUISYM.TTF', 16)
-    segoe14 = truetype('SEGUISYM.TTF', 14)
+    segoe18 = truetype('seguisym.ttf', 18)
+    segoe16 = truetype('seguisym.ttf', 16)
+    segoe14 = truetype('seguisym.ttf', 14)
 
     cardNameText = card.cardName
     cardNameSizeX = segoe18.getsize(cardNameText)[0]
@@ -511,6 +513,6 @@ def generateImage(card: Card, palette: Palette) -> str:
     baseY = baseY + 45
     imageDraw.text((290, baseY), skillText, font=segoe14, spacing=-2, fill="white", stroke_width=1, stroke_fill="black")
 
-    fileName = "imgTmp/" + str(uuid.uuid1()) + ".png"
+    fileName = "img/imgTmp/" + str(uuid.uuid1()) + ".png"
     im.save(fileName)
     return fileName
