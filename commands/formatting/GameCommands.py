@@ -318,7 +318,7 @@ def GetEPGainOutput(yourScore: int, multiScore: int, bpPercent: int, flamesUsed:
             ep = (bbPlaceBonus + math.floor(yourScore / 5500)) * epPerFlame
     return ep
 
-async def GenerateBandandTitlesImage(members: list, titles: list):
+async def GenerateBandandTitlesImage(members: list, titles: list, server: str):
     from PIL import Image
     from PIL.ImageDraw import Draw
     from PIL.ImageFont import truetype
@@ -350,7 +350,7 @@ async def GenerateBandandTitlesImage(members: list, titles: list):
         for Title_ID in titles:
             ImageContents = []
             titleinfo = TitlesAPI[str(Title_ID)]  
-            EventTitle = f"img/titles/{titleinfo['baseImageName'][1]}.png"
+            EventTitle = f"img/titles/{server}/{titleinfo['baseImageName'][1]}.png"
             ImageContents.append(EventTitle)
             event = Image.open(ImageContents[0])
             event = event.resize((368,100), Image.ANTIALIAS)
@@ -358,13 +358,13 @@ async def GenerateBandandTitlesImage(members: list, titles: list):
 
             Tier = titleinfo['rank'][1]
             if Tier != 'none' and Tier != 'normal' and Tier != 'extra':
-                TierTitle = f'img/titles/event_point_{Tier}.png'
+                TierTitle = f'img/titles/{server}/event_point_{Tier}.png'
                 ImageContents.append(TierTitle)
                 tier = Image.open(ImageContents[1])
                 tier = tier.resize((368,100), Image.ANTIALIAS)
                 new_im.paste(tier, (x_offset,250), tier)
             elif Tier == 'normal' or Tier == 'extra':
-                TierTitle = f'img/titles/try_clear_{Tier}.png'
+                TierTitle = f'img/{server}/titles/try_clear_{Tier}.png'
                 ImageContents.append(TierTitle)
                 tier = Image.open(ImageContents[1])
                 tier = tier.resize((368,100), Image.ANTIALIAS)
@@ -375,7 +375,7 @@ async def GenerateBandandTitlesImage(members: list, titles: list):
         x_offset = 250
         ImageContents = []
         titleinfo = TitlesAPI[str(titles[0])]  
-        EventTitle = f"img/titles/{titleinfo['baseImageName'][1]}.png"
+        EventTitle = f"img/titles/{server}/{titleinfo['baseImageName'][1]}.png"
         ImageContents.append(EventTitle)
         event = Image.open(ImageContents[0])
         event = event.resize((368,100), Image.ANTIALIAS)
@@ -383,7 +383,7 @@ async def GenerateBandandTitlesImage(members: list, titles: list):
 
         Tier = titleinfo['rank'][1]
         if Tier != 'none':
-            TierTitle = f'img/titles/event_point_{Tier}.png'
+            TierTitle = f'img/titles/{server}/event_point_{Tier}.png'
             ImageContents.append(TierTitle)
             tier = Image.open(ImageContents[1])
             tier = tier.resize((368,100), Image.ANTIALIAS)

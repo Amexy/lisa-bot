@@ -179,7 +179,7 @@ class Card:
 
     def __init__(self, cardId: int, characterId: int, character: Character, rarity: Rarity,
                  attribute: Attribute, levelLimit: int, resourceName: str, skillId: int,
-                 acquisition: Acquisition, cardName: str, skill: str, stat: Stat):
+                 acquisition: Acquisition, cardName: str, skill: str, stat: Stat, jpRelease, enRelease):
         self.cardId = cardId
         self.characterId = characterId
         self.character = character
@@ -192,6 +192,8 @@ class Card:
         self.cardName = cardName
         self.skill = skill
         self.stat = stat
+        self.jpRelease = jpRelease
+        self.enRelease = enRelease
 
 
 class FilteredArguments:
@@ -234,7 +236,17 @@ def mapJsonToCards(k, v, skills) -> Card:
         cardName = enName
 
     stat = v['stat']
+    from datetime import datetime
 
+    
+    if v['releasedAt'][0]:
+        jpRelease = datetime.fromtimestamp(int(v['releasedAt'][0]) / 1000).strftime("%Y-%m-%d %H:%M:%S %Z%z") + ' UTC'
+    else:
+        jpRelease = 'N/A'
+    if v['releasedAt'][1]:
+        enRelease = datetime.fromtimestamp(int(v['releasedAt'][1]) / 1000).strftime("%Y-%m-%d %H:%M:%S %Z%z") + ' UTC'
+    else:
+        enRelease = 'N/A'
     if rarity == Rarity.Normal or rarity == Rarity.Rare:
         maxLvl = stat[str(levelLimit)]
         performance = maxLvl['performance']
@@ -272,7 +284,7 @@ def mapJsonToCards(k, v, skills) -> Card:
     else:
         desc = desc.format(duration)
 
-    return Card(cardId, characterId, character, rarity, attribute, levelLimit, resourceName, skillId, acquisition, cardName, desc, stat)
+    return Card(cardId, characterId, character, rarity, attribute, levelLimit, resourceName, skillId, acquisition, cardName, desc, stat, jpRelease, enRelease)
 
 
 def splitStrings(textToSplit: str, font, maxSize: int) -> str:
@@ -418,33 +430,53 @@ def findCardFromArguments(cardList: List[Card], arg: FilteredArguments) -> Resul
 
 
 def generateImage(card: Card, palette: Palette) -> str:
-    im = Image.new("RGBA", (570, 360))
+    cards = []
+    normal_card: requests.models.Response = requests.get('https://bestdori.com/assets/jp/characters/resourceset/' + card.resourceName + '_rip/card_normal.png')
+    cards.append(Image.open(BytesIO(normal_card.content)))
 
     rarity = card.rarity
     if rarity == Rarity.Normal:
         rarityPng = "img/normal.png"
+        InitialXOffset = 570        
+        TextOffset1 = 290
+        TextOffset2 = 540
     elif rarity == Rarity.Rare:
         rarityPng = "img/rare.png"
+        InitialXOffset = 570
+        TextOffset1 = 290
+        TextOffset2 = 540
     elif rarity == Rarity.Sr:
         rarityPng = "img/sr.png"
+        trained_card: requests.models.Response = requests.get('https://bestdori.com/assets/jp/characters/resourceset/' + card.resourceName + '_rip/card_after_training.png')
+        cards.append(Image.open(BytesIO(trained_card.content)))
+        InitialXOffset = 855
+        TextOffset1 = 568
+        TextOffset2 = 818
     else:
         rarityPng = "img/ssr.png"
+        trained_card: requests.models.Response = requests.get('https://bestdori.com/assets/jp/characters/resourceset/' + card.resourceName + '_rip/card_after_training.png')
+        cards.append(Image.open(BytesIO(trained_card.content)))
+        InitialXOffset = 855
+        TextOffset1 = 568
+        TextOffset2 = 818
     rarityBg = Image.open(rarityPng)
+    im = Image.new("RGBA", (InitialXOffset, 360))
     im.paste(rarityBg, mask=rarityBg)
 
-    image: requests.models.Response = requests.get('https://bestdori.com/assets/jp/characters/resourceset/' + card.resourceName + '_rip/card_normal.png')
-    cardArt = Image.open(BytesIO(image.content))
+    # trained_cardArt = Image.open(BytesIO(trained_card.content))
 
-    cardArtWidth = cardArt.size[0]
-    cardArtHeight = cardArt.size[1]
-    ratio = cardArtHeight / 340
-    newCardArtWidth = int(cardArtWidth / ratio)
-    newCardArtHeight = int(cardArtHeight / ratio)
-    cardArt = cardArt.resize((newCardArtWidth, newCardArtHeight))
-    border = int((newCardArtWidth - 270) / 2)
-    cardArt = cardArt.crop((border, 0, (border + 270), 340))
-    im.paste(cardArt, (10, 10))
-
+    xoffset = 11
+    for cardArt in cards:
+        cardArtWidth = cardArt.size[0]
+        cardArtHeight = cardArt.size[1]
+        ratio = cardArtHeight / 340
+        newCardArtWidth = int(cardArtWidth / ratio)
+        newCardArtHeight = int(cardArtHeight / ratio)
+        cardArt = cardArt.resize((newCardArtWidth, newCardArtHeight))
+        border = int((newCardArtWidth - 270) / 2)
+        cardArt = cardArt.crop((border, 0, (border + 270), 340))
+        im.paste(cardArt, (xoffset, 10))
+        xoffset += 277
     attribute = card.attribute
     if attribute == Attribute.Powerful:
         attrPng = "img/power.png"
@@ -455,7 +487,7 @@ def generateImage(card: Card, palette: Palette) -> str:
     else:
         attrPng = "img/happy.png"
     attrBg = Image.open(attrPng)
-    im.paste(attrBg, (524, 4), mask=attrBg)
+    im.paste(attrBg, (796, 4), mask=attrBg)
 
     imageDraw = Draw(im)
 
@@ -467,24 +499,25 @@ def generateImage(card: Card, palette: Palette) -> str:
     # This font isn't installed by default on macOS. The name must entered exactly how it was installed as well
     # seguisym.ttf for Windows
     # SEGUISYM.TTF for MacOS
-    segoe26 = truetype('seguisym.ttf', 26)
-    imageDraw.text((290, 3), rarityText, font=segoe26, fill="white", stroke_width=1, stroke_fill="black")
+    segoe26 = truetype('seguisym.ttf', 22)
+    imageDraw.text((TextOffset1, 3), rarityText, font=segoe26, fill="white", stroke_width=1, stroke_fill="black")
 
-    segoe18 = truetype('seguisym.ttf', 18)
-    segoe16 = truetype('seguisym.ttf', 16)
-    segoe14 = truetype('seguisym.ttf', 14)
+    segoe18 = truetype('seguisym.ttf', 22)
+    segoe16 = truetype('seguisym.ttf', 20)
+    segoe14 = truetype('seguisym.ttf', 16)
 
     cardNameText = card.cardName
     cardNameSizeX = segoe18.getsize(cardNameText)[0]
     if cardNameSizeX > 225:
+        
         cardNameText = splitStrings(cardNameText, segoe18, 225)
 
     baseY = 40
     cardNameSizeY = segoe18.getsize_multiline(cardNameText)[1]
-    imageDraw.text((290, baseY), cardNameText, font=segoe18, fill="white", stroke_width=1, spacing=-1, stroke_fill="black")
+    imageDraw.text((TextOffset1, baseY), cardNameText, font=segoe18, fill="white", stroke_width=1, spacing=-1, stroke_fill="black")
 
     baseY = baseY + cardNameSizeY + 5
-    imageDraw.text((290, baseY), str(card.acquisition.name), font=segoe14, fill="white", stroke_width=1, stroke_fill="black")
+    imageDraw.text((TextOffset1, baseY), str(card.acquisition.name), font=segoe14, fill="white", stroke_width=1, stroke_fill="black")
 
     statPerformance = card.stat.performance
     statTechnique = card.stat.technique
@@ -500,20 +533,20 @@ def generateImage(card: Card, palette: Palette) -> str:
         visFocus = True
 
     baseY = baseY + 35
-    imageDraw.text((290, baseY), "Performance", font=segoe16, fill="white", stroke_width=1, stroke_fill="black")
-    imageDraw.text(((540 - segoe16.getsize(str(statPerformance))[0]), baseY), str(statPerformance), font=segoe16, fill=palette.accentHsv if perFocus else "white", stroke_width=1, stroke_fill="black")
+    imageDraw.text((TextOffset1, baseY), "Performance", font=segoe16, fill="white", stroke_width=1, stroke_fill="black")
+    imageDraw.text(((TextOffset2 - segoe16.getsize(str(statPerformance))[0]), baseY), str(statPerformance), font=segoe16, fill=palette.accentHsv if perFocus else "white", stroke_width=1, stroke_fill="black")
 
     baseY = baseY + 30
-    imageDraw.text((290, baseY), "Technique", font=segoe16, fill="white", stroke_width=1, stroke_fill="black")
-    imageDraw.text(((540 - segoe16.getsize(str(statTechnique))[0]), baseY), str(statTechnique), font=segoe16, fill=palette.accentHsv if tecFocus else "white", stroke_width=1, stroke_fill="black")
+    imageDraw.text((TextOffset1, baseY), "Technique", font=segoe16, fill="white", stroke_width=1, stroke_fill="black")
+    imageDraw.text(((TextOffset2 - segoe16.getsize(str(statTechnique))[0]), baseY), str(statTechnique), font=segoe16, fill=palette.accentHsv if tecFocus else "white", stroke_width=1, stroke_fill="black")
 
     baseY = baseY + 30
-    imageDraw.text((290, baseY), "Visual", font=segoe16, fill="white", stroke_width=1, stroke_fill="black")
-    imageDraw.text(((540 - segoe16.getsize(str(statVisual))[0]), baseY), str(statVisual), font=segoe16, fill=palette.accentHsv if visFocus else "white", stroke_width=1, stroke_fill="black")
+    imageDraw.text((TextOffset1, baseY), "Visual", font=segoe16, fill="white", stroke_width=1, stroke_fill="black")
+    imageDraw.text(((TextOffset2 - segoe16.getsize(str(statVisual))[0]), baseY), str(statVisual), font=segoe16, fill=palette.accentHsv if visFocus else "white", stroke_width=1, stroke_fill="black")
 
     baseY = baseY + 40
-    imageDraw.text((290, baseY), "Total Power", font=segoe18, fill="white", stroke_width=1, stroke_fill="black")
-    imageDraw.text(((540 - segoe18.getsize(str(statPerformance + statTechnique + statVisual))[0]), baseY), str(statPerformance + statTechnique + statVisual), font=segoe18, fill="white", stroke_width=1, stroke_fill="black")
+    imageDraw.text((TextOffset1, baseY), "Total Power", font=segoe18, fill="white", stroke_width=1, stroke_fill="black")
+    imageDraw.text(((TextOffset2 - segoe18.getsize(str(statPerformance + statTechnique + statVisual))[0]), baseY), str(statPerformance + statTechnique + statVisual), font=segoe18, fill="white", stroke_width=1, stroke_fill="black")
 
     skillText = card.skill
     skillSize = segoe14.getsize(skillText)[0]
@@ -521,8 +554,9 @@ def generateImage(card: Card, palette: Palette) -> str:
         skillText = splitStrings(skillText, segoe14, 250)
 
     baseY = baseY + 45
-    imageDraw.text((290, baseY), skillText, font=segoe14, spacing=-2, fill="white", stroke_width=1, stroke_fill="black")
+    imageDraw.text((TextOffset1, baseY), skillText, font=segoe14, spacing=-2, fill="white", stroke_width=1, stroke_fill="black")
 
-    fileName = "img/imgTmp/" + str(uuid.uuid1()) + ".png"
-    im.save(fileName)
-    return fileName
+    fileName = str(uuid.uuid1()) + ".png"
+    filePath = "img/imgTmp/" + fileName
+    im.save(filePath)
+    return filePath, fileName

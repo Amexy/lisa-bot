@@ -69,8 +69,7 @@ class Event(commands.Cog):
         try:
             if server not in self.ValidT10Servers:
                 await ctx.send('This function only works for the `EN` and `JP` servers')
-            ValidJPIDUsers = [158699060893581313,
-                                365863959527555082, 384333652344963074, 385264382935957504]
+            ValidJPIDUsers = [359549867955191811,158699060893581313, 365863959527555082, 384333652344963074, 385264382935957504, 301704971962023937]
             if server == 'jp' and ctx.message.author.id not in ValidJPIDUsers:
                 output = 'This command has been temporarily disabled / このコマンドは現在無効になっています'
             else:
@@ -124,7 +123,7 @@ class Event(commands.Cog):
             if server not in self.ValidT10Servers:
                 output = 'This function only works for the `EN` and `JP` servers'
             else:
-                ValidJPIDUsers = [158699060893581313,
+                ValidJPIDUsers = [359549867955191811,158699060893581313,
                                   365863959527555082, 384333652344963074, 385264382935957504, 301704971962023937]
                 if server == 'jp' and ctx.message.author.id not in ValidJPIDUsers:
                     output = 'This command has been temporarily disabled / このコマンドは現在無効になっています'

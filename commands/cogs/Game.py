@@ -86,7 +86,6 @@ class Game(commands.Cog):
                 ProfilePicture = f'{info.center_info.card_id}_trained.png'
             else:
                 ProfilePicture = f'{info.center_info.card_id}.png'
-            print(info.cleared_songs.song)
                 
             if len(info.cleared_songs.song) > 0:
                 embed.add_field(name='EX Cleared / FC', value=f'{info.cleared_songs.song._values[2].amount} / {info.fced_songs.song._values[2].amount}', inline=True)
@@ -130,7 +129,7 @@ class Game(commands.Cog):
             BandMembers.append(info.current_band.card1)
             BandMembers.append(info.current_band.card3)
             BandMembers.append(info.current_band.card5)
-            BandFileName = await GenerateBandandTitlesImage(BandMembers,TitlesInfo)
+            BandFileName = await GenerateBandandTitlesImage(BandMembers,TitlesInfo, server)
             BandImageFile = discord.File(BandFileName[1], filename=BandFileName[0])
             icon = discord.File(f"img/icons/base_icons/{ProfilePicture}", filename=f'{ProfilePicture}')
             embed.set_thumbnail(url=f"attachment://{ProfilePicture}")
@@ -405,6 +404,7 @@ class Game(commands.Cog):
                       description="Provides embedded image of card with specified filters",
                       help="There are several filters one can use to search. Rarity goes bEnter the character with optional filters to see card information\n\n.card lisa - Most recent Lisa 4* Card\n.card lisa df - Lisa Dreamfes Card\n.card lisa last - Last released Lisa 4*\n.card lisa last sr happy - Last released happy 3* Lisa\n.card title maritime detective - Lookup card with title \"Maritime Detective\"")
     async def card(self, ctx: discord.abc.Messageable, *args):
+        from discord import File
         if not args:
             await ctx.send('No filters were entered. For help please use `.help card`')
         else:
@@ -420,7 +420,18 @@ class Game(commands.Cog):
             card: Card = resultCard.success
             palette = Palette(card.attribute)
             imagePath = generateImage(card, palette)
-            await ctx.send(file=discord.File(imagePath))
+            enRelease = card.enRelease
+            jpRelase = card.jpRelease
+            DiscordFileObject = File(imagePath[0],filename=imagePath[1])
+            embed = discord.Embed(title=f'{card.cardName}',color=discord.Color.blue(),url=f'https://bestdori.com/info/cards/{card.cardId}')
+            embed.add_field(name='EN Release',value=enRelease,inline=True)
+            embed.add_field(name='\u200b',value='\u200b',inline=True)
+            embed.add_field(name='\u200b',value='\u200b',inline=True)
+            embed.add_field(name='JP Release',value=jpRelase,inline=True)
+            embed.add_field(name='\u200b',value='\u200b',inline=True)
+            embed.add_field(name='\u200b',value='\u200b',inline=True)
+            embed.set_image(url=f'attachment://{imagePath[1]}')
+            await ctx.send(embed=embed,file=DiscordFileObject)
 
     @songinfo.error
     async def songinfo_error(self, ctx, error):

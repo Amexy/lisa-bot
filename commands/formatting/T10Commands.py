@@ -249,7 +249,7 @@ async def t10membersformatting(server: str, eventid: int, songs: bool, userid):
     if not eventranking.top_10.contents:
         songsOutput = (f'No data found for event `{eventid}` on `{server}`. You can use the `.t10e` command to find which events have data. If you suspect this is an error, please use the `.notify` command')
     else:
-        ValidJPIDUsers = [158699060893581313,
+        ValidJPIDUsers = [359549867955191811,158699060893581313,
                                   365863959527555082, 384333652344963074, 385264382935957504]
         if server == 'jp' and userid not in ValidJPIDUsers:
             if songs:

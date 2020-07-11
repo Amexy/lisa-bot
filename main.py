@@ -11,8 +11,6 @@ import time
 
 # checks prefix database for each message. could probably improve this
 default_prefix = ","
-
-
 def prefix(bot, message):
     prefixList = TinyDB('databases/prefixdb.json')
     results = prefixList.search(where('id') == message.guild.id)
@@ -21,7 +19,6 @@ def prefix(bot, message):
     else:
         prefix = default_prefix
     return prefix
-
 
 bot = commands.Bot(command_prefix=prefix, case_insensitive=True)
 
@@ -33,8 +30,6 @@ with open("config.json") as file:
 #################
 #   Bot Stuff   #
 #################
-
-
 @bot.event
 async def on_ready():
     print("Connected..")
@@ -45,8 +40,7 @@ async def on_ready():
     print('Current Server Count: ' + str(CurrentGuildCount))
     await bot.change_presence(activity=discord.Game(name='.help | discord.gg/wDu5CAA'))
 
-
-# Temporay thing for WSC
+# Temporary thing for WSC
 @bot.event
 async def on_member_join(member):
     from discord.member import Member
@@ -55,7 +49,6 @@ async def on_member_join(member):
         user = member
         role = get(user.guild.roles, name='Gatherer')
         await Member.add_roles(user, role)
-
 
 @bot.event
 async def on_message(message):
@@ -67,7 +60,6 @@ async def on_command_error(ctx, error):
     if isinstance(error, CommandNotFound):
         return
     raise error
-
 
 @bot.event
 async def on_guild_join(guild):
