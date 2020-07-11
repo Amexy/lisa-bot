@@ -254,7 +254,7 @@ class Event(commands.Cog):
         await ctx.send(output)
 
     @commands.command(name='cutoff',
-                      aliases=['t100', 't1000', 't2000','t2500','t5000','t10000'],
+                      aliases=['t100', 't1000', 't2000','t2500','t5000','t10000','t1k','t2k','t2.5k','t5k','t10k','co'],
                       description="Cutoff estimate for t100, t1000, and t2000 (experimental support for t2500, t5000, and t10000). Input the tier and server (defaulted to en and 100). Add graph as an argument to see a graph",
                       help=".cutoff 100\n.cutoff 1000 en\n.cutoff 2000 jp graph\n.cutoff en t1000\n.t100\n.t100 jp graph")
     async def cutoff(self, ctx, *args):
@@ -269,22 +269,26 @@ class Event(commands.Cog):
         }
 
         ctx.invoked_with = ctx.invoked_with.lower()
-        tier_alias_regex = re.compile('t[0-9]+')
-        tier_argument_regex = re.compile('t[0-9]+|[0-9]+')
+        tier_regex = re.compile(r't?([0-9]+k?|[0-9]+\.[0-9]+k)')
 
         tier = None
         server = None
         graph = None
 
+        def parse_tier_arg(tier_arg):
+            if tier_arg[0] == 't':
+                tier_arg = tier_arg[1:]
+            if tier_arg[-1] == 'k':
+                return round(1000 * float(tier_arg[:-1]))
+            return int(tier_arg)
+
         for arg in args:
             arg = arg.lower()
-            if tier_argument_regex.match(arg):
-                if arg[0] == 't':
-                    arg = arg[1:]
+            if tier_regex.fullmatch(arg):
                 if tier is not None:
                     await ctx.send('Only one tier argument is allowed.')
                     return
-                tier = int(arg)
+                tier = parse_tier_arg(arg)
             elif arg in valid_servers:
                 if server is not None:
                     await ctx.send('Only one server argument is allowed.')
@@ -297,11 +301,11 @@ class Event(commands.Cog):
                 return
 
         # set tier if using an alias (.t100, .t1000, etc.)
-        if tier_alias_regex.fullmatch(ctx.invoked_with):
+        if tier_regex.fullmatch(ctx.invoked_with):
             if tier is not None:
                 await ctx.send('Tier already specified by alias.')
                 return
-            tier = int(ctx.invoked_with[1:])
+            tier = parse_tier_arg(ctx.invoked_with)
 
         tier = tier or 100
         if tier not in valid_servers_by_tier:
