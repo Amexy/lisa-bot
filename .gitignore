@@ -1,4 +1,3 @@
-
 config.json
 t10archives/
 databases/
@@ -6,13 +5,14 @@ protodefs/
 serverlogs/
 venv/
 img/rolls/*
+img/icons/*
+img/imgTmp/*
 startup/login.py
 commands/cogs/seiyuu.py
 commands/cogs/admin.py
 commands/cogs/Servers.py
-startup/google.py
-icons/images/*
 commands/cogs/Music.py
+startup/google.py
 temp-plot.html
 debug.log
 *.json

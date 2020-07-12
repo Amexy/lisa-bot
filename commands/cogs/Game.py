@@ -422,8 +422,10 @@ class Game(commands.Cog):
             imagePath = generateImage(card, palette)
             enRelease = card.enRelease
             jpRelase = card.jpRelease
-            DiscordFileObject = File(imagePath[0],filename=imagePath[1])
+            ImageFileObject = File(imagePath[0],filename=imagePath[1])
+            ThumbnailFileObject = File(f'img/icons/full_icons/{card.cardId}.png',filename=f'{card.cardId}.png')
             embed = discord.Embed(title=f'{card.cardName}',color=discord.Color.blue(),url=f'https://bestdori.com/info/cards/{card.cardId}')
+            embed.set_thumbnail(url=f'attachment://{card.cardId}.png')
             embed.add_field(name='EN Release',value=enRelease,inline=True)
             embed.add_field(name='\u200b',value='\u200b',inline=True)
             embed.add_field(name='\u200b',value='\u200b',inline=True)
@@ -431,7 +433,7 @@ class Game(commands.Cog):
             embed.add_field(name='\u200b',value='\u200b',inline=True)
             embed.add_field(name='\u200b',value='\u200b',inline=True)
             embed.set_image(url=f'attachment://{imagePath[1]}')
-            await ctx.send(embed=embed,file=DiscordFileObject)
+            await ctx.send(embed=embed,files=[ThumbnailFileObject,ImageFileObject])
 
     @songinfo.error
     async def songinfo_error(self, ctx, error):

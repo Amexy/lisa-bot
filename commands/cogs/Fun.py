@@ -448,6 +448,7 @@ class Fun(commands.Cog):
             embed.set_image(url=f"attachment://{FileName}")
             embed.set_footer(text="Want to see all your stats? Use the rollstats command\nWant to check the leaderboards? Use the rolllb command")
             await ctx.send(file=DiscordFileObject, embed=embed)
+            os.remove(SavedFile)
         except IndexError:
             await ctx.send("Failed generating a roll. This is likely because the bot rolled a card that doesn't exist (e.g. 3* rokka)")
         except Exception as e:
@@ -720,9 +721,11 @@ async def UpdateCardIcons():
             CharaName = CharaAPI[CharacterID]['characterName'][1]
             SplitList = CharaName.split(' ', 1)
             CharaName = SplitList[0].lower()
+            Type = CardAPI[x]['type']
             BaseIconsPath = f"img/icons/base_icons/{x}.png"
             FullIconsPath  = f"img/icons/full_icons/{x}.png"
             GachaIconsPath = f"img/icons/{CharaName}/{Rarity}/{x}.png"
+            GachaTypes = ['limited','permanent']
             # DO THE GACHA ICONS IN THIS LOGIC TOO IF RARITY > 1
             if not path.exists(FullIconsPath):
                 URLList = []
@@ -775,11 +778,12 @@ async def UpdateCardIcons():
                         bandBg = Image.open(bandPng)
                         im.paste(bandBg, (1, 2), mask=bandBg)
                         # The last URL in the list will always be the trained card which isn't needed for the gacha cards
-                        if int(Rarity) == 2:
-                            im.save(GachaIconsPath)
-                        elif int(Rarity) > 2:
-                            if url != URLList[-1]:
+                        if Type in GachaTypes:
+                            if int(Rarity) == 2:
                                 im.save(GachaIconsPath)
+                            elif int(Rarity) > 2:
+                                if url != URLList[-1]:
+                                    im.save(GachaIconsPath)
                         im.save(FullIconsPath)
                     except:
                         print(f"Failed adding card with ID {x}")
