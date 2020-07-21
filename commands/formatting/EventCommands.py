@@ -141,37 +141,7 @@ def GetManualCutoffJSONFile(Server, Tier, EventID):
     return FileName
 
 def GetCutoffJSONFile(Server, Tier):
-    if Server == 'en':
-        if Tier == 100:
-            FileName = f'databases/ent100.json'
-        elif Tier == 1000:
-            FileName = f'databases/ent1000.json'
-        elif Tier == 2500:
-            FileName = f'databases/ent2500.json'
-        elif Tier == 5000:
-            FileName = f'databases/ent5000.json'
-        elif Tier == 10000:
-            FileName = f'databases/ent10000.json'
-        else:
-            FileName = f'databases/ent100.json'
-    elif Server == 'jp':
-        if Tier == 100:
-            FileName = f'databases/jpt100.json'
-        elif Tier == 1000:
-            FileName = f'databases/jpt1000.json'
-        else:
-            FileName = f'databases/jpt2000.json'
-    elif Server == 'cn':
-        if Tier == 100:
-            FileName = f'databases/cnt100.json'
-        elif Tier == 1000:
-            FileName = f'databases/cnt1000.json'
-        else:
-            FileName = f'databases/cnt2000.json'
-    elif Server == 'tw':
-        FileName = f'databases/twt100.json'
-    else:
-        FileName = f'databases/krt100.json'
+    FileName = f'databases/{Server}t{Tier}.json'
     return FileName
 
 def UpdateManualTrackingCutoffJSON(Server, Tier, EventID, Current, Epoch):
@@ -318,12 +288,7 @@ async def CalculatecutoffEstimates(server, tier, EventID):
             Rate = x['rate']
     if not Rate:
         Rate = .01
-    if tier in [100,1000,2000]:
-        CutoffAPI = await GetBestdoriCutoffAPI(server, tier)
-    else:
-        FileName = GetManualCutoffJSONFile(server, tier, EventID)
-        with open(FileName) as file:
-            CutoffAPI = json.load(file)
+    CutoffAPI = await GetBestdoriCutoffAPI(server, tier)
     LastUpdatedCutoff = CutoffAPI['cutoffs'][-1]['ep']
     EventStartTime = int(EventAPI['startAt'][Key])
     EventEndTime = int(EventAPI['endAt'][Key])
@@ -400,8 +365,8 @@ async def CreateGraph(Server, EventID, Tier, CurrentEPValues, CurrentTimes, Esti
     from selenium import webdriver
     import plotly.offline as offline
     fig = go.Figure()
-    fig.add_trace(go.Scatter(go.Scatter(x=CurrentTimes,y=CurrentEPValues)))
-    fig.add_trace(go.Scatter(go.Scatter(x=EstimateTimes,y=EstimateEPValues)))
+    fig.add_trace(go.Scatter(x=CurrentTimes,y=CurrentEPValues,mode='lines+markers'))
+    fig.add_trace(go.Scatter(x=EstimateTimes,y=EstimateEPValues,mode='lines+markers'))
     fig.update_xaxes(range=[0,100])
     fig.update_layout(
         xaxis=dict(
@@ -470,14 +435,7 @@ async def GetCutoffFormatting(server: str, tier: int, graph: bool):
     from commands.formatting.TimeCommands import GetTimeLeftString, GetEventProgress, GetEventTimeLeftSeconds, GetEventLengthSeconds, GetEventStartTime
     import math, time, os
     EventID = await GetCurrentEventID(server)
-
-    if tier in [100,1000,2000]:
-        CutoffAPI = await GetBestdoriCutoffAPI(server, tier)
-    else:
-        FileName = GetManualCutoffJSONFile(server, tier, EventID)
-        with open(FileName) as file:
-            CutoffAPI = json.load(file)
-
+    CutoffAPI = await GetBestdoriCutoffAPI(server, tier)
     EventAPI = await GetBestdoriEventAPI(EventID)
     Key = await GetServerAPIKey(server)
 

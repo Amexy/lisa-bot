@@ -27,10 +27,16 @@ async def GetBestdoriEventAPI(EventID: int):
 async def GetTierKey(tier):
     if tier == 100:
         tier = '0'
-    elif tier == 1000:
+    elif tier == 1000 or tier == 500:
         tier = '1'
-    else:
+    elif tier == 2000 or tier == 2500:
         tier = '2'
+    elif tier == 5000:
+        tier = '3'
+    elif tier == 10000:
+        tier = '4'
+    else:
+        tier = '0'
     return int(tier)
 
 

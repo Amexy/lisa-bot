@@ -261,11 +261,12 @@ class Event(commands.Cog):
         valid_servers = {'jp', 'cn', 'en', 'tw', 'kr'}
         valid_servers_by_tier = {
             100: ['en', 'jp', 'cn', 'tw', 'kr'],
+            500: ['tw'],
             1000: ['en', 'jp', 'cn'],
             2000: ['jp', 'cn'],
             2500: ['en'],
-            5000: ['en'],
-            10000: ['en']
+            5000: ['jp'],
+            10000: ['jp']
         }
 
         ctx.invoked_with = ctx.invoked_with.lower()
@@ -322,14 +323,6 @@ class Event(commands.Cog):
                 readable_list = ', '.join(tier_server_list[:-1]) + ', and ' + tier_server_list[-1]
             await ctx.send(f'T{tier} is only valid for {readable_list}.')
             return
-
-        if tier in [100, 1000, 2000]:
-            import random
-            if random.random() > .5:
-                await ctx.send('Lisa bot is now (experimentally) tracking t2.5k/5k/10k data for the EN server. If you have data you wish to add to the bot, please post in the Lisa bot discord or ping one of the following:\n\nJosh#1373\nNeon#5555\norangejuice#8467\nEndure#9581\nHaruu#6580\n学渣#1424')
-        elif tier in [2500, 5000, 10000]:
-            await ctx.send('This is an experimental feature, expect bugs. If you find any, please use the `.notify` command to let Josh know')
-
         try:
             if graph:
                 output = await GetCutoffFormatting(server, tier, True)
