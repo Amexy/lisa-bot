@@ -17,8 +17,9 @@ class Loops(commands.Cog):
         with open("config.json") as file:
             config_json = json.load(file)
             loops_enabled = config_json['loops_enabled']
-        self.initialT100Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=84&tier=0').json()
-        self.initialT1000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=84&tier=1').json()
+        self.initialT100Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=87&tier=0').json()
+        self.initialT1000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=87&tier=1').json()
+        self.initialT2500Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=87&tier=2').json()
         self.initialCardsAPI = requests.get('https://bestdori.com/api/cards/all.5.json').json()
         self.firstAPI = requests.get('https://bestdori.com/api/news/all.5.json').json()
 
@@ -59,6 +60,7 @@ class Loops(commands.Cog):
     def StartLoops(self):
         self.bot.loop.create_task(self.postT100CutoffUpdates())
         self.bot.loop.create_task(self.postT1000CutoffUpdates())
+        self.bot.loop.create_task(self.postT2500CutoffUpdates())
         self.bot.loop.create_task(self.postEventT102min())
         self.bot.loop.create_task(self.postEventT101hr())
         self.bot.loop.create_task(self.postSongUpdates1min())
@@ -277,7 +279,7 @@ class Loops(commands.Cog):
                             channel = self.bot.get_channel(i)
                             if channel != None:
                                 try:
-                                    await channel.send('T100 update found!')
+                                    await channel.send('t100 update found!')
                                     await channel.send(file=output[1], embed=output[0])                                
                                 except (commands.BotMissingPermissions, discord.errors.NotFound): 
                                     LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
@@ -306,13 +308,42 @@ class Loops(commands.Cog):
                             channel = self.bot.get_channel(i)
                             if channel != None:
                                 try:
-                                    await channel.send('T1000 update found!')
+                                    await channel.send('t1000 update found!')
                                     await channel.send(file=output[1], embed=output[0])                                
                                 except (commands.BotMissingPermissions, discord.errors.NotFound): 
                                     LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
                                     await LoopRemovalUpdates.send('Removing t1000 updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
                                     rmChannelFromCutoffDatabase(channel, 1000)
                         self.initialT1000Cutoffs = cutoffAPI
+                await asyncio.sleep(60)
+                
+    async def postT2500CutoffUpdates(self):
+        await self.bot.wait_until_ready()
+        while not self.bot.is_closed():
+            try:
+                EventID = await GetCurrentEventID('en')
+            except Exception as e:
+                print('Failed posting t2500 update. Exception: ' + str(e))   
+            if EventID:
+                timeLeft = await GetEventTimeLeftSeconds('en', EventID)
+                if(timeLeft > 0):
+                    ids = getCutoffChannels(2500)
+                    initialT2500Cutoffs = self.initialT2500Cutoffs  
+                    cutoffAPI = await GetBestdoriCutoffAPI('en', 2500)
+                    if(sorted(initialT2500Cutoffs.items()) != sorted(cutoffAPI.items())):
+                        output = await GetCutoffFormatting('en', 2500, False)
+                        ids = getCutoffChannels(2500)
+                        for i in ids:
+                            channel = self.bot.get_channel(i)
+                            if channel != None:
+                                try:
+                                    await channel.send('t2500 update found!')
+                                    await channel.send(embed=output)                                
+                                except (commands.BotMissingPermissions, discord.errors.NotFound): 
+                                    LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
+                                    await LoopRemovalUpdates.send('Removing t2500 updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
+                                    rmChannelFromCutoffDatabase(channel, 2500)
+                        self.initialT2500Cutoffs = cutoffAPI
                 await asyncio.sleep(60)
 
     async def postBestdoriNews(self):

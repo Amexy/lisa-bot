@@ -26,18 +26,19 @@ class Fun(commands.Cog):
         api = self.api
         r = await GetBestdoriAllCharasAPI()
         AllCharacters = []
+        AllCharactersEnglish = []
         for x in r:
             charalist = r[x]['characterName']
             if charalist[1]:
                 name = "".join(charalist[0].split())
-                AllCharacters.append(name)
-        AllCharacters = AllCharacters[0:25] # Because the API has a lot more than the 25 main characters
+                AllCharacters.append([charalist[1],name])
+        AllCharacters = AllCharacters[0:34] # Because the API has a lot more than the 25 main characters
         for chara in AllCharacters:
             AllPics = {}
             
-            print(f'Grabbing pictures for {chara}')
+            print(f'Grabbing pictures for {chara[0]}')
             Pics = []
-            pics = api.search_illust(chara)
+            pics = api.search_illust(chara[1])
             for pic in pics.illusts:
                 if pic['total_bookmarks'] > 100 and pic['sanity_level'] < 3 and pic['page_count'] == 1 and pic['type'] == 'illust':
                     Pics.append(pic)
@@ -55,13 +56,14 @@ class Fun(commands.Cog):
                         ContinueSearching = False
                 else:
                     ContinueSearching = False
-            data = {chara: {
+            data = {chara[0]: {
             "pics" : Pics}}
             AllPics.update(data)
             newfile = json.dumps(AllPics)
-            f = open(f"{chara}.json","a")
+            f = open(f"{chara[0]}.json","a")
             f.write(newfile)
             f.close()
+            await asyncio.sleep(60)
         return AllPics
 
     def GetCards(self):
@@ -527,7 +529,7 @@ class Fun(commands.Cog):
                             charalist = r[x]['characterName']
                             if query.capitalize() in charalist[1]:
                                 charaId = x
-                                AllQueries.append("".join(charalist[0].split()))
+                                AllQueries.append("".join(charalist[1]))
                                 CharaImageURLs.append('https://bestdori.com/res/icon/chara_icon_%s.png' % charaId)
             for newquery, charaImageURL in zip(AllQueries, CharaImageURLs):
                 db = f'databases/{newquery}.json'

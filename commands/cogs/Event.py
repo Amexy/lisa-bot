@@ -69,9 +69,6 @@ class Event(commands.Cog):
         try:
             if server not in self.ValidT10Servers:
                 await ctx.send('This function only works for the `EN` and `JP` servers')
-            ValidJPIDUsers = [359549867955191811,158699060893581313, 365863959527555082, 384333652344963074, 385264382935957504, 301704971962023937]
-            if server == 'jp' and ctx.message.author.id not in ValidJPIDUsers:
-                output = 'This command has been temporarily disabled / このコマンドは現在無効になっています'
             else:
                 FileToAttach = await GetT10ArchiveFile(int(eventid), server)
                 if FileToAttach:
@@ -123,24 +120,19 @@ class Event(commands.Cog):
             if server not in self.ValidT10Servers:
                 output = 'This function only works for the `EN` and `JP` servers'
             else:
-                ValidJPIDUsers = [359549867955191811,158699060893581313,
-                                  365863959527555082, 384333652344963074, 385264382935957504, 301704971962023937]
-                if server == 'jp' and ctx.message.author.id not in ValidJPIDUsers:
-                    output = 'This command has been temporarily disabled / このコマンドは現在無効になっています'
-                else:
-                    try:
-                        if(eventid == 0):
-                            eventid = await GetCurrentEventID(server)
-                        else:
-                            eventid = eventid
-                        if(songs):
-                            output = await t10songsformatting(server, eventid, True)
-                            output = ''.join(output)
-                        else:
-                            output = await t10formatting(server, eventid, True)
-                    except:
-                        output = f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify` command to let Josh know"
-                await ctx.send(output)
+                try:
+                    if(eventid == 0):
+                        eventid = await GetCurrentEventID(server)
+                    else:
+                        eventid = eventid
+                    if(songs):
+                        output = await t10songsformatting(server, eventid, True)
+                        output = ''.join(output)
+                    else:
+                        output = await t10formatting(server, eventid, True)
+                except:
+                    output = f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify` command to let Josh know"
+            await ctx.send(output)
 
     @commands.command(name='t10members',
                     aliases=['t10m'],
@@ -254,7 +246,7 @@ class Event(commands.Cog):
         await ctx.send(output)
 
     @commands.command(name='cutoff',
-                      aliases=['t100', 't1000', 't2000','t2500','t5000','t10000','t1k','t2k','t2.5k','t5k','t10k','co'],
+                      aliases=['t100','t500','t1000', 't2000','t2500','t5000','t10000','t1k','t2k','t2.5k','t5k','t10k','co'],
                       description="Cutoff estimate for t100, t1000, and t2000 (experimental support for t2500, t5000, and t10000). Input the tier and server (defaulted to en and 100). Add graph as an argument to see a graph",
                       help=".cutoff 100\n.cutoff 1000 en\n.cutoff 2000 jp graph\n.cutoff en t1000\n.t100\n.t100 jp graph")
     async def cutoff(self, ctx, *args):

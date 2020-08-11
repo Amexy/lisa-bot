@@ -357,7 +357,7 @@ async def CalculatecutoffEstimates(server, tier, EventID):
     LastUpdatedTime = CutoffAPI['cutoffs'][-1]['time']
     ElapsedTimeHours = (LastUpdatedTime - EventStartTime) / 1000 / 3600
     EPPerHour = math.floor(LastUpdatedCutoff / ElapsedTimeHours)
-    return EstimateSmoothing, EstimateNoSmoothing, EPPerHour, Ests,AllTimeEntires, AllEPEntries,EstTimes
+    return EstimateSmoothing, EstimateNoSmoothing, EPPerHour, Ests, AllTimeEntires, AllEPEntries, EstTimes
 
 async def CreateGraph(Server, EventID, Tier, CurrentEPValues, CurrentTimes, EstimateEPValues, EstimateTimes):
     import plotly.graph_objects as go
@@ -365,6 +365,7 @@ async def CreateGraph(Server, EventID, Tier, CurrentEPValues, CurrentTimes, Esti
     from selenium import webdriver
     import plotly.offline as offline
     fig = go.Figure()
+    config = {'displayModeBar': False}
     fig.add_trace(go.Scatter(x=CurrentTimes,y=CurrentEPValues,mode='lines+markers'))
     fig.add_trace(go.Scatter(x=EstimateTimes,y=EstimateEPValues,mode='lines+markers'))
     fig.update_xaxes(range=[0,100])
@@ -412,7 +413,7 @@ async def CreateGraph(Server, EventID, Tier, CurrentEPValues, CurrentTimes, Esti
     with open("config.json") as file:
         config_json = json.load(file)
         driverPath = config_json["chromeDriverPath"]
-    offline.plot(fig, image='svg', auto_open=False)
+    offline.plot(fig, image='svg', auto_open=False,config=config)
     
     # Just when I thought I was done with this shit
     options = webdriver.ChromeOptions()

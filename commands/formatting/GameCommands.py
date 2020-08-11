@@ -324,7 +324,7 @@ async def GenerateBandandTitlesImage(members: list, titles: list, server: str):
     from PIL.ImageFont import truetype
     from io import BytesIO
     from os import path
-    from commands.apiFunctions import GetBestdoriAllTitlesAPI
+    from commands.apiFunctions import GetBestdoriAllTitlesAPI, GetServerAPIKey
     TitlesAPI = await GetBestdoriAllTitlesAPI()
     PathToIcons = []
     for x in members:
@@ -348,15 +348,16 @@ async def GenerateBandandTitlesImage(members: list, titles: list, server: str):
     if len(titles) == 2:
         x_offset = 0
         for Title_ID in titles:
+            TitleKey = await GetServerAPIKey(server)
             ImageContents = []
             titleinfo = TitlesAPI[str(Title_ID)]  
-            EventTitle = f"img/titles/{server}/{titleinfo['baseImageName'][1]}.png"
+            EventTitle = f"img/titles/{server}/{titleinfo['baseImageName'][TitleKey]}.png"
             ImageContents.append(EventTitle)
             event = Image.open(ImageContents[0])
             event = event.resize((368,100), Image.ANTIALIAS)
             new_im.paste(event, (x_offset,250), event)
 
-            Tier = titleinfo['rank'][1]
+            Tier = titleinfo['rank'][TitleKey]
             if Tier != 'none' and Tier != 'normal' and Tier != 'extra':
                 TierTitle = f'img/titles/{server}/event_point_{Tier}.png'
                 ImageContents.append(TierTitle)
@@ -364,33 +365,30 @@ async def GenerateBandandTitlesImage(members: list, titles: list, server: str):
                 tier = tier.resize((368,100), Image.ANTIALIAS)
                 new_im.paste(tier, (x_offset,250), tier)
             elif Tier == 'normal' or Tier == 'extra':
-                TierTitle = f'img/{server}/titles/try_clear_{Tier}.png'
+                TierTitle = f'img/titles/{server}/try_clear_{Tier}.png'
                 ImageContents.append(TierTitle)
                 tier = Image.open(ImageContents[1])
                 tier = tier.resize((368,100), Image.ANTIALIAS)
                 new_im.paste(tier, (x_offset,250), tier)
-
             x_offset += 525
     else:
         x_offset = 250
         ImageContents = []
         titleinfo = TitlesAPI[str(titles[0])]  
-        EventTitle = f"img/titles/{server}/{titleinfo['baseImageName'][1]}.png"
+        TitleKey = await GetServerAPIKey(server)
+        EventTitle = f"img/titles/{server}/{titleinfo['baseImageName'][TitleKey]}.png"
         ImageContents.append(EventTitle)
         event = Image.open(ImageContents[0])
         event = event.resize((368,100), Image.ANTIALIAS)
         new_im.paste(event, (x_offset,250), event)
 
-        Tier = titleinfo['rank'][1]
+        Tier = titleinfo['rank'][TitleKey]
         if Tier != 'none':
             TierTitle = f'img/titles/{server}/event_point_{Tier}.png'
             ImageContents.append(TierTitle)
             tier = Image.open(ImageContents[1])
             tier = tier.resize((368,100), Image.ANTIALIAS)
             new_im.paste(tier, (x_offset,250), tier)
-
-        
-    
     import uuid
     from discord import File
     FileName = f'{str(uuid.uuid4())}.png'

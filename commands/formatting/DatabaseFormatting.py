@@ -18,6 +18,7 @@ bestdoriAllNewsDB = 'databases/allNewsDB.json'
 prefixDb = 'databases/prefixdb.json'
 t100DB = 'databases/t100DB.json'
 t1000DB = 'databases/t1000DB.json'
+t2500DB = 'databases/t2500DB.json'
 jp2MinuteTracking = 'databases/jp2MinuteTrackingDB.json'
 jp1HourTracking = 'databases/jp1HourTrackingDB.json'
 botupdatesDB = 'databases/botupdates.json'
@@ -189,10 +190,12 @@ def addChannelToDatabaseSongs(channel: TextChannel):
 #######################
 def addChannelToCutoffDatabase(channel: TextChannel, tier: int):
     success = True
-    if(tier == 100):
+    if tier == 100:
         db = TinyDB(t100DB)
-    else:
+    elif tier == 1000:
         db = TinyDB(t1000DB)
+    else:
+        db = TinyDB(t2500DB)
     try:
         db.upsert({'name': channel.name,
                 'guild': channel.guild.id,
@@ -202,7 +205,6 @@ def addChannelToCutoffDatabase(channel: TextChannel, tier: int):
     except Exception as e:
         print(e)
         success = False
-
     if success:
         text = "Channel " + channel.name + " will receive t%s updates" %str(tier)
     else:
@@ -211,10 +213,12 @@ def addChannelToCutoffDatabase(channel: TextChannel, tier: int):
 
 def rmChannelFromCutoffDatabase(channel: TextChannel, tier: int):
     success = True
-    if(tier == 100):
+    if tier == 100:
         db = TinyDB(t100DB)
-    else:
+    elif tier == 1000:
         db = TinyDB(t1000DB)
+    else:
+        db = TinyDB(t2500DB)
     try:
         db.remove((where('id') == channel.id) & (where('guild') == channel.guild.id))
     except Exception as e:
@@ -228,10 +232,12 @@ def rmChannelFromCutoffDatabase(channel: TextChannel, tier: int):
 
 def getCutoffChannels(tier: int):
     ids = list()
-    if(tier == 100):
+    if tier == 100:
         db = TinyDB(t100DB)
-    else:
+    elif tier == 1000:
         db = TinyDB(t1000DB)
+    else:
+        db = TinyDB(t2500DB)
     try:
         saved = db.all()
         for i in saved:

@@ -7,6 +7,7 @@ venv/
 img/rolls/*
 img/icons/*
 img/imgTmp/*
+img/graphs/*
 startup/login.py
 commands/cogs/seiyuu.py
 commands/cogs/admin.py

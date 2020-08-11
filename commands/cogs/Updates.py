@@ -107,37 +107,46 @@ class Updates(commands.Cog):
             
     @commands.command(name='addcutoffupdates',
                       aliases=['acu'],
-                      description="(Requires Admin Privileges) Given a channel and tier input, this channel will receive updated cutoff values from Bestdori\n",
-                      help="You can specify either the channel's id, or by using the full channel name (e.g. #cutoffs)\n\n.addcutoffupdates (defaults to T100 and T1000 updates + channel command was sent in)\n.acu 100\n.acu 100 #cutoffs\n.acu 1000 523339468229312555")
-    async def addt100updates(self, ctx, tier: int = 0, channel: TextChannel = None):
-        if ctx.message.author.guild_permissions.administrator:
-            if(channel == None):
-                channel = ctx.channel
-            if tier == 0:
-                await ctx.send(addChannelToCutoffDatabase(channel, 100))
-                await ctx.send(addChannelToCutoffDatabase(channel, 1000))
-            else:
-                await ctx.send(addChannelToCutoffDatabase(channel, tier))
+                      description="(Requires Admin Privileges) Given a channel and tier input, this channel will receive updated cutoff values from Bestdori for EN\nCurrently supports all EN tiers (100, 1000, and 2500)",
+                      help="You can specify either the channel's id, or by using the full channel name (e.g. #cutoffs)\n\n.addcutoffupdates (defaults to t100, t1000, and t2500 updates + channel command was sent in)\n.acu 100\n.acu 100 #cutoffs\n.acu 1000 523339468229312555")
+    async def addcutoffupdates(self, ctx, tier: int = 0, channel: TextChannel = None):
+        ValidCutoffTiers = [100,1000,2500]
+        if tier not in ValidCutoffTiers:
+            output = 'Please choose a valid tier from `100`, `1000`, or `2500`'
         else:
-            msg = "You must have administrator rights to run this command, {0.author.mention}".format(ctx.message)  
-            await ctx.send(msg)
+            if ctx.message.author.guild_permissions.administrator:
+                if(channel == None):
+                    channel = ctx.channel
+                if tier == 0:
+                    output = addChannelToCutoffDatabase(channel, 100)
+                    output = addChannelToCutoffDatabase(channel, 1000)
+                    output = addChannelToCutoffDatabase(channel, 2500)
+                else:
+                    output = addChannelToCutoffDatabase(channel, tier)
+            else:
+                output = "You must have administrator rights to run this command, {0.author.mention}".format(ctx.message)  
+        await ctx.send(output)
             
     @commands.command(name='removecutoffupdates',
                       aliases=['rmcu','rmcutoffupdates'],
                       description="Given a channel and tier input, this channel will stop receiving updated cutoff values from Bestdori",
                       help="You can specify either the channel's id, or by using the full channel name (e.g. #cutoffs)\n\n.removecutoffupdates (defaults to T100 and T1000 updates + channel command was sent in)\n.rmcu 100\n.rmcu 1000 #cutoffs\n.rmcu 1000 523339468229312555")
     async def rmt100updates(self, ctx, tier: int = None, channel: TextChannel = None):
-        if ctx.message.author.guild_permissions.administrator:
-            if(channel == None):
-                channel = ctx.channel
-            if tier == None:
-                await ctx.send(rmChannelFromCutoffDatabase(channel, 100))
-                await ctx.send(rmChannelFromCutoffDatabase(channel, 1000))
-            else:
-                await ctx.send(rmChannelFromCutoffDatabase(channel, tier))
+        ValidCutoffTiers = [100,1000,2500]
+        if tier not in ValidCutoffTiers:
+            output = 'Please choose a valid tier from `100`, `1000`, or `2500`'
         else:
-            msg = "You must have administrator rights to run this command, {0.author.mention}".format(ctx.message)  
-            await ctx.send(msg)
+            if ctx.message.author.guild_permissions.administrator:
+                if(channel == None):
+                    channel = ctx.channel
+                if tier == None:
+                    output = rmChannelFromCutoffDatabase(channel, 100)
+                    output = rmChannelFromCutoffDatabase(channel, 1000)
+                else:
+                    output = rmChannelFromCutoffDatabase(channel, tier)
+            else:
+                output = "You must have administrator rights to run this command, {0.author.mention}".format(ctx.message)  
+        await ctx.send(output)
 
     #######################
     #     T10 Commands    #
