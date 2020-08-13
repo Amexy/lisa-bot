@@ -58,7 +58,7 @@ class Misc(commands.Cog):
                 await ctx.send("You are not authorized to use this command. If you'd like access, please use the .notify command requesting access")
             else:
                 try:
-                    cog = f"commands.cogs.{cog}"
+                    cog = f"commands.cogs.{cog.capitalize()}"
                     self.bot.unload_extension(cog)
                     self.bot.load_extension(cog)
                     await ctx.send(f"Successfully reloaded the {cog} cog")
@@ -93,17 +93,6 @@ class Misc(commands.Cog):
             await ctx.send("Notification sent")
         else:
             await ctx.send('Please enter your notification')
-
-    @commands.command(name='nickchange',
-                    hidden=True)
-    async def dsd(self,ctx, nick):
-        ValidUsers = [158699060893581313]
-        if ctx.message.author.id not in ValidUsers:
-            await ctx.send("You are not authorized to use this command")
-        else:
-            await self.bot.user.edit(username=nick)
-
-
 
     @commands.command(name='avatar',
                     aliases=['a'],

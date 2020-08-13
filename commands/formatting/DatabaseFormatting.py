@@ -188,14 +188,10 @@ def addChannelToDatabaseSongs(channel: TextChannel):
 #######################
 #    Event Updates    #
 #######################
-def addChannelToCutoffDatabase(channel: TextChannel, tier: int):
+def addChannelToCutoffDatabase(channel: TextChannel, tier: int, server: str):
     success = True
-    if tier == 100:
-        db = TinyDB(t100DB)
-    elif tier == 1000:
-        db = TinyDB(t1000DB)
-    else:
-        db = TinyDB(t2500DB)
+    db = f"databases/cutoff_updates/{server}_t{tier}.json"
+    db = TinyDB(db)
     try:
         db.upsert({'name': channel.name,
                 'guild': channel.guild.id,
@@ -211,14 +207,10 @@ def addChannelToCutoffDatabase(channel: TextChannel, tier: int):
         text = "Failed adding " + channel.name + " to the t%s updates list" %str(tier)
     return text
 
-def rmChannelFromCutoffDatabase(channel: TextChannel, tier: int):
+def rmChannelFromCutoffDatabase(channel: TextChannel, tier: int, server: str):
     success = True
-    if tier == 100:
-        db = TinyDB(t100DB)
-    elif tier == 1000:
-        db = TinyDB(t1000DB)
-    else:
-        db = TinyDB(t2500DB)
+    db = f"databases/cutoff_updates/{server}_t{tier}.json"
+    db = TinyDB(db)
     try:
         db.remove((where('id') == channel.id) & (where('guild') == channel.guild.id))
     except Exception as e:
@@ -230,14 +222,10 @@ def rmChannelFromCutoffDatabase(channel: TextChannel, tier: int):
         text = "Failed removing " + channel.name + " from receiving t%s updates"%str(tier)
     return text
 
-def getCutoffChannels(tier: int):
+def getCutoffChannels(tier: int, server: str):
     ids = list()
-    if tier == 100:
-        db = TinyDB(t100DB)
-    elif tier == 1000:
-        db = TinyDB(t1000DB)
-    else:
-        db = TinyDB(t2500DB)
+    db = f"databases/cutoff_updates/{server}_t{tier}.json"
+    db = TinyDB(db)
     try:
         saved = db.all()
         for i in saved:

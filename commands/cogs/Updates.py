@@ -107,45 +107,74 @@ class Updates(commands.Cog):
             
     @commands.command(name='addcutoffupdates',
                       aliases=['acu'],
-                      description="(Requires Admin Privileges) Given a channel and tier input, this channel will receive updated cutoff values from Bestdori for EN\nCurrently supports all EN tiers (100, 1000, and 2500)",
-                      help="You can specify either the channel's id, or by using the full channel name (e.g. #cutoffs)\n\n.addcutoffupdates (defaults to t100, t1000, and t2500 updates + channel command was sent in)\n.acu 100\n.acu 100 #cutoffs\n.acu 1000 523339468229312555")
-    async def addcutoffupdates(self, ctx, tier: int = 0, channel: TextChannel = None):
-        ValidCutoffTiers = [100,1000,2500]
-        if tier not in ValidCutoffTiers:
-            output = 'Please choose a valid tier from `100`, `1000`, or `2500`'
-        else:
-            if ctx.message.author.guild_permissions.administrator:
+                      description="(Requires Admin Privileges) Given a server, tier, and channel input, this channel will receive updated cutoff values from Bestdori for the specified server\n\nCurrently supports all EN and JP tiers (100 / 1000 / 2500 and 100 / 1000 / 2000 / 5000 / 10000)",
+                      help="You can specify either the channel's id, or by using the full channel name (e.g. #cutoffs)\n\n.addcutoffupdates (defaults to EN t100, t1000, and t2500 updates + the channel command was sent in)\n.acu en 100\n.acu jp 5000 #cutoffs")
+    async def addcutoffupdates(self, ctx, server: str = 'en', tier: int = 0, channel: TextChannel = None):
+        if ctx.message.author.guild_permissions.administrator:
+            ValidServers = {'jp', 'en'}
+            ValidServersByTier = {
+                100: ['en', 'jp'],
+                1000: ['en', 'jp'],
+                2000: ['jp'],
+                2500: ['en'],
+                5000: ['jp'],
+                10000: ['jp']
+            }
+            if server not in ValidServers:
+                output = f"The `{server}` server doesn't currently have cutoff update notifications enabled or it is not a valid server"
+            elif tier not in ValidServersByTier.keys() and tier != 0:
+                output = f"That tier isn't being tracked by Bestdori"
+            else:
                 if(channel == None):
                     channel = ctx.channel
                 if tier == 0:
-                    output = addChannelToCutoffDatabase(channel, 100)
-                    output = addChannelToCutoffDatabase(channel, 1000)
-                    output = addChannelToCutoffDatabase(channel, 2500)
+                    try:
+                        for tier in ValidServersByTier:
+                            if server in ValidServersByTier[tier]:
+                                addChannelToCutoffDatabase(channel, tier, server)
+                        output = f"Channel `{channel.name}` will now receive all cutoff updates for `{server}`"
+                    except:
+                        output = f"Failed adding {channel.name} to the cutoff updates database"
                 else:
-                    output = addChannelToCutoffDatabase(channel, tier)
-            else:
-                output = "You must have administrator rights to run this command, {0.author.mention}".format(ctx.message)  
+                    output = addChannelToCutoffDatabase(channel, tier, server)
+        else:
+            output = "You must have administrator rights to run this command, {0.author.mention}".format(ctx.message)  
         await ctx.send(output)
             
     @commands.command(name='removecutoffupdates',
                       aliases=['rmcu','rmcutoffupdates'],
                       description="Given a channel and tier input, this channel will stop receiving updated cutoff values from Bestdori",
-                      help="You can specify either the channel's id, or by using the full channel name (e.g. #cutoffs)\n\n.removecutoffupdates (defaults to T100 and T1000 updates + channel command was sent in)\n.rmcu 100\n.rmcu 1000 #cutoffs\n.rmcu 1000 523339468229312555")
-    async def rmt100updates(self, ctx, tier: int = None, channel: TextChannel = None):
-        ValidCutoffTiers = [100,1000,2500]
-        if tier not in ValidCutoffTiers:
-            output = 'Please choose a valid tier from `100`, `1000`, or `2500`'
-        else:
-            if ctx.message.author.guild_permissions.administrator:
+                      help="You can specify either the channel's id, or by using the full channel name (e.g. #cutoffs)\n\n.removecutoffupdates (defaults to T100 and T1000 updates + channel command was sent in)\n.rmcu en \n.rmcu jp 1000 #cutoffs")
+    async def rmt100updates(self, ctx, server: str = 'en', tier: int = None, channel: TextChannel = None):
+        if ctx.message.author.guild_permissions.administrator:
+            ValidServers = {'jp', 'en'}
+            ValidServersByTier = {
+                100: ['en', 'jp'],
+                1000: ['en', 'jp'],
+                2000: ['jp'],
+                2500: ['en'],
+                5000: ['jp'],
+                10000: ['jp']
+            }
+            if server not in ValidServers:
+                output = f"The `{server}` server doesn't currently have cutoff update notifications enabled or it is not a valid server"
+            elif tier not in ValidServersByTier.keys() and tier != 0:
+                output = f"That tier isn't being tracked by Bestdori"
+            else:
                 if(channel == None):
                     channel = ctx.channel
-                if tier == None:
-                    output = rmChannelFromCutoffDatabase(channel, 100)
-                    output = rmChannelFromCutoffDatabase(channel, 1000)
+                if tier == 0:
+                    try:
+                        for tier in ValidServersByTier:
+                            if server in ValidServersByTier[tier]:
+                                rmChannelFromCutoffDatabase(channel, tier, server)
+                        output = f"Channel `{channel.name}` will stop receiving all cutoff updates for `{server}`"
+                    except:
+                        output = f"Failed removing {channel.name} from the cutoff updates database"
                 else:
-                    output = rmChannelFromCutoffDatabase(channel, tier)
-            else:
-                output = "You must have administrator rights to run this command, {0.author.mention}".format(ctx.message)  
+                    output = rmChannelFromCutoffDatabase(channel, tier, server)
+        else:
+            output = "You must have administrator rights to run this command, {0.author.mention}".format(ctx.message)  
         await ctx.send(output)
 
     #######################

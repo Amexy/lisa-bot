@@ -114,6 +114,68 @@ class Fun(commands.Cog):
         except:
             return 'Unknown error. If this keeps happening please use the `notify` command to let Josh know'
 
+    def GetUsersRolls(self, user, Include3Star: True):
+        FileName = 'databases/rolls/roll_albums.json'
+        with open(FileName) as file:
+            api = json.load(file)
+        user = str(user)
+        if api[user]:
+            if Include3Star:
+                return api[user]['Cards']['3'],api[user]['Cards']['4']
+            else:
+                return api[user]['Cards']['4']
+    def UpdateRollAlbumJSON(self, UserID, Name, Roll):
+        # how many times will i manually make a json file before putting it into its own function
+        import json
+        FileName = 'databases/rolls/roll_albums.json'
+        try:
+            with open(FileName) as file:
+                api = json.load(file)
+        except (json.JSONDecodeError, FileNotFoundError):
+            # Create the file and add an empty dict to it so we can load the json file
+            with open(FileName, 'a+') as file:
+                data = {}
+                json.dump(data, file, indent=2)
+            
+            # Load the newly created file
+            with open(FileName) as file:
+                api = json.load(file)
+
+        import re
+        TwoStars = []
+        ThreeStars = []
+        FourStars = []
+        for CardID in Roll:
+            CardInfo = re.search('icons/([a-zA-Z]*)\/([0-9]*)\/([0-9]*)', CardID)
+            CardRarity = CardInfo[2]
+            if CardRarity == '2':
+                TwoStars.append(int(CardInfo[3]))
+            elif CardRarity == '3':
+                ThreeStars.append(int(CardInfo[3]))
+            else:
+                FourStars.append(int(CardInfo[3]))
+                
+        # Check if there's an entry for the UserID in the json file 
+        if str(UserID) in api:
+            [api[str(UserID)]['Cards']['2'].append(x) for x in TwoStars if x not in api[str(UserID)]['Cards']['2']]
+            [api[str(UserID)]['Cards']['3'].append(x) for x in ThreeStars if x not in api[str(UserID)]['Cards']['3']]
+            [api[str(UserID)]['Cards']['4'].append(x) for x in FourStars if x not in api[str(UserID)]['Cards']['4']]
+            if 'Name' not in api[str(UserID)]:
+                api[str(UserID)].update({'Name' : Name})
+            with open(FileName, 'w') as f:
+                json.dump(api, f)
+                
+        # This adds a new user to the database/dict
+        else:
+            data = {UserID: {
+                            "Name" : Name,
+                            "Cards" : {2: TwoStars, 3: ThreeStars, 4: FourStars}
+                            }
+                    }
+            with open(FileName, 'w') as f:
+                api.update(data)
+                json.dump(api, f)
+
     def UpdateCharaRollsJSON(self, UserIDOrOverall, Name, Chara, CardType):
         import json
         FileName = f'databases/rolls/{Chara}.json'
@@ -207,6 +269,15 @@ class Fun(commands.Cog):
                 api.update(data)
                 json.dump(api, f)
 
+    async def GetCardRarityCount(self, rarity: int):
+        from commands.apiFunctions import GetBestdoriAllCardsAPI
+        AllCardsAPI = await GetBestdoriAllCardsAPI()
+        count = 0 
+        for x in AllCardsAPI:
+            if AllCardsAPI[x]['rarity'] == rarity and AllCardsAPI[x]['type'] in ['limited','permanent']:
+                count += 1
+        return count
+    
     @commands.command(name='updatecards',
                       hidden=True,
                       enabled=True)
@@ -217,7 +288,6 @@ class Fun(commands.Cog):
         except:
             print('Failed updating icons')
             
-
     @commands.command(name='rollstats',
                      aliases=['rs'],
                      description='Returns the stats from the roll command for a particular user',
@@ -271,7 +341,86 @@ class Fun(commands.Cog):
             await ctx.send('No stats found for that user')
         except:
             await ctx.send('Unknown error. If this keeps happening please use the `notify` command to let Josh know')
-        
+    
+    @commands.command(name='album',
+                      aliases=['al'],
+                      description='Shows a picture containing all the 4* (and 3* if requested) one has rolled using the `roll` command as well as how many total has been obtained from the current pool',
+                      help='By default, the album only shows 4 stars and uploads a PNG image. To show 3 stars as well, add 3 to the command. For a JPG image (use this if you receive an error about file size) add JPG to the command\n\nExamples:\n\n.album\n.al 3\n.al 3 jpg')
+    async def getrollalbum(self, ctx, *args):
+        try:
+            from PIL import Image
+            from PIL.ImageDraw import Draw
+            from PIL.ImageFont import truetype
+            from discord import File
+            embed=discord.Embed(title=f"{ctx.message.author.name}'s Album",color=discord.Color.blue())
+            embed.set_thumbnail(url=ctx.message.author.avatar_url.BASE + ctx.message.author.avatar_url._url)
+            AllFourStars = await self.GetCardRarityCount(4)
+            if '3' in args:
+                AllThreeStars = await self.GetCardRarityCount(3)
+                Cards = self.GetUsersRolls(ctx.author.id, True)
+                TotalThreeStars = len(Cards[0])
+                TotalFourStars = len(Cards[1])
+                embed.add_field(name='3*',value=f'{TotalThreeStars} / {AllThreeStars}',inline=True)
+            else: 
+                Cards = self.GetUsersRolls(ctx.author.id, False)
+                TotalFourStars = len(Cards)
+                
+            import uuid
+            TotalCards = 0
+            # TotalTwoStars = len(Cards['2'])
+            # AllTwoStars = await self.GetCardRarityCount(2)
+            FullIconPaths = []
+            if type(Cards) is tuple:
+                for x in Cards:
+                    TotalCards += len(x)
+                for x in reversed(Cards): # Go through the dict with 4* first since those need to be painted first in the album
+                    SortedCards = x
+                    SortedCards.sort(reverse=True)
+                    for y in SortedCards:
+                        FullIconPaths.append(f"img/icons/full_icons/{y}_trained.png")
+            else:
+                TotalCards = len(Cards)
+                Cards.sort(reverse=True)
+                for y in Cards:
+                    FullIconPaths.append(f"img/icons/full_icons/{y}_trained.png")
+
+            Rows = math.ceil(TotalCards / 10)
+            Width = 1800 # 10 cards per row, 180px per icon
+            Height = Rows * 180
+            
+            if 'jpg' not in [x.lower() for x in args]:
+                Album = Image.new('RGBA', (int(Width), Height))
+                FileName = f"{uuid.uuid4()}.png"
+            else:
+                Album = Image.new('RGB', (int(Width), Height))
+                FileName = f"{uuid.uuid4()}.jpg"
+     
+            x_offset = 0
+            y_offset = 0
+            Icons = [Image.open(x) for x in FullIconPaths]
+            for icon in Icons:
+                Album.paste(icon, (x_offset, y_offset))
+                x_offset += 180
+                if x_offset >= Width: # new row
+                    x_offset = 0
+                    y_offset += 180
+            SavedFile =  FileName
+            Album.save(SavedFile,optimize=True,qualiy=100)
+            DiscordFileObject = File(SavedFile,filename=SavedFile)
+            embed.add_field(name='4*',value=f'{TotalFourStars} / {AllFourStars}',inline=True)
+            # embed.add_field(name='2*',value=f'{TotalTwoStars} / {AllTwoStars}',inline=True)
+            embed.set_image(url=f"attachment://{SavedFile}")
+            await ctx.send(file=DiscordFileObject, embed=embed)
+        except json.JSONDecodeError:
+            await ctx.send(f'No rolls found for your user, please use the `roll` command to generate roll data')
+        except SystemError:
+            await ctx.send(f'No 4* were found for your user, please use the `roll` command to get more cards or add `3` to the command to check your 3* album')
+        except discord.errors.HTTPException:
+            await ctx.send(f"Album size too large, please rerun the command but add `jpg` to it to upload a smaller sized image")
+        except Exception as e:
+            await ctx.send(f'Unknown error')    
+        if os.path.exists(SavedFile):
+            os.remove(SavedFile)
     @commands.command(name='roll',
                       description='Simulates a 10 roll using the default rates and all the permanent/limited cards that have been released in JP so far. Event cards are not included. Add df and/or the bands/characters names to the input to simulate increased rates/only roll those cards.',
                       help='For bands, the values below are valid, if an invalid value is entered, the command will fail\n\nRoselia\nAfterglow\nPopipa\nPasupare\nHHW\nMorfonica\n\n.roll\n.roll df\n.roll lisa\n.roll df yukina lisa\n.roll roselia\n.roll roselia popipa')
@@ -385,9 +534,6 @@ class Fun(commands.Cog):
                     random.shuffle(AllFourStarCards)
                     CardsRolled.append(str(AllFourStarCards[0]))
         
-        
-        
-
             FirstHalfCardsRolled = CardsRolled[:len(CardsRolled)//2]        
             SecondtHalfCardsRolled = CardsRolled[len(CardsRolled)//2:]
 
@@ -423,7 +569,8 @@ class Fun(commands.Cog):
 
             self.UpdateRollsJSON(523337807847227402, 'self', TwoStarsRolled, ThreeStarsRolled, FourStarsRolled)
             self.UpdateRollsJSON(ctx.message.author.id, user, TwoStarsRolled, ThreeStarsRolled, FourStarsRolled)
-
+            self.UpdateRollAlbumJSON(ctx.message.author.id, user, CardsRolled)
+            
             if 4 not in Rolled:
                 Title = "Haha no 4*"
             else:
@@ -448,7 +595,7 @@ class Fun(commands.Cog):
             embed.add_field(name='3* Rolled',value=ThreeStarsRolled,inline=True)
             embed.add_field(name='4* Rolled',value=FourStarsRolled,inline=True) 
             embed.set_image(url=f"attachment://{FileName}")
-            embed.set_footer(text="Want to see all your stats? Use the rollstats command\nWant to check the leaderboards? Use the rolllb command")
+            embed.set_footer(text="Want to see an album with all your 4 and 3*? Use the `album` command\nWant to see all your stats? Use the `rollstats` command\nWant to check the leaderboards? Use the `rolllb` command")
             await ctx.send(file=DiscordFileObject, embed=embed)
             os.remove(SavedFile)
         except IndexError:

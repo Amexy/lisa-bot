@@ -17,25 +17,20 @@ class Loops(commands.Cog):
         with open("config.json") as file:
             config_json = json.load(file)
             loops_enabled = config_json['loops_enabled']
-        self.initialT100Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=87&tier=0').json()
-        self.initialT1000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=87&tier=1').json()
-        self.initialT2500Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=87&tier=2').json()
+        self.initialENT100Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=87&tier=0').json()
+        self.initialENT1000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=87&tier=1').json()
+        self.initialENT2500Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=87&tier=2').json()        
+        self.initialJPT100Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=0&event=123&tier=0').json()
+        self.initialJPT1000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=0&event=123&tier=1').json()
+        self.initialJPT2000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=0&event=123&tier=2').json()
+        self.initialJPT5000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=0&event=123&tier=3').json()
+        self.initialJPT10000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=0&event=123&tier=4').json()
         self.initialCardsAPI = requests.get('https://bestdori.com/api/cards/all.5.json').json()
         self.firstAPI = requests.get('https://bestdori.com/api/news/all.5.json').json()
-
+        self.ENCutoffs = {100: self.initialENT100Cutoffs, 1000: self.initialENT1000Cutoffs, 2500: self.initialENT2500Cutoffs}
+        self.JPCutoffs = {100: self.initialJPT100Cutoffs, 1000: self.initialJPT1000Cutoffs, 2000: self.initialJPT2000Cutoffs, 5000: self.initialJPT5000Cutoffs, 10000: self.initialJPT10000Cutoffs}
         if loops_enabled == 'true':
-            self.bot.loop.create_task(self.postT1000CutoffUpdates())
-            self.bot.loop.create_task(self.postEventT102min())
-            self.bot.loop.create_task(self.postEventT101hr())
-            self.bot.loop.create_task(self.postEventNotif('en'))
-            self.bot.loop.create_task(self.postEventNotif('jp'))
-            self.bot.loop.create_task(self.postSongUpdates1min())
-            self.bot.loop.create_task(self.postT100CutoffUpdates())
-            self.bot.loop.create_task(self.postBestdoriNews())
-            self.bot.loop.create_task(self.UpdateAvatar())
-            self.bot.loop.create_task(self.UpdateCardIcons())
-            
-            # self.bot.loop.create_task(self.PostYukiLisa())
+            self.StartLoops()            
         else:
             print('Not loading loops')
         print('Successfully loaded Loops cog')
@@ -58,9 +53,9 @@ class Loops(commands.Cog):
             await asyncio.sleep(1200)
             
     def StartLoops(self):
-        self.bot.loop.create_task(self.postT100CutoffUpdates())
-        self.bot.loop.create_task(self.postT1000CutoffUpdates())
-        self.bot.loop.create_task(self.postT2500CutoffUpdates())
+        # self.bot.loop.create_task(self.postT100CutoffUpdates())
+        # self.bot.loop.create_task(self.postT1000CutoffUpdates())
+        # self.bot.loop.create_task(self.postT2500CutoffUpdates())
         self.bot.loop.create_task(self.postEventT102min())
         self.bot.loop.create_task(self.postEventT101hr())
         self.bot.loop.create_task(self.postSongUpdates1min())
@@ -69,7 +64,8 @@ class Loops(commands.Cog):
         self.bot.loop.create_task(self.postBestdoriNews())
         self.bot.loop.create_task(self.UpdateAvatar())
         self.bot.loop.create_task(self.UpdateCardIcons())
-        # self.bot.loop.create_task(self.PostYukiLisa())
+        #self.bot.loop.create_task(self.PostYukiLisa())
+        self.bot.loop.create_task(self.postCutoffUpdates())
 
     async def UpdateCardIcons(self):
         await self.bot.wait_until_ready()
@@ -259,92 +255,137 @@ class Loops(commands.Cog):
             timeStart = timeStart.timestamp()
             await asyncio.sleep(timeFinish - timeStart)
 
-    async def postT100CutoffUpdates(self):
-        await self.bot.wait_until_ready()
-        while not self.bot.is_closed():
-            try:
-                EventID = await GetCurrentEventID('en')
-            except Exception as e:
-                print('Failed posting t100 update. Exception: ' + str(e))            
-            if EventID:
-                timeLeft = await GetEventTimeLeftSeconds('en', EventID)
-                if(timeLeft > 0):
-                    ids = getCutoffChannels(100)
-                    initialT100Cutoffs = self.initialT100Cutoffs
-                    cutoffAPI = await GetBestdoriCutoffAPI('en', 100)
-                    if(sorted(initialT100Cutoffs.items()) != sorted(cutoffAPI.items())):
-                        output = await GetCutoffFormatting('en', 100, True)
-                        ids = getCutoffChannels(100)
-                        for i in ids:
-                            channel = self.bot.get_channel(i)
-                            if channel != None:
-                                try:
-                                    await channel.send('t100 update found!')
-                                    await channel.send(file=output[1], embed=output[0])                                
-                                except (commands.BotMissingPermissions, discord.errors.NotFound): 
-                                    LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
-                                    await LoopRemovalUpdates.send('Removing t100 updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
-                                    rmChannelFromCutoffDatabase(channel, 100)
-                        self.initialT100Cutoffs = cutoffAPI
-                await asyncio.sleep(60)
+    async def CutoffUpdatesFormatting(self, server: str, tier):
+        UpdateCheck = False
+        CurrentCutoffs = await GetBestdoriCutoffAPI(server, tier)
+        if server == 'en':
+            CachedCutoffs = self.ENCutoffs
+        else:
+            CachedCutoffs = self.JPCutoffs
+        if sorted(CurrentCutoffs.items()) != sorted(CachedCutoffs[tier].items()):
+            output = await GetCutoffFormatting(server, tier, False)
+            ids = getCutoffChannels(tier, server)
+            for i in ids:
+                channel = self.bot.get_channel(i)
+                if channel != None:
+                    try:
+                        await channel.send(f't{tier} update found!')
+                        await channel.send(embed=output)
+                        UpdateCheck = True                                
+                    except (commands.BotMissingPermissions, discord.errors.NotFound): 
+                        rmChannelFromCutoffDatabase(channel, tier, 'en')
+        return UpdateCheck, CurrentCutoffs
 
-    async def postT1000CutoffUpdates(self):
+    async def postCutoffUpdates(self):
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
             try:
-                EventID = await GetCurrentEventID('en')
+                ENEventID = await GetCurrentEventID('en')
+                JPEventID = await GetCurrentEventID('jp')
             except Exception as e:
-                print('Failed posting t1000 update. Exception: ' + str(e))   
-            if EventID:
-                timeLeft = await GetEventTimeLeftSeconds('en', EventID)
+                print('Error getting current event ids. Exception: ' + str(e))      
+            if ENEventID:
+                timeLeft = await GetEventTimeLeftSeconds('en', ENEventID)
                 if(timeLeft > 0):
-                    ids = getCutoffChannels(1000)
-                    initialT1000Cutoffs = self.initialT1000Cutoffs  
-                    cutoffAPI = await GetBestdoriCutoffAPI('en', 1000)
-                    if(sorted(initialT1000Cutoffs.items()) != sorted(cutoffAPI.items())):
-                        output = await GetCutoffFormatting('en', 1000, True)
-                        ids = getCutoffChannels(1000)
-                        for i in ids:
-                            channel = self.bot.get_channel(i)
-                            if channel != None:
-                                try:
-                                    await channel.send('t1000 update found!')
-                                    await channel.send(file=output[1], embed=output[0])                                
-                                except (commands.BotMissingPermissions, discord.errors.NotFound): 
-                                    LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
-                                    await LoopRemovalUpdates.send('Removing t1000 updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
-                                    rmChannelFromCutoffDatabase(channel, 1000)
-                        self.initialT1000Cutoffs = cutoffAPI
-                await asyncio.sleep(60)
+                    for tier in self.ENCutoffs:
+                        UpdateCheck = await self.CutoffUpdatesFormatting('en', tier)
+                        if UpdateCheck:
+                            self.ENCutoffs[tier] = UpdateCheck[1]
+            if JPEventID:
+                timeLeft = await GetEventTimeLeftSeconds('jp', JPEventID)
+                if(timeLeft > 0):
+                    for tier in self.JPCutoffs:
+                        UpdateCheck = await self.CutoffUpdatesFormatting('jp', tier)
+                        if UpdateCheck:
+                            self.JPCutoffs[tier] = UpdateCheck[1]
+            await asyncio.sleep(120)
+    
+    # async def postT100CutoffUpdates(self):
+    #     await self.bot.wait_until_ready()
+    #     while not self.bot.is_closed():
+    #         try:
+    #             EventID = await GetCurrentEventID('en')
+    #         except Exception as e:
+    #             print('Failed posting t100 update. Exception: ' + str(e))            
+    #         if EventID:
+    #             timeLeft = await GetEventTimeLeftSeconds('en', EventID)
+    #             if(timeLeft > 0):
+    #                 ids = getCutoffChannels(100)
+    #                 initialT100Cutoffs = self.initialT100Cutoffs
+    #                 cutoffAPI = await GetBestdoriCutoffAPI('en', 100)
+    #                 if(sorted(initialT100Cutoffs.items()) != sorted(cutoffAPI.items())):
+    #                     output = await GetCutoffFormatting('en', 100, False)
+    #                     ids = getCutoffChannels(100)
+    #                     for i in ids:
+    #                         channel = self.bot.get_channel(i)
+    #                         if channel != None:
+    #                             try:
+    #                                 await channel.send('t100 update found!')
+    #                                 await channel.send(embed=output)                                
+    #                             except (commands.BotMissingPermissions, discord.errors.NotFound): 
+    #                                 LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
+    #                                 await LoopRemovalUpdates.send('Removing t100 updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
+    #                                 rmChannelFromCutoffDatabase(channel, 100)
+    #                     self.initialT100Cutoffs = cutoffAPI
+    #             await asyncio.sleep(60)
+
+    # async def postT1000CutoffUpdates(self):
+    #     await self.bot.wait_until_ready()
+    #     while not self.bot.is_closed():
+    #         try:
+    #             EventID = await GetCurrentEventID('en')
+    #         except Exception as e:
+    #             print('Failed posting t1000 update. Exception: ' + str(e))   
+    #         if EventID:
+    #             timeLeft = await GetEventTimeLeftSeconds('en', EventID)
+    #             if(timeLeft > 0):
+    #                 ids = getCutoffChannels(1000)
+    #                 initialT1000Cutoffs = self.initialT1000Cutoffs  
+    #                 cutoffAPI = await GetBestdoriCutoffAPI('en', 1000)
+    #                 if(sorted(initialT1000Cutoffs.items()) != sorted(cutoffAPI.items())):
+    #                     output = await GetCutoffFormatting('en', 1000, False)
+    #                     ids = getCutoffChannels(1000)
+    #                     for i in ids:
+    #                         channel = self.bot.get_channel(i)
+    #                         if channel != None:
+    #                             try:
+    #                                 await channel.send('t1000 update found!')
+    #                                 await channel.send(embed=output)                                
+    #                             except (commands.BotMissingPermissions, discord.errors.NotFound): 
+    #                                 LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
+    #                                 await LoopRemovalUpdates.send('Removing t1000 updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
+    #                                 rmChannelFromCutoffDatabase(channel, 1000)
+    #                     self.initialT1000Cutoffs = cutoffAPI
+    #             await asyncio.sleep(60)
                 
-    async def postT2500CutoffUpdates(self):
-        await self.bot.wait_until_ready()
-        while not self.bot.is_closed():
-            try:
-                EventID = await GetCurrentEventID('en')
-            except Exception as e:
-                print('Failed posting t2500 update. Exception: ' + str(e))   
-            if EventID:
-                timeLeft = await GetEventTimeLeftSeconds('en', EventID)
-                if(timeLeft > 0):
-                    ids = getCutoffChannels(2500)
-                    initialT2500Cutoffs = self.initialT2500Cutoffs  
-                    cutoffAPI = await GetBestdoriCutoffAPI('en', 2500)
-                    if(sorted(initialT2500Cutoffs.items()) != sorted(cutoffAPI.items())):
-                        output = await GetCutoffFormatting('en', 2500, False)
-                        ids = getCutoffChannels(2500)
-                        for i in ids:
-                            channel = self.bot.get_channel(i)
-                            if channel != None:
-                                try:
-                                    await channel.send('t2500 update found!')
-                                    await channel.send(embed=output)                                
-                                except (commands.BotMissingPermissions, discord.errors.NotFound): 
-                                    LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
-                                    await LoopRemovalUpdates.send('Removing t2500 updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
-                                    rmChannelFromCutoffDatabase(channel, 2500)
-                        self.initialT2500Cutoffs = cutoffAPI
-                await asyncio.sleep(60)
+    # async def postT2500CutoffUpdates(self):
+    #     await self.bot.wait_until_ready()
+    #     while not self.bot.is_closed():
+    #         try:
+    #             EventID = await GetCurrentEventID('en')
+    #         except Exception as e:
+    #             print('Failed posting t2500 update. Exception: ' + str(e))   
+    #         if EventID:
+    #             timeLeft = await GetEventTimeLeftSeconds('en', EventID)
+    #             if(timeLeft > 0):
+    #                 ids = getCutoffChannels(2500)
+    #                 initialT2500Cutoffs = self.initialT2500Cutoffs  
+    #                 cutoffAPI = await GetBestdoriCutoffAPI('en', 2500)
+    #                 if(sorted(initialT2500Cutoffs.items()) != sorted(cutoffAPI.items())):
+    #                     output = await GetCutoffFormatting('en', 2500, False)
+    #                     ids = getCutoffChannels(2500)
+    #                     for i in ids:
+    #                         channel = self.bot.get_channel(i)
+    #                         if channel != None:
+    #                             try:
+    #                                 await channel.send('t2500 update found!')
+    #                                 await channel.send(embed=output)                                
+    #                             except (commands.BotMissingPermissions, discord.errors.NotFound): 
+    #                                 LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
+    #                                 await LoopRemovalUpdates.send('Removing t2500 updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
+    #                                 rmChannelFromCutoffDatabase(channel, 2500)
+    #                     self.initialT2500Cutoffs = cutoffAPI
+    #             await asyncio.sleep(60)
 
     async def postBestdoriNews(self):
         await self.bot.wait_until_ready()
