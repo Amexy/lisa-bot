@@ -5,21 +5,14 @@ from pixivpy3 import *
 
 class Fun(commands.Cog):
     def __init__(self, bot):
-        with open("config.json") as file:
-            config_json = json.load(file)
-            pixiv_username = config_json["pixiv_username"]
-            pixiv_pw = config_json["pixiv_pw"]
-
         self.bot = bot
         self.AllCards = self.GetCards()
         self.AllTwoStarCards = self.AllCards[0]
         self.AllThreeStarCards = self.AllCards[1]
         self.AllFourStarCards = self.AllCards[2]
         self.api = AppPixivAPI()
-        self.api.login(pixiv_username,pixiv_pw)
-        # Uncomment this to load new images
         # asyncio.run(self.GetImages())
-        
+    
     async def GetImages(self):
         import json
         from commands.apiFunctions import GetBestdoriAllCharasAPI
@@ -65,6 +58,19 @@ class Fun(commands.Cog):
             f.close()
             await asyncio.sleep(60)
         return AllPics
+
+    async def get_titles(self, server):
+        import requests, shutil, os
+        from tqdm import tqdm
+        from commands.apiFunctions import get_bestdori_title_names_api
+        titles = await get_bestdori_title_names_api(server)
+        for title in tqdm(titles, "Extracting titles.."):
+            if not os.path.isfile(f'img/titles/{server}/{title}'):
+                r = requests.get(f'https://bestdori.com/assets/{server}/thumb/degree_rip/{title}',stream=True)
+                with open(f'img/titles/{server}/{title}', 'wb') as out_file:
+                    shutil.copyfileobj(r.raw, out_file)
+                del r  
+        print('Finished extracting titles')
 
     def GetCards(self):
         AllFourStarCards = []
@@ -124,6 +130,7 @@ class Fun(commands.Cog):
                 return api[user]['Cards']['3'],api[user]['Cards']['4']
             else:
                 return api[user]['Cards']['4']
+    
     def UpdateRollAlbumJSON(self, UserID, Name, Roll):
         # how many times will i manually make a json file before putting it into its own function
         import json
@@ -277,7 +284,7 @@ class Fun(commands.Cog):
             if AllCardsAPI[x]['rarity'] == rarity and AllCardsAPI[x]['type'] in ['limited','permanent']:
                 count += 1
         return count
-    
+
     @commands.command(name='updatecards',
                       hidden=True,
                       enabled=True)
@@ -287,7 +294,19 @@ class Fun(commands.Cog):
             print('Updated icons successfully')
         except:
             print('Failed updating icons')
-            
+         
+    @commands.command(name='updatetitles',
+                      hidden=True)
+    async def update_titles(self, ctx, server: str):
+        if ctx.author.id == 158699060893581313:
+            try:
+                await self.get_titles(server)
+                await ctx.send('Successfully updated titles')
+            except Exception as e:
+                await ctx.send(f'Failed updating titles\n\nException: {e}')
+        else:
+            await ctx.send('Unauthorized to use this command')
+                
     @commands.command(name='rollstats',
                      aliases=['rs'],
                      description='Returns the stats from the roll command for a particular user',
@@ -404,23 +423,23 @@ class Fun(commands.Cog):
                 if x_offset >= Width: # new row
                     x_offset = 0
                     y_offset += 180
-            SavedFile =  FileName
+            SavedFile = FileName
             Album.save(SavedFile,optimize=True,qualiy=100)
             DiscordFileObject = File(SavedFile,filename=SavedFile)
             embed.add_field(name='4*',value=f'{TotalFourStars} / {AllFourStars}',inline=True)
             # embed.add_field(name='2*',value=f'{TotalTwoStars} / {AllTwoStars}',inline=True)
             embed.set_image(url=f"attachment://{SavedFile}")
             await ctx.send(file=DiscordFileObject, embed=embed)
+            os.remove(SavedFile)
         except json.JSONDecodeError:
             await ctx.send(f'No rolls found for your user, please use the `roll` command to generate roll data')
         except SystemError:
             await ctx.send(f'No 4* were found for your user, please use the `roll` command to get more cards or add `3` to the command to check your 3* album')
         except discord.errors.HTTPException:
             await ctx.send(f"Album size too large, please rerun the command but add `jpg` to it to upload a smaller sized image")
-        except Exception as e:
-            await ctx.send(f'Unknown error')    
-        if os.path.exists(SavedFile):
-            os.remove(SavedFile)
+        except:
+            await ctx.send(f'Unknown error. Likely there is no card data for your user yet, please use the `roll` command to get more cards or add `3` to the command to check your 3* album')
+
     @commands.command(name='roll',
                       description='Simulates a 10 roll using the default rates and all the permanent/limited cards that have been released in JP so far. Event cards are not included. Add df and/or the bands/characters names to the input to simulate increased rates/only roll those cards.',
                       help='For bands, the values below are valid, if an invalid value is entered, the command will fail\n\nRoselia\nAfterglow\nPopipa\nPasupare\nHHW\nMorfonica\n\n.roll\n.roll df\n.roll lisa\n.roll df yukina lisa\n.roll roselia\n.roll roselia popipa')
@@ -595,7 +614,7 @@ class Fun(commands.Cog):
             embed.add_field(name='3* Rolled',value=ThreeStarsRolled,inline=True)
             embed.add_field(name='4* Rolled',value=FourStarsRolled,inline=True) 
             embed.set_image(url=f"attachment://{FileName}")
-            embed.set_footer(text="Want to see an album with all your 4 and 3*? Use the `album` command\nWant to see all your stats? Use the `rollstats` command\nWant to check the leaderboards? Use the `rolllb` command")
+            embed.set_footer(text="Want to see an album with all your 4 and 3*? Use the album command\nWant to see all your stats? Use the rollstats command\nWant to check the leaderboards? Use the rolllb command")
             await ctx.send(file=DiscordFileObject, embed=embed)
             os.remove(SavedFile)
         except IndexError:
@@ -685,12 +704,7 @@ class Fun(commands.Cog):
                 pic = random.choice(db[newquery]['pics'])
                 PicID = pic['id']
                 PicURL = pic['image_urls']['large']
-                if charaId == '23':
-                    SaveImage = True
-                    SavedPicPath = f'img/pfps/{PicID}_p0.jpg'
-                else:
-                    SaveImage = False
-                    SavedPicPath = f'img/imgTmp/{PicID}_p0.jpg'
+                SavedPicPath = f'img/imgTmp/{PicID}_p0.jpg'
                 response = requests.get(PicURL, 
                                         headers={
                                             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36', 
@@ -705,19 +719,9 @@ class Fun(commands.Cog):
                     response.raw.decode_content = True
                     Out_file.write(response.content)   
                     DiscordFileObject = File(SavedPicPath)
-                
-                if SaveImage:
-                    from PIL import Image
-                    # Since the original image is saved as corrupt, save it this way
-                    SavedPFP = Image.open(SavedPicPath)
-                    SavedPFP.save(SavedPicPath)
-
                 channel: discord.TextChannel = self.bot.get_channel(712732064381927515)  # Change this channel to the channel you want the bot to send images to so it can grab a URL for the embed
                 fileSend: discord.Message = await channel.send(file=DiscordFileObject)
-
                 TitleURL = f"https://www.pixiv.net/en/artworks/{PicID}"
-
-
                 embed=discord.Embed(title=pic['title'],url=TitleURL,color=discord.Color.blue())
                 embed.set_thumbnail(url=charaImageURL)
                 embed.set_image(url=fileSend.attachments[0].url)
@@ -725,8 +729,8 @@ class Fun(commands.Cog):
                 embed.add_field(name='Date',value=pic['create_date'],inline=True)
                 await ctx.send(embed=embed)
         except:
-            await ctx.send('Failed posting image. Please use the `notify` command if this keeps happening')
-                   
+            await ctx.send('Failed posting image. Please use the `notify` command if this keeps happening')   
+                            
     @commands.command(name='rolllb',
                       aliases=['rlb'],
                       description='Shows the top 20 leaderboards for the roll command',
