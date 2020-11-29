@@ -21,41 +21,31 @@ import re
 class Event(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.ValidT10Servers = ['en','jp']
+        self.valid_t10_servers = ['en','jp']
 
         with open("config.json") as file:
             config_json = json.load(file)
-            load_t10events = config_json["load_t10events"]
-        if load_t10events == 'true':
-            print("Loading valid T10 Events")
-            self.ValidT10EventsEN = asyncio.run(self.GetT10Events('en'))
-            self.ValidT10EventsJP = asyncio.run(self.GetT10Events('jp'))
-        else:
-            print("Not loading Valid T10 Events")
-
-    async def GetT10Events(self, server):
-        # After running this command for a few weeks, only the current and previous 5 events are returned so may as well hard code it
-        from commands.formatting.EventCommands import GetCurrentEventID
-        CurrentEventID = int(await GetCurrentEventID(server))
-        ValidEvents = [CurrentEventID, CurrentEventID-1, CurrentEventID -
-                       2, CurrentEventID-3, CurrentEventID-4, CurrentEventID-5]
-        return ValidEvents
-
+            en_event_id = int(config_json["en_event_id"])
+            jp_event_id = int(config_json["jp_event_id"])
+            self.valid_t10_events_en = [en_event_id, en_event_id-1, en_event_id -
+                       2, en_event_id-3, en_event_id-4, en_event_id-5]
+            self.valid_t10_events_jp = [jp_event_id, jp_event_id-1, jp_event_id -
+                       2, jp_event_id-3, jp_event_id-4, jp_event_id-5]
 
     @commands.command(name='t10events',
                     aliases=['t10e'],
                     description="Returns a list of events that can be checked for T10 data",
                     help='Examples:\n\n.t10events\n.t10e jp')
     async def t10events(self, ctx, server: str = 'en'):
-        if server.lower() not in self.ValidT10Servers:
+        if server.lower() not in self.valid_t10_servers:
             await ctx.send("Only EN and JP can be checked for T10 data")
         else:
             if server.lower() == 'en':
-                ValidT10Events = self.ValidT10EventsEN
+                valid_t10_events = self.valid_t10_events_en
             if server.lower() == 'jp':
-                ValidT10Events = self.ValidT10EventsJP
-            if ValidT10Events: # In case the function isn't ran at startup
-                await ctx.send(f'Valid t10 events for `{server}` are: {str(ValidT10Events)[1:-1]}')
+                valid_t10_events = self.valid_t10_events_jp
+            if valid_t10_events: # In case the function isn't ran at startup
+                await ctx.send(f'Valid t10 events for `{server}` are: {str(valid_t10_events)[1:-1]}')
             else:
                 await ctx.send('Error loading valid t10 events. Use the `notify` command to let Josh know')
 
@@ -67,7 +57,7 @@ class Event(commands.Cog):
         if not eventid.isnumeric():
             raise commands.errors.BadArgument
         try:
-            if server not in self.ValidT10Servers:
+            if server not in self.valid_t10_servers:
                 await ctx.send('This function only works for the `EN` and `JP` servers')
             else:
                 FileToAttach = await GetT10ArchiveFile(int(eventid), server)
@@ -90,7 +80,7 @@ class Event(commands.Cog):
             raise commands.errors.BadArgument
         else:
             server = server.lower()
-            if server not in self.ValidT10Servers:
+            if server not in self.valid_t10_servers:
                 await ctx.send('This function only works for the `EN` and `JP` servers')
             else:
                 try:
@@ -117,7 +107,7 @@ class Event(commands.Cog):
             raise commands.errors.BadArgument
         else:
             server = server.lower()
-            if server not in self.ValidT10Servers:
+            if server not in self.valid_t10_servers:
                 output = 'This function only works for the `EN` and `JP` servers'
             else:
                 try:
@@ -143,7 +133,7 @@ class Event(commands.Cog):
             raise commands.errors.BadArgument
         else:
             server = server.lower()
-            if server not in self.ValidT10Servers:
+            if server not in self.valid_t10_servers:
                 await ctx.send('This function only works for the `EN` and `JP` servers')
             else:
                 try:
