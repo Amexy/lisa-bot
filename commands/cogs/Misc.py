@@ -8,6 +8,10 @@ class Misc(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @commands.command(name='premium')
+    async def premium(self, ctx):
+        await ctx.send("As a way to recoup hosting costs, 2 minute tracking/archive data will become a premium feature of Lisabot. **Current pricing is $10/event**. Hourly will remain free for now.\n\nIf you'd like to purchase 2 minute tracking for your event, please send your payment through ko-fi and DM Josh#1373 your server ID and channel ID that will be used for 2 minute tracking. Developer mode must be enabled in Discord under your settings, right click the server and channel and select the `Copy ID` option.\n\nIf you have any questions, please let Josh#1373 know.\n\nhttps://ko-fi.com/lisabot")
+        
     @commands.command(name='servericon',
                     aliases=['sp','si','serverpic'],
                     description="Uploads the server's icon")

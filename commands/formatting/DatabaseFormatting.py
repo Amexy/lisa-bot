@@ -2,6 +2,7 @@ from tinydb import TinyDB, where, Query
 from tabulate import tabulate
 from discord.channel import TextChannel
 from discord.guild import Guild
+from discord.user import User
 from discord import RawReactionActionEvent
 
 # Databases
@@ -22,7 +23,27 @@ t2500DB = 'databases/t2500DB.json'
 jp2MinuteTracking = 'databases/jp2MinuteTrackingDB.json'
 jp1HourTracking = 'databases/jp1HourTrackingDB.json'
 botupdatesDB = 'databases/botupdates.json'
+premium_db = 'databases/premium_users.json'
 
+
+def add_user_to_premium_db(user: User, guild: Guild, event_id, server: str):
+    db = TinyDB(premium_db)
+    success = True
+    try:
+        db.upsert({'user': user,
+                   'guild': guild,
+                   'event_id': event_id,
+                   'server': server
+                   }, where('guild') == guild)
+    except Exception as e:
+        print(e)
+        success = False
+    if success:
+        text = f'User {user} has been added as a premium user for event id {event_id}'
+    else:
+        text = f'Failed adding user {user} as a premium user for event id {event_id}'
+    return text    
+    
 #######################
 #     Bot Updates     #
 #######################

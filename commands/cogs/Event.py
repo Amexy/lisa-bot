@@ -51,25 +51,29 @@ class Event(commands.Cog):
 
     @commands.command(name='t10archives',
                 aliases=["t10a"],
-                description="ttaches a txt file (if found) containing 2 minute t10 updates for the specified event and server",
+                description="This is a premium function. Use `.premium`. for more information\n\nAttaches a txt file (if found) containing 2 minute t10 updates for the specified event and server",
                 help=".t10a 76 (this defaults to en)\n.t10a 112 jp")
     async def t10archives(self, ctx, eventid: str, server: str = 'en'):
-        if not eventid.isnumeric():
-            raise commands.errors.BadArgument
-        try:
-            if server not in self.valid_t10_servers:
-                await ctx.send('This function only works for the `EN` and `JP` servers')
-            else:
-                FileToAttach = await GetT10ArchiveFile(int(eventid), server)
-                if FileToAttach:
-                    await ctx.send('File found, uploading..')
-                    await ctx.send(file=FileToAttach)
+        valid_users = [158699060893581313,202289392394436609,384333652344963074]
+        if ctx.author.id in valid_users:
+            if not eventid.isnumeric():
+                raise commands.errors.BadArgument
+            try:
+                if server not in self.valid_t10_servers:
+                    await ctx.send('This function only works for the `EN` and `JP` servers')
                 else:
-                    await ctx.send("No file found for the specified event.")
+                    FileToAttach = await GetT10ArchiveFile(int(eventid), server)
+                    if FileToAttach:
+                        await ctx.send('File found, uploading..')
+                        await ctx.send(file=FileToAttach)
+                    else:
+                        await ctx.send("No file found for the specified event.")
+            except Exception as e:
+                print(str(e))
+                await ctx.send("No file found for the specified event.")
+        else:
+            await ctx.send('Event archive access is now a premium feature. Please use `.premium` for more information')
 
-        except Exception as e:
-            print(str(e))
-            await ctx.send("No file found for the specified event.")
 
     @commands.command(name='t10',
                 brief="t10 info",

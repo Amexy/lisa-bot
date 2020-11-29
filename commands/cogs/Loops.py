@@ -56,6 +56,7 @@ class Loops(commands.Cog):
         # self.bot.loop.create_task(self.postT100CutoffUpdates())
         # self.bot.loop.create_task(self.postT1000CutoffUpdates())
         # self.bot.loop.create_task(self.postT2500CutoffUpdates())
+        #self.bot.loop.create_task(self.PostYukiLisa())
         self.bot.loop.create_task(self.postEventT102min())
         self.bot.loop.create_task(self.postEventT101hr())
         self.bot.loop.create_task(self.postSongUpdates1min())
@@ -64,7 +65,6 @@ class Loops(commands.Cog):
         self.bot.loop.create_task(self.postBestdoriNews())
         self.bot.loop.create_task(self.UpdateAvatar())
         self.bot.loop.create_task(self.UpdateCardIcons())
-        #self.bot.loop.create_task(self.PostYukiLisa())
         self.bot.loop.create_task(self.postCutoffUpdates())
 
     async def UpdateCardIcons(self):
@@ -452,30 +452,43 @@ class Loops(commands.Cog):
                     if TimeTilNextEventStarts > 86400:
                         await asyncio.sleep(TimeTilNextEventStarts - 86400)
                         Message = f"{EventName} on `{server.upper()}` begins in 1 day!"
-                        await self.sendEventUpdates(Message, 'en')               
+                        await self.sendEventUpdates(Message, server)               
                     elif TimeTilNextEventStarts > 3600:
                         await asyncio.sleep(TimeTilNextEventStarts - 3600)
                         Message = f"{EventName} on `{server.upper()}` begins in 1 hour!"
-                        await self.sendEventUpdates(Message, 'en')
+                        await self.sendEventUpdates(Message, server)
                     else:
                         await asyncio.sleep(TimeTilNextEventStarts)
                         Message = f"{EventName} on `{server.upper()}` has begun!"
-                        await self.sendEventUpdates(Message, 'en')
+                        await self.sendEventUpdates(Message, server)
                 else:
                     EventName = await GetEventName(server, EventID)
-                    TimeLeftSeconds = await GetEventTimeLeftSeconds(server, EventID)
+                    TimeLeftSeconds = 5#await GetEventTimeLeftSeconds(server, EventID)
                     if TimeLeftSeconds > 86400:
                         await asyncio.sleep(TimeLeftSeconds - 86400)
                         Message = f"{EventName} on `{server.upper()}` ends in 1 day!"
-                        await self.sendEventUpdates(Message, 'en')
+                        await self.sendEventUpdates(Message, server)
                     elif TimeLeftSeconds > 3600:
                         await asyncio.sleep(TimeLeftSeconds - 3600)
                         Message = f"{EventName} on `{server.upper()}` ends in 1 hour!"
-                        await self.sendEventUpdates(Message, 'en')
+                        await self.sendEventUpdates(Message, server)
                     else:
                         await asyncio.sleep(TimeLeftSeconds)
                         Message = f"{EventName} on `{server.upper()}` has ended!"
-                        await self.sendEventUpdates(Message, 'en')
+                        from tinydb import TinyDB, Query, where
+                        q = Query()
+                        guilds_db = TinyDB('databases/premium_users.json')
+                        guilds = guilds_db.search(q.event_id == EventID and q.server == server)
+                        if guilds:
+                            if server == 'en':
+                                two_min_db = 'databases/eventCheckDb2min.json' 
+                            elif server == 'jp':
+                                two_min_db = 'databases/jp2MinuteTrackingDB.json'
+                            if two_min_db:
+                                db = TinyDB(two_min_db)
+                                for guild in guilds:
+                                    db.remove((where('guild') == guild['guild']))
+                        await self.sendEventUpdates(Message, server)
                         await asyncio.sleep(60)
             except aiohttp.client_exceptions.ContentTypeError: # This will typically happen on JP since Bestdori doesn't always have the next event's information available until ~24 hours before event start
                 await asyncio.sleep(60)
