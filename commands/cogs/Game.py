@@ -5,14 +5,12 @@ from discord.ext import commands
 from datetime import datetime
 from pytz import timezone
 from operator import itemgetter
-from time import strftime
-from time import gmtime
+from time import strftime, gmtime
 from commands.apiFunctions import GetBestdoriAllCharactersAPI, GetBestdoriAllEventsAPI, GetBestdoriBannersAPI, GetBestdoriEventArchivesAPI, GetBestdoriAllGachasAPI, GetBestdoriGachaAPI, GetBestdoriCardAPI, GetSongMetaAPI, GetBestdoriCharasAPI, GetServerAPIKey, GetBestdoriAllCardsAPI
 from commands.cogs.Cards import parseCards, generateImage, Palette, filterArguments, findCardFromArguments, Card
 from commands.formatting.GameCommands import GetStarsUsedOutput, GetEPGainOutput, characterOutput, GetSongInfo, GetSongMetaOutput, GetLeaderboardsOutput
 from commands.formatting.TimeCommands import GetCurrentTime
-import discord, shutil, time, requests, math, asyncio
-
+import discord, shutil, time, requests, math, asyncio, traceback, os
 
 class Game(commands.Cog):
     def __init__(self, bot):
@@ -86,41 +84,46 @@ class Game(commands.Cog):
                 ProfilePicture = f'{info.center_info.card_id}_trained.png'
             else:
                 ProfilePicture = f'{info.center_info.card_id}.png'
-                
             if len(info.cleared_songs.song) > 0:
-                embed.add_field(name='EX Cleared / FC', value=f'{info.cleared_songs.song._values[2].amount} / {info.fced_songs.song._values[2].amount}', inline=True)
-                embed.add_field(name='SP Cleared / FC', value=f'{info.cleared_songs.song._values[0].amount} / {info.fced_songs.song._values[0].amount}', inline=True)
+                embed.add_field(name='EX Cleared / FC', value=f'{info.cleared_songs.song[2].amount} / {info.fced_songs.song[2].amount}', inline=True)
+                embed.add_field(name='SP Cleared / FC', value=f'{info.cleared_songs.song[0].amount} / {info.fced_songs.song[0].amount}', inline=True)
 
 
 
             TitlesInfo = []
-            if len(info.equipped_titles.title._values) == 2:
-                TitlesInfo.append(info.equipped_titles.title._values[0].titleinfo.title_id)
-                TitlesInfo.append(info.equipped_titles.title._values[1].titleinfo.title_id)
+            if len(info.equipped_titles.title) == 2:
+                #print(info.equipped_titles.title[0].titleinfo.title_id)
+                TitlesInfo.append(info.equipped_titles.title[0].titleinfo.title_id)
+                TitlesInfo.append(info.equipped_titles.title[1].titleinfo.title_id)
             else:
-                TitlesInfo.append(info.equipped_titles.title._values[0].titleinfo.title_id)
+                TitlesInfo.append(info.equipped_titles.title.titleinfo.title_id)
                 
             if len(info.hsr.val1.val) > 0:
                 # I know there's a better way to do this, but whatever
                 hsr = 0
-                hsr += info.hsr.val1.val._values[0].rating
-                hsr += info.hsr.val1.val._values[1].rating
-                hsr += info.hsr.val1.val._values[2].rating
-                hsr += info.hsr.val2.val._values[0].rating
-                hsr += info.hsr.val2.val._values[1].rating
-                hsr += info.hsr.val2.val._values[2].rating
-                hsr += info.hsr.val3.val._values[0].rating
-                hsr += info.hsr.val3.val._values[1].rating
-                hsr += info.hsr.val3.val._values[2].rating
-                hsr += info.hsr.val4.val._values[0].rating
-                hsr += info.hsr.val4.val._values[1].rating
-                hsr += info.hsr.val4.val._values[2].rating
-                hsr += info.hsr.val5.val._values[0].rating
-                hsr += info.hsr.val5.val._values[1].rating
-                hsr += info.hsr.val5.val._values[2].rating
-                hsr += info.hsr.val6.val._values[0].rating
-                hsr += info.hsr.val6.val._values[1].rating
+                # print(info.hsr)
+                # for r in list(info.hsr):
+                #     hsr += r.rating
+                # print(hsr)
+                hsr += info.hsr.val1.val[0].rating
+                hsr += info.hsr.val1.val[1].rating
+                hsr += info.hsr.val1.val[2].rating
+                hsr += info.hsr.val2.val[0].rating
+                hsr += info.hsr.val2.val[1].rating
+                hsr += info.hsr.val2.val[2].rating
+                hsr += info.hsr.val3.val[0].rating
+                hsr += info.hsr.val3.val[1].rating
+                hsr += info.hsr.val3.val[2].rating
+                hsr += info.hsr.val4.val[0].rating
+                hsr += info.hsr.val4.val[1].rating
+                hsr += info.hsr.val4.val[2].rating
+                hsr += info.hsr.val5.val[0].rating
+                hsr += info.hsr.val5.val[1].rating
+                hsr += info.hsr.val5.val[2].rating
+                hsr += info.hsr.val6.val[0].rating
+                hsr += info.hsr.val6.val[1].rating
                 #hsr += info.hsr.val6.val._values[2].rating
+                embed.add_field(name='\u200b', value='\u200b', inline=True)
                 embed.add_field(name='High Score Rating', value=hsr, inline=True)
             BandMembers = []
             # Since you can't iterate over it, I think
@@ -136,7 +139,8 @@ class Game(commands.Cog):
             embed.set_image(url=f"attachment://{BandFileName[0]}")
 
             await ctx.send(files=[icon,BandImageFile],embed=embed)
-        except:
+        except Exception as e:
+            print(traceback.format_exc())
             await ctx.send('Failed looking up that player. If you believe this to be a mistake, please use the notify command to let Josh know')
         
     @commands.command(name='level',
