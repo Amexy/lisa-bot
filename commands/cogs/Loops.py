@@ -463,7 +463,7 @@ class Loops(commands.Cog):
                         await self.sendEventUpdates(Message, server)
                 else:
                     EventName = await GetEventName(server, EventID)
-                    TimeLeftSeconds = 5#await GetEventTimeLeftSeconds(server, EventID)
+                    TimeLeftSeconds = await GetEventTimeLeftSeconds(server, EventID)
                     if TimeLeftSeconds > 86400:
                         await asyncio.sleep(TimeLeftSeconds - 86400)
                         Message = f"{EventName} on `{server.upper()}` ends in 1 day!"
