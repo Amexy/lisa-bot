@@ -92,19 +92,14 @@ class Game(commands.Cog):
 
             TitlesInfo = []
             if len(info.equipped_titles.title) == 2:
-                #print(info.equipped_titles.title[0].titleinfo.title_id)
                 TitlesInfo.append(info.equipped_titles.title[0].titleinfo.title_id)
                 TitlesInfo.append(info.equipped_titles.title[1].titleinfo.title_id)
             else:
-                TitlesInfo.append(info.equipped_titles.title.titleinfo.title_id)
+                TitlesInfo.append(info.equipped_titles.title[0].titleinfo.title_id)
                 
             if len(info.hsr.val1.val) > 0:
                 # I know there's a better way to do this, but whatever
                 hsr = 0
-                # print(info.hsr)
-                # for r in list(info.hsr):
-                #     hsr += r.rating
-                # print(hsr)
                 hsr += info.hsr.val1.val[0].rating
                 hsr += info.hsr.val1.val[1].rating
                 hsr += info.hsr.val1.val[2].rating
