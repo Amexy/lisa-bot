@@ -13,7 +13,7 @@ class Updates(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-
+    premium_guilds = []
     @commands.command(name='addpremiumuser',
                       aliases=['apu'])
     async def add_premium_user(self, ctx, user_id: int, server_id: int, event_id: int, server: str):
@@ -27,6 +27,7 @@ class Updates(commands.Cog):
             # user = user_id if not user else user 
             # server = server_id if not server else server
             await ctx.send(add_user_to_premium_db(user_id, server_id, event_id, server))
+            self.premium_guilds.append(server_id)
     #################
     #  Bot Updates  #
     #################
