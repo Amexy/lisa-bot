@@ -53,12 +53,11 @@ class Loops(commands.Cog):
             await asyncio.sleep(1200)
             
     def StartLoops(self):
-        # self.bot.loop.create_task(self.postT100CutoffUpdates())
-        # self.bot.loop.create_task(self.postT1000CutoffUpdates())
-        # self.bot.loop.create_task(self.postT2500CutoffUpdates())
         #self.bot.loop.create_task(self.PostYukiLisa())
-        self.bot.loop.create_task(self.postEventT102min())
-        self.bot.loop.create_task(self.postEventT101hr())
+        self.bot.loop.create_task(self.post_t10_updates('en', 2))
+        self.bot.loop.create_task(self.post_t10_updates('en', 3600))
+        self.bot.loop.create_task(self.post_t10_updates('jp', 2))
+        self.bot.loop.create_task(self.post_t10_updates('jp', 3600))
         self.bot.loop.create_task(self.postSongUpdates1min())
         self.bot.loop.create_task(self.postEventNotif('en'))
         self.bot.loop.create_task(self.postEventNotif('jp'))
@@ -136,96 +135,38 @@ class Loops(commands.Cog):
             await channel.send(embed=embed)
             await asyncio.sleep(180)
 
-    async def postEventT102min(self):
+    async def post_t10_updates(self, server: str, interval: int):
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
             try:
-                EnEventID = await GetCurrentEventID('en')
-                JPEventID = await GetCurrentEventID('jp')
+                event_id = await GetCurrentEventID(server)
             except Exception as e:
-                print('Failed posting 2 minute data. Exception: ' + str(e))            
-            if EnEventID:
-                timeLeftEn = await GetEventTimeLeftSeconds('en', EnEventID)
-                if(timeLeftEn > 0):
-                    EnMessage = await t10formatting('en', EnEventID, True)
-                    #await t10logging('en', EnEventID, False)
-                    #await t10logging('en', EnEventID, True)
-                    ids = getChannelsToPost(2, 'en')
+                print(f'Failed posting {interval} minute data for {server}.\nException: ' + {e})            
+            if event_id:
+                time_left = await GetEventTimeLeftSeconds(server, event_id)
+                if(time_left > 0):
+                    message = await t10formatting(server, event_id, True)
+                    ids = getChannelsToPost(interval, server)
                     for i in ids:
                         channel = self.bot.get_channel(i)
                         if channel != None:
                             try:
-                                await channel.send(EnMessage)
+                                await channel.send(message)
                             except (commands.BotMissingPermissions, discord.errors.NotFound, discord.errors.Forbidden): 
                                 LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
-                                await LoopRemovalUpdates.send('Removing 2 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
-                                removeChannelFromDatabase(channel, 2, 'en')
-            if JPEventID:
-                timeLeftJp = await GetEventTimeLeftSeconds('jp', JPEventID)
-                if(timeLeftJp > 0):
-                    JPMessage = await t10formatting('jp', JPEventID, False)
-                    ids = getChannelsToPost(2, 'jp')
-                    for i in ids:
-                        channel = self.bot.get_channel(i)
-                        if channel != None:
-                            try:
-                                await channel.send(JPMessage)
-                            except (commands.BotMissingPermissions, discord.errors.NotFound, discord.errors.Forbidden): 
-                                LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
-                                await LoopRemovalUpdates.send('Removing 2 minute updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
-                                removeChannelFromDatabase(channel, 2, 'jp')
+                                await LoopRemovalUpdates.send(f'Removing {interval} updates from channel: {channel.name} in server: {channel.guild.name}')
+                                removeChannelFromDatabase(channel, interval, server)
             timeStart = datetime.now()
-            if (timeStart.minute % 2) != 0: 
-                timeFinish = (timeStart + timedelta(minutes=1)).replace(second=0, microsecond=0).timestamp()
+            if interval == 2:
+                if (timeStart.minute % 2) != 0: 
+                    timeFinish = (timeStart + timedelta(minutes=1)).replace(second=0, microsecond=0).timestamp()
+                else:
+                    timeFinish = (timeStart + timedelta(minutes=2)).replace(second=0, microsecond=0).timestamp()
             else:
-                timeFinish = (timeStart + timedelta(minutes=2)).replace(second=0, microsecond=0).timestamp()
+                timeFinish = (timeStart + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0).timestamp()
             timeStart = timeStart.timestamp()
             await asyncio.sleep(timeFinish - timeStart)
-            
-    async def postEventT101hr(self):
-        await self.bot.wait_until_ready()
-        while not self.bot.is_closed():
-            timeStart = datetime.now()
-            timeFinish = (timeStart + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0).timestamp()            
-            timeStart = timeStart.timestamp()
-            await asyncio.sleep(timeFinish - timeStart)
-            try:
-                EnEventID = await GetCurrentEventID('en')
-            except Exception as e:
-                print('Failed posting 2 minute data. Exception: ' + str(e))            
-            if EnEventID:
-                timeLeftEn = await GetEventTimeLeftSeconds('en', EnEventID)
-                if(timeLeftEn > 0):
-                    EnMessage = await t10formatting('en', EnEventID, True)
-                    #await t10logging('en', EnEventID, False)
-                    #await t10logging('en', EnEventID, True)
-                    ids = getChannelsToPost(3600, 'en')
-                    for i in ids:
-                        channel = self.bot.get_channel(i)
-                        if channel != None:
-                            try:
-                                await channel.send(EnMessage)
-                            except (commands.BotMissingPermissions, discord.errors.NotFound, discord.errors.Forbidden): 
-                                LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
-                                await LoopRemovalUpdates.send('Removing 1 hour updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
-                                removeChannelFromDatabase(channel, 3600, 'en')
-            
-            JPEventID = await GetCurrentEventID('jp')
-            if JPEventID:
-                timeLeftJp = await GetEventTimeLeftSeconds('jp', JPEventID)
-                if(timeLeftJp > 0):
-                    JPMessage = await t10formatting('jp', JPEventID, False)
-                    ids = getChannelsToPost(3600, 'jp')
-                    for i in ids:
-                        channel = self.bot.get_channel(i)
-                        if channel != None:
-                            try:
-                                await channel.send(JPMessage)
-                            except (commands.BotMissingPermissions, discord.errors.NotFound, discord.errors.Forbidden): 
-                                LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
-                                await LoopRemovalUpdates.send('Removing 1 hour updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
-                                removeChannelFromDatabase(channel, 3600, 'jp')                  
-
+                            
     async def postSongUpdates1min(self):
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
