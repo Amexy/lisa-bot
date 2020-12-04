@@ -20,7 +20,7 @@ async def GetBestdoriRateAPI():
 
 async def GetBestdoriEventAPI(EventID: int):
     async with aiohttp.ClientSession() as session:
-        api = 'https://bestdori.com/api/events/%s.json' %str(EventID)
+        api = f'https://bestdori.com/api/events/{EventID}.json'
         async with session.get(api) as CurrentEventAPI:
             return await CurrentEventAPI.json()
 
@@ -46,8 +46,7 @@ async def GetBestdoriCutoffAPI(server: int, tier: int):
         EventID = await GetCurrentEventID(server)
         tier = await GetTierKey(tier)
         ServerKey = await GetServerAPIKey(server)
-        api = 'https://bestdori.com/api/tracker/data?server={}&event={}&tier={}'.format(
-            ServerKey, str(EventID), tier)
+        api = f'https://bestdori.com/api/tracker/data?server={ServerKey}&event={str(EventID)}&tier={tier}'
         async with session.get(api) as r:
             return await r.json()
 
@@ -71,7 +70,7 @@ async def GetBestdoriPlayerLeaderboardsAPI(server: str, lbtype: str, entries: in
             lbtype = 'cleared'
         elif lbtype in ['rank','ranks']:
             lbtype = 'rank'
-        api = 'https://bestdori.com/api/sync/list/player?server=%s&stats=%s&limit=%s&offset=0' %(str(server),lbtype,str(entries))
+        api = f'https://bestdori.com/api/sync/list/player?server={server}&stats={lbtype}&limit={str(entries)}&offset=0'
         async with session.get(api) as r:
             return await r.json()
 
@@ -95,8 +94,7 @@ async def GetBestdoriAllCharactersAPI():
 
 async def GetBestdoriBannersAPI(eventId: int):
     async with aiohttp.ClientSession() as session:
-        eventId = str(eventId)
-        api = 'https://bestdori.com/api/events/%s.json' %eventId
+        api = f'https://bestdori.com/api/events/{str(eventId)}.json'
         async with session.get(api) as r:
             return await r.json()
 
@@ -132,8 +130,7 @@ async def GetBestdoriAllTitlesAPI():
 
 async def GetBestdoriCharasAPI(charaId: int):
     async with aiohttp.ClientSession() as session:
-        eventId = str(charaId)
-        api = 'https://bestdori.com/api/characters/%s.json' %eventId
+        api = f'https://bestdori.com/api/characters/{str(charaId)}.json'
         async with session.get(api) as r:
             return await r.json()
 
@@ -145,13 +142,13 @@ async def GetBestdoriAllGachasAPI():
 
 async def GetBestdoriGachaAPI(gachaid: int):
     async with aiohttp.ClientSession() as session:
-        api = 'https://bestdori.com/api/gacha/%s.json' %str(gachaid)
+        api = f'https://bestdori.com/api/gacha/{str(gachaid)}.json'
         async with session.get(api) as r:
             return await r.json()
 
 async def GetBestdoriCardAPI(cardid: int):
     async with aiohttp.ClientSession() as session:
-        api = 'https://bestdori.com/api/cards/%s.json' %str(cardid)
+        api = f'https://bestdori.com/api/cards/{str(cardid)}.json'
         async with session.get(api) as r:
             return await r.json()
 
