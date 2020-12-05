@@ -1,28 +1,52 @@
+import datetime
 import requests
 import json
 import time
 import aiohttp
+from main import ctime
 
 """
-async def getBandoriGAAPI(server: str):
-    async with aiohttp.ClientSession() as session:
-        api = 'https://api.bandori.ga/v1/%s/event' %str(server)
+@cachedRequest
+async def GetBandoriGAAPI(server: str):
+        return 'https://api.bandori.ga/v1/%s/event' %str(server)
         async with session.get(api) as BandoriGAAPI:
             return await BandoriGAAPI.json()
 """
 
+_cache = {}
+_etags = {}
 
+use_cache = True
+
+def cachedRequest(func):
+    async def wrapper(*args, **kwargs):
+        url = await func(*args, **kwargs)
+        if use_cache:
+            async with aiohttp.ClientSession() as session:
+                etag = _etags.get(func)
+                async with session.get(url, headers={'If-None-Match': etag} if etag else None) as r:
+                    if r.status != 304:
+                        _etags[func] = r.headers['ETag']
+                        _cache[func] = await r.json()
+            return _cache[func]
+        else:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as r:
+                    return await r.json()
+
+    return wrapper
+
+
+@ctime
+@cachedRequest
 async def GetBestdoriRateAPI():
-    async with aiohttp.ClientSession() as session:
-        api = 'https://bestdori.com/api/tracker/rates.json'
-        async with session.get(api) as r:
-            return await r.json()
+    return 'https://bestdori.com/api/tracker/rates.json'
 
+@ctime
+@cachedRequest
 async def GetBestdoriEventAPI(EventID: int):
-    async with aiohttp.ClientSession() as session:
-        api = 'https://bestdori.com/api/events/%s.json' %str(EventID)
-        async with session.get(api) as CurrentEventAPI:
-            return await CurrentEventAPI.json()
+    return 'https://bestdori.com/api/events/%s.json' % str(EventID)
+
 
 async def GetTierKey(tier):
     if tier == 100:
@@ -39,133 +63,118 @@ async def GetTierKey(tier):
         tier = '0'
     return int(tier)
 
-
+@ctime
+@cachedRequest
 async def GetBestdoriCutoffAPI(server: int, tier: int):
-    async with aiohttp.ClientSession() as session:
-        from commands.formatting.EventCommands import GetCurrentEventID
-        EventID = await GetCurrentEventID(server)
-        tier = await GetTierKey(tier)
-        ServerKey = await GetServerAPIKey(server)
-        api = 'https://bestdori.com/api/tracker/data?server={}&event={}&tier={}'.format(
-            ServerKey, str(EventID), tier)
-        async with session.get(api) as r:
-            return await r.json()
+    from commands.formatting.EventCommands import GetCurrentEventID
+    EventID = await GetCurrentEventID(server)
+    tier = await GetTierKey(tier)
+    ServerKey = await GetServerAPIKey(server)
+    return 'https://bestdori.com/api/tracker/data?server={}&event={}&tier={}'.format(
+        ServerKey, str(EventID), tier)
 
+@ctime
+@cachedRequest
 async def GetBestdoriPlayerLeaderboardsAPI(server: str, lbtype: str, entries: int):
-    async with aiohttp.ClientSession() as session:
-        if server == 'en':
-            server = 1
-        elif server == 'jp':
-            server = 0
-        elif server == 'tw':
-            server = 2
-        elif server == 'cn':
-            server = 3
-        elif server == 'kr':
-            server = 4
-        if lbtype in ['highscores','hs']:
-            lbtype = 'hsr'
-        elif lbtype in ['fullcombo','fc']:
-            lbtype = 'fullComboCount'
-        elif lbtype in 'cleared':
-            lbtype = 'cleared'
-        elif lbtype in ['rank','ranks']:
-            lbtype = 'rank'
-        api = 'https://bestdori.com/api/sync/list/player?server=%s&stats=%s&limit=%s&offset=0' %(str(server),lbtype,str(entries))
-        async with session.get(api) as r:
-            return await r.json()
+    if server == 'en':
+        server = 1
+    elif server == 'jp':
+        server = 0
+    elif server == 'tw':
+        server = 2
+    elif server == 'cn':
+        server = 3
+    elif server == 'kr':
+        server = 4
+    if lbtype in ['highscores', 'hs']:
+        lbtype = 'hsr'
+    elif lbtype in ['fullcombo', 'fc']:
+        lbtype = 'fullComboCount'
+    elif lbtype in 'cleared':
+        lbtype = 'cleared'
+    elif lbtype in ['rank', 'ranks']:
+        lbtype = 'rank'
+    return 'https://bestdori.com/api/sync/list/player?server=%s&stats=%s&limit=%s&offset=0' % (
+        str(server), lbtype, str(entries))
 
+@ctime
+@cachedRequest
 async def GetSongAPI():
-    async with aiohttp.ClientSession() as session:
-        apiURL = 'https://bestdori.com/api/songs/all.7.json'
-        async with session.get(apiURL) as r:
-            return await r.json()
- 
+    return 'https://bestdori.com/api/songs/all.7.json'
+
+@ctime
+@cachedRequest
 async def GetBestdoriAllEventsAPI():
-    async with aiohttp.ClientSession() as session:
-        api = 'https://bestdori.com/api/events/all.5.json'
-        async with session.get(api) as r:
-            return await r.json()
+    return 'https://bestdori.com/api/events/all.5.json'
 
+@ctime
+@cachedRequest
 async def GetBestdoriAllCharactersAPI():
-    async with aiohttp.ClientSession() as session:
-        api = 'https://bestdori.com/api/characters/all.2.json'
-        async with session.get(api) as r:
-            return await r.json()
+    return 'https://bestdori.com/api/characters/all.2.json'
 
+@ctime
+@cachedRequest
 async def GetBestdoriBannersAPI(eventId: int):
-    async with aiohttp.ClientSession() as session:
-        eventId = str(eventId)
-        api = 'https://bestdori.com/api/events/%s.json' %eventId
-        async with session.get(api) as r:
-            return await r.json()
+    eventId = str(eventId)
+    return 'https://bestdori.com/api/events/%s.json' % eventId
 
+@ctime
+@cachedRequest
 async def GetBestdoriEventArchivesAPI():
-    async with aiohttp.ClientSession() as session:
-        api = 'https://bestdori.com/api/archives/all.5.json'
-        async with session.get(api) as r:
-            return await r.json()
+    return 'https://bestdori.com/api/archives/all.5.json'
 
+@ctime
+@cachedRequest
 async def GetBestdoriAllCardsAPI():
-    async with aiohttp.ClientSession() as session:
-        api = 'https://bestdori.com/api/cards/all.5.json'
-        async with session.get(api) as r:
-            return await r.json()
-        
+    return 'https://bestdori.com/api/cards/all.5.json'
+
+@ctime
+@cachedRequest
 async def GetBestdoriAllCharasAPI():
-    async with aiohttp.ClientSession() as session:
-        api = 'https://bestdori.com/api/characters/all.2.json'
-        async with session.get(api) as r:
-            return await r.json()
+    return 'https://bestdori.com/api/characters/all.2.json'
 
-async def get_bestdori_title_names_api(server: str):
-    async with aiohttp.ClientSession() as session:
-        api = f'https://bestdori.com/api/explorer/{server}/assets/thumb/degree.json'
-        async with session.get(api) as r:
-            return await r.json()
-        
+@ctime
+@cachedRequest
+async def Get_bestdori_title_names_api(server: str):
+    return f'https://bestdori.com/api/explorer/{server}/assets/thumb/degree.json'
+
+@ctime
+@cachedRequest
 async def GetBestdoriAllTitlesAPI():
-    async with aiohttp.ClientSession() as session:
-        api = 'https://bestdori.com/api/degrees/all.3.json'
-        async with session.get(api) as r:
-            return await r.json()
+    return 'https://bestdori.com/api/degrees/all.3.json'
 
+@ctime
+@cachedRequest
 async def GetBestdoriCharasAPI(charaId: int):
-    async with aiohttp.ClientSession() as session:
-        eventId = str(charaId)
-        api = 'https://bestdori.com/api/characters/%s.json' %eventId
-        async with session.get(api) as r:
-            return await r.json()
+    eventId = str(charaId)
+    return 'https://bestdori.com/api/characters/%s.json' % eventId
 
+@ctime
+@cachedRequest
 async def GetBestdoriAllGachasAPI():
-    async with aiohttp.ClientSession() as session:
-        api = 'https://bestdori.com/api/gacha/all.5.json'
-        async with session.get(api) as r:
-            return await r.json()
+    return 'https://bestdori.com/api/gacha/all.5.json'
 
+@ctime
+@cachedRequest
 async def GetBestdoriGachaAPI(gachaid: int):
-    async with aiohttp.ClientSession() as session:
-        api = 'https://bestdori.com/api/gacha/%s.json' %str(gachaid)
-        async with session.get(api) as r:
-            return await r.json()
+    return 'https://bestdori.com/api/gacha/%s.json' % str(gachaid)
 
+@ctime
+@cachedRequest
 async def GetBestdoriCardAPI(cardid: int):
-    async with aiohttp.ClientSession() as session:
-        api = 'https://bestdori.com/api/cards/%s.json' %str(cardid)
-        async with session.get(api) as r:
-            return await r.json()
+    return 'https://bestdori.com/api/cards/%s.json' % str(cardid)
 
+@ctime
+@cachedRequest
 async def GetSongMetaAPI():
-    async with aiohttp.ClientSession() as session:
-        api = 'https://bestdori.com/api/songs/meta/all.5.json'
-        async with session.get(api) as r:
-            return await r.json()
+    return 'https://bestdori.com/api/songs/meta/all.5.json'
+
 
 async def GetServerAPIKey(server: str):
     if server == 'en':
-        Key = 1 
+        Key = 1
     elif server == 'jp':
-        Key = 0 
+        Key = 0
     elif server == 'tw':
         Key = 2
     elif server == 'cn':
@@ -173,4 +182,3 @@ async def GetServerAPIKey(server: str):
     elif server == 'kr':
         Key = 4
     return Key
-

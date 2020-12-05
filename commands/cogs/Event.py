@@ -11,6 +11,7 @@ from selenium import webdriver
 from datetime import datetime
 from pytz import timezone
 from tabulate import tabulate
+from main import ctime
 import asyncio
 import discord
 import json
@@ -74,11 +75,11 @@ class Event(commands.Cog):
         else:
             await ctx.send('Event archive access is now a premium feature. Please use `.premium` for more information')
 
-
     @commands.command(name='t10',
                 brief="t10 info",
                 description="Posts t10 info. You can also include the songs parameter at the end to look at song info (given the event is CL or VS)",
                 help=".t10 en 30\n.t10 jp 78 songs\n.t10 (defaults to en and the current event id, no songs")
+    @ctime
     async def t10(self, ctx, server: str = 'en', eventid: int = 0, *songs):
         if server.isnumeric():
             raise commands.errors.BadArgument
@@ -101,11 +102,11 @@ class Event(commands.Cog):
                     await ctx.send(output)
                 except:
                     await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify` command to let Josh know")
-
     @commands.command(name='t10ids',
                     aliases=['t10i'],
                     description="Posts t10 info with each player's id. You can also include the songs parameter at the end to look at song info (given the event is CL or VS)",
                     help=".t10ids en 30\n.t10ids jp 78 songs\n.t10i (defaults to en and the current event id, no songs)")
+    @ctime
     async def t10ids(self, ctx, server: str = 'en', eventid: int = 0, *songs):
         if server.isnumeric():
             raise commands.errors.BadArgument
@@ -127,11 +128,11 @@ class Event(commands.Cog):
                 except:
                     output = f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify` command to let Josh know"
             await ctx.send(output)
-
     @commands.command(name='t10members',
                     aliases=['t10m'],
                     description="Posts t10 info with each player's team in their profile along with skill level for each member. You can also include the songs parameter at the end to look at song info (given the event is CL or VS)",
                     help=".t10members en 50\n.t10members jp 100 songs\n.t10m (defaults to en and the current event id, no songs)")
+    @ctime
     async def t10members(self, ctx, server: str = 'en', eventid: int = 0, *songs):
         if server.isnumeric():
             raise commands.errors.BadArgument
@@ -159,11 +160,11 @@ class Event(commands.Cog):
                         await ctx.send(output)
                 except:
                     await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify` command to let Josh know")
-
     @commands.command(name='timeleft',
                     aliases=['tl'],
                     description="Provides the amount of time left (in hours) for an event",
                     help=".timeleft (defaults to en)\n.timeleft jp")
+    @ctime
     async def timeLeftBotCommand(self, ctx, server: str = 'en'):
         EventID = await GetCurrentEventID(server)
         if EventID:
@@ -190,30 +191,11 @@ class Event(commands.Cog):
     #    Cutoff Commands   #
     #######################
 
-    #open website
-
-    @commands.command(name='refresh',
-                       aliases=['r'],
-                       hidden=True)
-    async def refresh(self, ctx, server: str = 'en'):
-        from startup.OpenWebdrivers import enDriver, jpDriver, cnDriver, twkrDriver
-        try:
-            if server == 'en':
-                driver = enDriver
-            elif server == 'jp':
-                driver = jpDriver
-            elif server == 'cn':
-                driver = cnDriver
-            else:
-                driver = twkrDriver
-            driver.find_element_by_xpath('//*[@id="app"]/div[4]/div[2]/div/div[3]/div[1]/div[2]/div/div[2]/a').click()
-        except:
-            await ctx.send('Failed refreshing the event tracker page for %s.' %(server))
-
     @commands.command(name='cutoffhistory',
                     aliases=['cutoffarchives','ch','ca'],
                     description="Gets the highest cutoff value for a given server and tier\n\nNote: This is based off Bestdori's data, so it's possible data could be incorrect because that value isn't known",
                     help = ".cutoffhistory en 100\n.ch jp 1")
+    @ctime
     async def cutoffhistory(self, ctx, server: str = 'en', tier: str = '10'):
         from commands.formatting.EventCommands import GetCutoffHistory
         try:
@@ -222,27 +204,11 @@ class Event(commands.Cog):
         except:
             await ctx.send(f"Couldn't find cutoff history for server `{server}` tier `{tier}`")
 
-    @commands.command(name='addcutoff',
-                      hidden=True)
-    async def addcutoff(self, ctx, server, tier, value, time):
-        ValidUsers = [158699060893581313,133048058756726784,246129130154754051,190765214243749888,417667260812099595,598280991248744448]
-        if ctx.message.author.id not in ValidUsers:
-            output = 'You are not authorized to use this command'
-        else:
-            from commands.formatting.EventCommands import UpdateManualTrackingCutoffJSON, GetCurrentEventID
-            from datetime import datetime
-            try:
-                EventID = await GetCurrentEventID(server)
-                UpdateManualTrackingCutoffJSON(server, int(tier), EventID, int(value), int(time))
-                output = 'Successfully added cutoff'
-            except:
-                output = 'Failed adding cutoff'
-        await ctx.send(output)
-
     @commands.command(name='cutoff',
                       aliases=['t100','t500','t1000', 't2000','t2500','t5000','t10000','t1k','t2k','t2.5k','t5k','t10k','co'],
                       description="Cutoff estimate for t100, t1000, and t2000 (experimental support for t2500, t5000, and t10000). Input the tier and server (defaulted to en and 100). Add graph as an argument to see a graph",
                       help=".cutoff 100\n.cutoff 1000 en\n.cutoff 2000 jp graph\n.cutoff en t1000\n.t100\n.t100 jp graph")
+    @ctime
     async def cutoff(self, ctx, *args):
         valid_servers = {'jp', 'cn', 'en', 'tw', 'kr'}
         valid_servers_by_tier = {

@@ -1,25 +1,23 @@
 import os
-from commands.apiFunctions import GetSongAPI
 from tabulate import tabulate
 from discord.ext import commands
 from datetime import datetime
 from pytz import timezone
 from operator import itemgetter
 from time import strftime, gmtime
-from commands.apiFunctions import GetBestdoriAllCharactersAPI, GetBestdoriAllEventsAPI, GetBestdoriBannersAPI, GetBestdoriEventArchivesAPI, GetBestdoriAllGachasAPI, GetBestdoriGachaAPI, GetBestdoriCardAPI, GetSongMetaAPI, GetBestdoriCharasAPI, GetServerAPIKey, GetBestdoriAllCardsAPI
 from commands.cogs.Cards import parseCards, generateImage, Palette, filterArguments, findCardFromArguments, Card
 from commands.formatting.GameCommands import GetStarsUsedOutput, GetEPGainOutput, characterOutput, GetSongInfo, GetSongMetaOutput, GetLeaderboardsOutput
 from commands.formatting.TimeCommands import GetCurrentTime
 import discord, shutil, time, requests, math, asyncio, traceback, os
-
+from main import ctime
 class Game(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
     @commands.command(name='updatecardicons',
                       aliases=['uci'],
                       hidden=True,
                       enabled=False)
+    @ctime
     async def uci(self, ctx):
         from commands.apiFunctions import GetBestdoriAllCardsAPI, GetBestdoriAllCharactersAPI        
         CardAPI = await GetBestdoriAllCardsAPI()
@@ -57,7 +55,8 @@ class Game(commands.Cog):
                       aliases=['find','search','lu'],
                       description='Searches a player on the specified server by ID',
                       help='Currently only supports EN. JP functionality coming at a later date.\n\n.lookup en 1540')
-    async def lookup(self, ctx, server: str, id: int):
+    @ctime
+    async def lookup(self, ctx, server: str, player_id: int):
         try:
             from protodefs.ranks import profileinfo
             from startup.login import enICEObject, jpICEObject
@@ -69,11 +68,11 @@ class Game(commands.Cog):
             else:
                 ice = jpICEObject
 
-            info = await profileinfo(ice, server, id)
+            info = await profileinfo(ice, server, player_id)
             if info.name == '':
                 info.name = 'No Name Found'
             info.name = stringCheck(info.name)
-            embed=discord.Embed(title=f'{info.name} [{id}]',color=discord.Color.blue())
+            embed=discord.Embed(title=f'{info.name} [{player_id}]',color=discord.Color.blue())
             embed.add_field(name='Description', value=info.description, inline=True)
             embed.add_field(name='Level', value=info.rank, inline=True)
             embed.add_field(name='\u200b', value='\u200b', inline=True)
@@ -134,13 +133,15 @@ class Game(commands.Cog):
             embed.set_image(url=f"attachment://{BandFileName[0]}")
 
             await ctx.send(files=[icon,BandImageFile],embed=embed)
+        except requests.exceptions.HTTPError:
+            await ctx.send("```Failed looking up that player\n\nReason: Player ID not found```")
         except Exception as e:
             print(traceback.format_exc())
             await ctx.send('Failed looking up that player. If you believe this to be a mistake, please use the notify command to let Josh know')
-        
     @commands.command(name='level',
                     description='Given a current level, xp earned per song, and the amount of songs played, the end level will be provided',
                     help='.level 100 500 10')
+    @ctime
     async def level(self, ctx, CurrentLevel: int, XPPerSong: int, SongsPlayed: int):
         from commands.formatting.GameCommands import GetLevelOutput
         NewLevel = await GetLevelOutput(CurrentLevel, XPPerSong, SongsPlayed)
@@ -149,11 +150,12 @@ class Game(commands.Cog):
     @commands.command(name='gacha',
                       description="Gives info on the current gachas. Doesn't show the gachas that are always available (new player, 3+ ticket, etc)",
                       help=".gacha en\n.gacha (defaults to en)")
+    @ctime
     async def gacha(self, ctx, server: str = 'en'):
         from PIL import Image
         from PIL.ImageDraw import Draw
         from PIL.ImageFont import truetype
-        from commands.apiFunctions import GetServerAPIKey
+        from commands.apiFunctions import GetServerAPIKey, GetBestdoriAllGachasAPI, GetBestdoriGachaAPI, GetBestdoriCardAPI, GetBestdoriCharasAPI
         api = await GetBestdoriAllGachasAPI()
         gachas = []
         gachasEnd = []
@@ -217,6 +219,7 @@ class Game(commands.Cog):
                       aliases=['chara','c'],
                       description='Posts character info',
                       help='.character lisa\n.c kasumi')
+    @ctime
     async def characterinfo(self, ctx, character: str):
         try:
             output = await characterOutput(character)
@@ -229,6 +232,7 @@ class Game(commands.Cog):
                       description="Provides star usage when aiming for a certain amount of EP. Challenge live calculations aren't incorporated yet. I recommended using Bestdori's event calculator",
                       help=".starsused 9750 100 0 2000000 3 en\n.starsused 9750 100 0 2000000 3 jp\n.starsused 9750 100 0 2000000 3 168\n.su 9750 100 0 2000000 3",
                       enabled=False)
+    @ctime
     async def starsused(self, ctx, epPerSong: int, begRank: int, begEP: int, targetEP: int, flamesUsed: int, *ServerOrHoursLeft):
         starsUsedTable = await GetStarsUsedOutput(epPerSong, begRank, begEP, targetEP, flamesUsed, *ServerOrHoursLeft)
         await ctx.send(starsUsedTable)
@@ -237,6 +241,7 @@ class Game(commands.Cog):
                       description="Provides EP gain given user-provided inputs",
                       help="BPPercent should be between 1 and 150 and in intervals of 10 e.g. 10, 20, 30\n\nNormal Event = 1\nLive Trial = 2\nChallenge = 3\nBand Battle* = 4\n*For Band Battles, specify placement between 1-5.\n\n.epgain 1500000 7500000 150 3 1\n.epgain 1000000 6000000 130 2 4 5",
                       enabled=False)
+    @ctime
     async def epgain(self, ctx, yourScore: int, multiScore: int, bpPercent: int, flamesUsed: int, eventType: int, bbPlace: int = 0):
         ep = GetEPGainOutput(yourScore, multiScore, bpPercent, flamesUsed, eventType, bbPlace)
         await ctx.send("EP Gain: " + str(math.floor(ep)))
@@ -244,8 +249,10 @@ class Game(commands.Cog):
     @commands.command(name='event',
                       description='Posts event info',
                       help='event\n.event jp\n.event en 12\n.event en Lisa\n.event jp 一閃')
+    @ctime
     async def event(self, ctx, server: str = 'en', *event):
         from commands.formatting.EventCommands import GetEventName, GetCurrentEventID, GetEventAttribute
+        from commands.apiFunctions import GetBestdoriAllCharactersAPI, GetBestdoriAllEventsAPI, GetBestdoriBannersAPI, GetBestdoriEventArchivesAPI, GetServerAPIKey
         from protodefs.ranks import GetEventType
         try:
             validServer = ["en","jp","tw","cn"]
@@ -356,6 +363,7 @@ class Game(commands.Cog):
                       aliases=['song','songs'],
                       description='Provides info about a song',
                       help='If there are special characters in the song name, provide the song name EXACTLY as it appears in game e.g. B.O.F not BOF, b.o.f, etc.\n\n.songinfo Sunkissed')
+    @ctime
     async def songinfo(self, ctx, *args: str):
         try:
             songName = args[0]
@@ -372,6 +380,7 @@ class Game(commands.Cog):
                       aliases=['sm','smf','meta'],
                       description='Shows song meta info (fever). By default, it will show the top 20 songs. Given a list of songs (EX and SP dif only), it will sort them based off efficiency. Assumes SL5 and 100% Perfects. I recommend using Bestdori for finer tuning',
                       help='.songmeta\n.sm\n.meta\n.songmeta unite guren jumpin')
+    @ctime
     async def songmeta(self, ctx, *songs):
         if songs:
             output = await GetSongMetaOutput(True, songs)
@@ -383,6 +392,7 @@ class Game(commands.Cog):
                       aliases=['smnf','metanf'],
                       description='Shows song meta info (no fever). By default, it will show the top 20 songs. Given a list of songs (EX and SP dif only), it will sort them based off efficiency. Assumes SL5 and 100% Perfects. I recommend using Bestdori for finer tuning',
                       help='.songmeta\n.sm\n.meta\n.songmeta unite guren jumpin')
+    @ctime
     async def songmetanf(self, ctx, *songs):
         if songs:
             output = await GetSongMetaOutput(False, list(songs))
@@ -394,6 +404,7 @@ class Game(commands.Cog):
                       aliases=['lb','lbs'],
                       description='Shows the player leaderboards from Bestdori\n\nSupports the EN/JP/TW/CN/KR Server.\n',
                       help='A valid type of leaderboard must be entered, these valid entries are: highscores/hs, fullcombo/fc, ranks/rank, and cleared\n\n.lb\n.lb en ranks\n.lb jp highscores 50')
+    @ctime
     async def playerleaderboards(self, ctx, server: str = 'en', type: str = 'highscores', entries: int = 20):
         Output = await GetLeaderboardsOutput(server, type, entries)
         await ctx.send(Output)
@@ -402,6 +413,7 @@ class Game(commands.Cog):
                       aliases=['cards', 'ci', 'cardinfo'],
                       description="Provides embedded image of card with specified filters",
                       help="There are several filters one can use to search. Rarity goes bEnter the character with optional filters to see card information\n\n.card lisa - Most recent Lisa 4* Card\n.card lisa df - Lisa Dreamfes Card\n.card lisa last - Last released Lisa 4*\n.card lisa last sr happy - Last released happy 3* Lisa\n.card title maritime detective - Lookup card with title \"Maritime Detective\"")
+    @ctime
     async def card(self, ctx: discord.abc.Messageable, *args):
         from discord import File
         if not args:

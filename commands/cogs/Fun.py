@@ -1,18 +1,20 @@
 from discord.ext import commands
-from typing import Union
-import discord, shutil, time, requests, math, asyncio, os, json
 from pixivpy3 import *
+from typing import Union
+from main import ctime
+import discord, shutil, time, requests, math, asyncio, os, json
 
 class Fun(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.AllCards = self.GetCards()
+        self.AllCards = asyncio.run(self.GetCards())
         self.AllTwoStarCards = self.AllCards[0]
         self.AllThreeStarCards = self.AllCards[1]
         self.AllFourStarCards = self.AllCards[2]
         self.api = AppPixivAPI()
         # asyncio.run(self.GetImages())
     
+    @ctime
     async def GetImages(self):
         import json
         from commands.apiFunctions import GetBestdoriAllCharasAPI
@@ -58,7 +60,8 @@ class Fun(commands.Cog):
             f.close()
             await asyncio.sleep(60)
         return AllPics
-
+    
+    @ctime
     async def get_titles(self, server):
         import requests, shutil, os
         from tqdm import tqdm
@@ -71,8 +74,9 @@ class Fun(commands.Cog):
                     shutil.copyfileobj(r.raw, out_file)
                 del r  
         print('Finished extracting titles')
-
-    def GetCards(self):
+    
+    @ctime
+    async def GetCards(self):
         AllFourStarCards = []
         AllThreeStarCards = []
         AllTwoStarCards = []
@@ -94,7 +98,8 @@ class Fun(commands.Cog):
 
         return AllTwoStarCards, AllThreeStarCards, AllFourStarCards
 
-    def GetRollStats(self, user, *Chara):
+    @ctime
+    async def GetRollStats(self, user, *Chara):
         import json
         try:
             if Chara:
@@ -120,7 +125,8 @@ class Fun(commands.Cog):
         except:
             return 'Unknown error. If this keeps happening please use the `notify` command to let Josh know'
 
-    def GetUsersRolls(self, user, Include3Star: True):
+    @ctime
+    async def GetUsersRolls(self, user, Include3Star: True):
         FileName = 'databases/rolls/roll_albums.json'
         with open(FileName) as file:
             api = json.load(file)
@@ -131,7 +137,8 @@ class Fun(commands.Cog):
             else:
                 return api[user]['Cards']['4']
     
-    def UpdateRollAlbumJSON(self, UserID, Name, Roll):
+    @ctime
+    async def UpdateRollAlbumJSON(self, UserID, Name, Roll):
         # how many times will i manually make a json file before putting it into its own function
         import json
         FileName = 'databases/rolls/roll_albums.json'
@@ -183,7 +190,8 @@ class Fun(commands.Cog):
                 api.update(data)
                 json.dump(api, f)
 
-    def UpdateCharaRollsJSON(self, UserIDOrOverall, Name, Chara, CardType):
+    @ctime
+    async def UpdateCharaRollsJSON(self, UserIDOrOverall, Name, Chara, CardType):
         import json
         FileName = f'databases/rolls/{Chara}.json'
         try:
@@ -236,7 +244,8 @@ class Fun(commands.Cog):
                 api.update(data)
                 json.dump(api, f)
 
-    def UpdateRollsJSON(self, UserIDOrOverall, Name, TwoStars, ThreeStars, FourStars):
+    @ctime
+    async def UpdateRollsJSON(self, UserIDOrOverall, Name, TwoStars, ThreeStars, FourStars):
         import json
         FileName = 'databases/rolls/rolls.json'
         try:
@@ -276,18 +285,17 @@ class Fun(commands.Cog):
                 api.update(data)
                 json.dump(api, f)
 
+    @ctime
     async def GetCardRarityCount(self, rarity: int):
         from commands.apiFunctions import GetBestdoriAllCardsAPI
-        AllCardsAPI = await GetBestdoriAllCardsAPI()
-        count = 0 
-        for x in AllCardsAPI:
-            if AllCardsAPI[x]['rarity'] == rarity and AllCardsAPI[x]['type'] in ['limited','permanent']:
-                count += 1
+        all_cards_api = await GetBestdoriAllCardsAPI()
+        count = sum(map(lambda value: value["rarity"] == rarity, all_cards_api.values()))
         return count
 
     @commands.command(name='updatecards',
                       hidden=True,
                       enabled=True)
+    @ctime
     async def GetIcons(self, ctx, gachacards: bool = True):
         try:
             await UpdateCardIcons()
@@ -297,6 +305,7 @@ class Fun(commands.Cog):
          
     @commands.command(name='updatetitles',
                       hidden=True)
+    @ctime
     async def update_titles(self, ctx, server: str):
         if ctx.author.id == 158699060893581313:
             try:
@@ -311,6 +320,7 @@ class Fun(commands.Cog):
                      aliases=['rs'],
                      description='Returns the stats from the roll command for a particular user',
                      help='.rollstats (this defaults to the user running the command)\n.rollstats @Lisa#4081\n.rollstats Lisa (this searches all the users with Lisa as their Discord name and returns the first user found)\n.rs Lisa Rinko (returns the stats for user Lisa and character Rinko)\n.rs total (returns ALL stats accumulated so far)')
+    @ctime
     async def rollstats(self, ctx, user: Union[discord.Member, str, int]=None, *Chara):
         import json
         if user:
@@ -365,6 +375,7 @@ class Fun(commands.Cog):
                       aliases=['al'],
                       description='Shows a picture containing all the 4* (and 3* if requested) one has rolled using the `roll` command as well as how many total has been obtained from the current pool',
                       help='By default, the album only shows 4 stars and uploads a PNG image. To show 3 stars as well, add 3 to the command. For a JPG image (use this if you receive an error about file size) add JPG to the command\n\nExamples:\n\n.album\n.al 3\n.al 3 jpg')
+    @ctime
     async def getrollalbum(self, ctx, *args):
         try:
             from PIL import Image
@@ -381,7 +392,7 @@ class Fun(commands.Cog):
                 TotalFourStars = len(Cards[1])
                 embed.add_field(name='3*',value=f'{TotalThreeStars} / {AllThreeStars}',inline=True)
             else: 
-                Cards = self.GetUsersRolls(ctx.author.id, False)
+                Cards = await self.GetUsersRolls(ctx.author.id, False)
                 TotalFourStars = len(Cards)
                 
             import uuid
@@ -443,7 +454,10 @@ class Fun(commands.Cog):
     @commands.command(name='roll',
                       description='Simulates a 10 roll using the default rates and all the permanent/limited cards that have been released in JP so far. Event cards are not included. Add df and/or the bands/characters names to the input to simulate increased rates/only roll those cards.',
                       help='For bands, the values below are valid, if an invalid value is entered, the command will fail\n\nRoselia\nAfterglow\nPopipa\nPasupare\nHHW\nMorfonica\n\n.roll\n.roll df\n.roll lisa\n.roll df yukina lisa\n.roll roselia\n.roll roselia popipa')
+    @ctime
     async def gacharoll(self, ctx, *args):
+        from timeit import default_timer
+        time = default_timer()
         try:
             import re
             import random
@@ -572,24 +586,20 @@ class Fun(commands.Cog):
             for im in SecondHalfImages:
                 new_im.paste(im, (x_offset,180))
                 x_offset += im.size[0]        
-            
-            
-            
+                   
             # Update roll database
             user = self.bot.get_user(ctx.message.author.id)
             user = user.name + '#' + user.discriminator
-
+            await self.UpdateRollsJSON(523337807847227402, 'self', TwoStarsRolled, ThreeStarsRolled, FourStarsRolled)
+            await self.UpdateRollsJSON(ctx.message.author.id, user, TwoStarsRolled, ThreeStarsRolled, FourStarsRolled)
+            await self.UpdateRollAlbumJSON(ctx.message.author.id, user, CardsRolled)
             for chara in CardsRolled:
                 search = re.search('icons/([a-zA-Z]*)\/([0-9]*)', chara)
                 name = search[1]
                 cardtype = search[2]
-                self.UpdateCharaRollsJSON(523337807847227402, 'self', name, cardtype)
-                self.UpdateCharaRollsJSON(ctx.message.author.id, user, name, cardtype)
+                await self.UpdateCharaRollsJSON(523337807847227402, 'self', name, cardtype)
+                await self.UpdateCharaRollsJSON(ctx.message.author.id, user, name, cardtype)
 
-            self.UpdateRollsJSON(523337807847227402, 'self', TwoStarsRolled, ThreeStarsRolled, FourStarsRolled)
-            self.UpdateRollsJSON(ctx.message.author.id, user, TwoStarsRolled, ThreeStarsRolled, FourStarsRolled)
-            self.UpdateRollAlbumJSON(ctx.message.author.id, user, CardsRolled)
-            
             if 4 not in Rolled:
                 Title = "Haha no 4*"
             else:
@@ -601,9 +611,8 @@ class Fun(commands.Cog):
             SavedFile = "img/rolls/" + FileName
             new_im.save(SavedFile)
             DiscordFileObject = File(SavedFile,filename=FileName)
-            RolledStats = self.GetRollStats(ctx.message.author.id)
+            RolledStats =  await self.GetRollStats(ctx.message.author.id)
             
-            await asyncio.sleep(.5)
             embed=discord.Embed(title=Title,color=discord.Color.blue())
             embed.set_thumbnail(url=RolledStats[5])
             embed.add_field(name='Total Cards Rolled',value="{:,}".format(RolledStats[0]),inline=True)
@@ -626,6 +635,7 @@ class Fun(commands.Cog):
 
     @commands.command(name='lisafeet',
                     description='Possi and Aura told me to make this so here it is')
+    @ctime
     async def forpossiandaura(self, ctx):
         # Pubcord
         if ctx.message.guild.id != 432379300684103699:
@@ -635,6 +645,7 @@ class Fun(commands.Cog):
 
     @commands.command(name='lisaxodia',
                     description='lol')
+    @ctime
     async def lisaxodia(self, ctx):
         # Pubcord
         if ctx.message.guild.id != 432379300684103699:
@@ -649,6 +660,7 @@ class Fun(commands.Cog):
                       aliases=['p'],
                       description='Note: THIS MAY RETURN NSFW IMAGES\n\nReturns an image (or images if multiple names/bands are entered) with > 100 bookmarks on Pixiv for the specified character/band/or defaults to Bang Dream tag and returns one random image from that list.',
                       help='For bands, the values below are valid, if an invalid value is entered, the command will fail\n\nRoselia\nAfterglow\nPopipa\nPasupare\nHHW\n\n.picture\n.picture lisa\n.p roselia arisa himari')
+    @ctime
     async def picture(self, ctx, *queries):
         try:
             from commands.apiFunctions import GetBestdoriAllCharasAPI
@@ -735,6 +747,7 @@ class Fun(commands.Cog):
                       aliases=['rlb'],
                       description='Shows the top 20 leaderboards for the roll command',
                       help='You can specify which leaderboard you want to check by including the character name at the end, if omitted, it will return the overall leaderboards\n\n.rolllb\n.rlb lisa')
+    @ctime
     async def rolllb(self, ctx, *Chara):
         try:
             from operator import itemgetter
@@ -759,7 +772,7 @@ class Fun(commands.Cog):
                     Rolls.append([Name,api[key]['TotalRolls'],api[key]['FourStars'],FourStarPercent])
                     Rolls = sorted(Rolls,key=itemgetter(1),reverse=True)
             Rolls = Rolls[0:20]
-            RollsHeader = 'Total Rolls' if not Chara else f"Total {Chara.capitalize()}'s rolled"
+            RollsHeader = 'Total Rolls' if not Chara else f"Total {Chara.capitalize()}s rolled"
             output = "```" + tabulate(Rolls,headers=['User',RollsHeader,'Total 4*','4* %'],tablefmt='plain') + "```"
         except FileNotFoundError:
             output = 'No rolls have been generated for that character yet'
@@ -771,6 +784,7 @@ class Fun(commands.Cog):
                       aliases=['bdays','bday'],
                       description="Note: This data may be publicly accessible\n\nIf you're like me and easily forget birthdays, you can use this command to add birthday entries and grab them as needed. Entries are server specific",
                       help='.birthdays (this returns all birthdays for the server the command was ran in\n.bdays add Aug 25 (adds an entry to the list for the user running the command\n.bdays del (removes the user running the command from the database)' )
+    @ctime
     async def bdays(self,ctx,*add):
         if add and add[0] == 'add':
             user = self.bot.get_user(ctx.message.author.id)
@@ -806,7 +820,8 @@ class Fun(commands.Cog):
                 entries.append([key,api[str(ctx.message.guild.id)][key]['Date']])
             output = "```" + tabulate(entries,headers=['Name','Date'],tablefmt='plain') + "```"
         await ctx.send(output)
-        
+      
+    @ctime    
     def UpdateBirthdaysJSON(self, Server, User, Date, Delete: bool = False):
         import json
         FileName = 'databases/birthdays.json'
@@ -851,7 +866,7 @@ class Fun(commands.Cog):
             with open(FileName, 'w') as f:
                 json.dump(api, f)
 
-
+@ctime
 async def UpdateCardIcons():
     from commands.apiFunctions import GetBestdoriAllCardsAPI, GetBestdoriAllCharactersAPI        
     from PIL import Image

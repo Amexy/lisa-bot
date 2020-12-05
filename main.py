@@ -8,9 +8,10 @@ import requests
 import discord
 import asyncio
 import time
-
 # checks prefix database for each message. could probably improve this
 default_prefix = ","
+
+
 def prefix(bot, message):
     prefixList = TinyDB('databases/prefixdb.json')
     results = prefixList.search(where('id') == message.guild.id)
@@ -20,7 +21,9 @@ def prefix(bot, message):
         prefix = default_prefix
     return prefix
 
+
 bot = commands.Bot(command_prefix=prefix, case_insensitive=True)
+
 
 # read config information
 with open("config.json") as file:
@@ -30,6 +33,18 @@ with open("config.json") as file:
 #################
 #   Bot Stuff   #
 #################
+def ctime(func):
+    from timeit import default_timer
+    from functools import wraps
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        time = default_timer()
+        ret = await func(*args,**kwargs)
+        print(f'{func.__name__.capitalize()}: {round((default_timer() - time),2)}')
+        return ret
+    return wrapper
+
+
 @bot.event
 async def on_ready():
     print("Connected..")
@@ -39,6 +54,7 @@ async def on_ready():
 
     print('Current Server Count: ' + str(CurrentGuildCount))
     await bot.change_presence(activity=discord.Game(name='.help | discord.gg/wDu5CAA'))
+
 
 # Temporary thing for WSC
 @bot.event
@@ -50,23 +66,29 @@ async def on_member_join(member):
         role = get(user.guild.roles, name='Gatherer')
         await Member.add_roles(user, role)
 
+
 @bot.event
 async def on_message(message):
     ctx = await bot.get_context(message)
     if ctx.author.bot is False:
         await bot.invoke(ctx)
 
-@bot.event
-async def on_command_error(ctx, error):
-    if isinstance(error, CommandNotFound):
-        return
-    raise error
+
+# @bot.event
+# async def on_command(ctx):
+#     import datetime
+#     start_time = datetime.datetime.now()
+#     await bot.wait_until_ready()
+#     end_time = datetime.datetime.now()
+#     print(end_time - start_time)
+
 
 @bot.event
 async def on_guild_join(guild):
     general = find(lambda x: x.name == 'general',  guild.text_channels)
     if general and general.permissions_for(guild.me).send_messages:
         await general.send("Thanks for inviting me! You can get started by typing .help to find the current command list and change the command prefix by typing .setprefix followed by the desired prefix e.g. !.\nSource Code: https://github.com/Amexy/lisa-bot\nSupport: https://ko-fi.com/lisabot\nIf you have any feedback or requests, please dm Josh#1373 or join discord.gg/wDu5CAA.")
+
 
 @bot.event
 async def on_raw_reaction_add(payload):
@@ -82,6 +104,7 @@ async def on_raw_reaction_add(payload):
                         return
                     except:
                         print("Could not complete action for react based role assignment.")
+
 
 @bot.event
 async def on_raw_reaction_remove(payload):
@@ -113,5 +136,4 @@ bot.load_extension("commands.cogs.Moderation")
 bot.load_extension("commands.cogs.Loops")
 bot.load_extension("commands.cogs.Help")
 bot.load_extension("commands.cogs.Fun")
-
 bot.run(TOKEN)

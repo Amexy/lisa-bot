@@ -28,6 +28,7 @@ class Updates(commands.Cog):
             # server = server_id if not server else server
             await ctx.send(add_user_to_premium_db(user_id, server_id, event_id, server))
             self.premium_guilds.append(server_id)
+            
     #################
     #  Bot Updates  #
     #################

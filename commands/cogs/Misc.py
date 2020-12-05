@@ -1,8 +1,9 @@
 from discord.ext import commands
 from tabulate import tabulate
 from googletrans import Translator
-import discord, os, shutil, requests, asyncio
 from discord import File
+from main import ctime
+import discord, os, shutil, requests, asyncio
 
 class Misc(commands.Cog):
     def __init__(self, bot):
@@ -11,10 +12,11 @@ class Misc(commands.Cog):
     @commands.command(name='premium')
     async def premium(self, ctx):
         await ctx.send("As a way to recoup hosting costs, 2 minute tracking/archive data will become a premium feature of Lisabot. **Current pricing is $10/event**. Hourly will remain free for now.\n\nIf you'd like to purchase 2 minute tracking for your event, please send your payment through ko-fi and DM Josh#1373 your server ID and channel ID that will be used for 2 minute tracking. Developer mode must be enabled in Discord under your settings, right click the server and channel and select the `Copy ID` option.\n\nIf you have any questions, please let Josh#1373 know.\n\nhttps://ko-fi.com/lisabot")
-        
+    
     @commands.command(name='servericon',
                     aliases=['sp','si','serverpic'],
                     description="Uploads the server's icon")
+    @ctime
     async def servericon(self, ctx):
         GuildInfo = self.bot.get_guild(ctx.message.guild.id)
         GuildPicURL = GuildInfo.icon_url.BASE + GuildInfo.icon_url._url
@@ -100,10 +102,12 @@ class Misc(commands.Cog):
         else:
             await ctx.send('Please enter your notification')
 
+    
     @commands.command(name='avatar',
                     aliases=['a'],
                     description="Uploads the mentioned user's avatar",
                     help='.avatar @Lisa#4081\n.a Lisa#4081\n.a 523337807847227402\n.a Lisa (ths one may not always work if multiple users have the same name)')
+    @ctime
     async def getavatar(self, ctx, user: discord.Member = None):
         if not user:
             user = self.bot.get_user(ctx.message.author.id)

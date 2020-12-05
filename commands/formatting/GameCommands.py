@@ -1,10 +1,8 @@
 from commands.formatting.TimeCommands import GetEventTimeLeftSeconds, GetCurrentTime
-from commands.apiFunctions import GetSongMetaAPI, GetSongAPI
 from tabulate import tabulate
 from time import strftime
 from time import gmtime
 from operator import itemgetter
-
 from discord.channel import TextChannel
 from discord.guild import Guild
 import math
@@ -75,6 +73,7 @@ async def GetSongInfo(songName: str):
     return songInfoOutput
 
 async def GetSongMetaOutput(fever: bool, songs: tuple = []):
+    from commands.apiFunctions import GetSongMetaAPI, GetSongAPI
     songNameAPI = await GetSongAPI()
     songMetaAPI = await GetSongMetaAPI()
     songWeightList = []
