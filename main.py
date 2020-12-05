@@ -74,15 +74,6 @@ async def on_message(message):
         await bot.invoke(ctx)
 
 
-# @bot.event
-# async def on_command(ctx):
-#     import datetime
-#     start_time = datetime.datetime.now()
-#     await bot.wait_until_ready()
-#     end_time = datetime.datetime.now()
-#     print(end_time - start_time)
-
-
 @bot.event
 async def on_guild_join(guild):
     general = find(lambda x: x.name == 'general',  guild.text_channels)
