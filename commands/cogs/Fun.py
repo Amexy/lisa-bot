@@ -1,7 +1,7 @@
 from discord.ext import commands
 from pixivpy3 import *
 from typing import Union
-from main import ctime
+#from main import ctime
 import discord, shutil, time, requests, math, asyncio, os, json
 
 class Fun(commands.Cog):

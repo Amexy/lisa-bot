@@ -1,7 +1,7 @@
 from discord.ext import commands
 from discord.utils import find, get
 from tinydb import TinyDB, where
-#from commands.formatting.DatabaseFormatting import GetReactAssignmentList, CheckMessageForReactAssignment
+from commands.formatting.DatabaseFormatting import GetReactAssignmentList, CheckMessageForReactAssignment
 import json
 import requests
 import discord

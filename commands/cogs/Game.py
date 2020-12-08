@@ -8,7 +8,7 @@ from time import strftime, gmtime
 from commands.cogs.Cards import parseCards, generateImage, Palette, filterArguments, findCardFromArguments, Card
 from commands.formatting.TimeCommands import GetCurrentTime
 import discord, shutil, time, requests, math, asyncio, traceback, os
-from main import ctime
+#from main import ctime
 
 class Game(commands.Cog):
     def __init__(self, bot):

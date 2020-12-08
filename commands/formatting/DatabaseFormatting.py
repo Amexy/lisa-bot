@@ -25,7 +25,7 @@ jp1HourTracking = 'data/databases/tinydb/jp1HourTrackingDB.json'
 botupdatesDB = 'data/databases/tinydb/botupdates.json'
 premium_db = 'data/databases/tinydb/premium_users.json'
 
-from main import ctime
+#from main import ctime
 #@ctime
 async def update_rolls_db(roll_info):
     from commands.database_handler import create_connection

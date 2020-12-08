@@ -11,7 +11,7 @@ from selenium import webdriver
 from datetime import datetime
 from pytz import timezone
 from tabulate import tabulate
-from main import ctime
+#from main import ctime
 import asyncio
 import discord
 import json

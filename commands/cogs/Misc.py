@@ -2,7 +2,7 @@ from discord.ext import commands
 from tabulate import tabulate
 from googletrans import Translator
 from discord import File
-from main import ctime
+#from main import ctime
 import discord, os, shutil, requests, asyncio
 
 class Misc(commands.Cog):
