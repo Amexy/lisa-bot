@@ -26,7 +26,7 @@ botupdatesDB = 'data/databases/tinydb/botupdates.json'
 premium_db = 'data/databases/tinydb/premium_users.json'
 
 from main import ctime
-@ctime
+#@ctime
 async def update_rolls_db(roll_info):
     from commands.database_handler import create_connection
     conn = create_connection()            
@@ -80,7 +80,7 @@ async def get_roll_leaderboards_info(*character):
     r = c.execute(f"SELECT * FROM {table} INNER JOIN users ON users.discord_id = {table}.discord_id ORDER BY two_stars_count DESC LIMIT 20")
     return r.fetchall()
 
-@ctime
+#@ctime
 async def update_roll_album_db(roll_info):
     album_db = 'data/databases/albums.json'
     db = TinyDB(album_db)
@@ -114,7 +114,7 @@ async def update_roll_album_db(roll_info):
             print(e)
             success = False
  
-@ctime
+#@ctime
 async def get_album_card_ids(user):
     album_db = 'data/databases/albums.json'
     db = TinyDB(album_db)
@@ -123,7 +123,7 @@ async def get_album_card_ids(user):
     album_card_ids = db.search(q.user_id == user)
     return album_card_ids
 
-@ctime
+#@ctime
 def add_user_to_premium_db(user: User, guild: Guild, event_id, server: str):
     db = TinyDB(premium_db)
     success = True

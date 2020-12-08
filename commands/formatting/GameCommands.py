@@ -12,7 +12,7 @@ import discord
 
 # This function is used in the album command when requesting character specific albums. Instead of making multiple calls to a bestdori api, this only calls it once 
 from main import ctime
-@ctime
+#@ctime
 async def check_album_ids(card_ids: list, characters: list):
     from commands.apiFunctions import GetBestdoriAllCharactersAPI5, get_bestdori_all_cards_api5
     card_api = await get_bestdori_all_cards_api5()
@@ -26,7 +26,7 @@ async def check_album_ids(card_ids: list, characters: list):
     return card_ids
 
 from main import ctime
-@ctime
+#@ctime
 async def get_chara_card_count(character, rarity):
     from commands.apiFunctions import GetBestdoriAllCharactersAPI5, get_bestdori_all_cards_api5
     card_api = await get_bestdori_all_cards_api5()

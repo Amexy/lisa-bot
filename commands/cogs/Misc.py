@@ -16,7 +16,7 @@ class Misc(commands.Cog):
     @commands.command(name='servericon',
                     aliases=['sp','si','serverpic'],
                     description="Uploads the server's icon")
-    @ctime
+    #@ctime
     async def servericon(self, ctx):
         GuildInfo = self.bot.get_guild(ctx.message.guild.id)
         GuildPicURL = GuildInfo.icon_url.BASE + GuildInfo.icon_url._url
@@ -107,7 +107,7 @@ class Misc(commands.Cog):
                     aliases=['a'],
                     description="Uploads the mentioned user's avatar",
                     help='.avatar @Lisa#4081\n.a Lisa#4081\n.a 523337807847227402\n.a Lisa (ths one may not always work if multiple users have the same name)')
-    @ctime
+    #@ctime
     async def getavatar(self, ctx, user: discord.Member = None):
         if not user:
             user = self.bot.get_user(ctx.message.author.id)

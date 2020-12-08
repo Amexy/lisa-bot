@@ -37,17 +37,17 @@ def cachedRequest(func):
     return wrapper
 
 
-@ctime
+#@ctime
 @cachedRequest
 async def GetBestdoriRateAPI():
     return 'https://bestdori.com/api/tracker/rates.json'
 
-@ctime
+#@ctime
 @cachedRequest
 async def GetBestdoriEventAPI(EventID: int):
     return 'https://bestdori.com/api/events/%s.json' % str(EventID)
 
-@ctime 
+#@ctime 
 @cachedRequest
 async def get_bestdori_all_cards_api2():
     return 'https://bestdori.com/api/cards/all.2.json'
@@ -67,7 +67,7 @@ async def GetTierKey(tier):
         tier = '0'
     return int(tier)
 
-@ctime
+#@ctime
 @cachedRequest
 async def GetBestdoriCutoffAPI(server: int, tier: int):
     from commands.formatting.EventCommands import GetCurrentEventID
@@ -77,7 +77,7 @@ async def GetBestdoriCutoffAPI(server: int, tier: int):
     return 'https://bestdori.com/api/tracker/data?server={}&event={}&tier={}'.format(
         ServerKey, str(EventID), tier)
 
-@ctime
+#@ctime
 @cachedRequest
 async def GetBestdoriPlayerLeaderboardsAPI(server: str, lbtype: str, entries: int):
     if server == 'en':
@@ -101,79 +101,79 @@ async def GetBestdoriPlayerLeaderboardsAPI(server: str, lbtype: str, entries: in
     return 'https://bestdori.com/api/sync/list/player?server=%s&stats=%s&limit=%s&offset=0' % (
         str(server), lbtype, str(entries))
 
-@ctime
+#@ctime
 @cachedRequest
 async def GetSongAPI():
     return 'https://bestdori.com/api/songs/all.7.json'
 
-@ctime
+#@ctime
 @cachedRequest
 async def GetBestdoriAllEventsAPI():
     return 'https://bestdori.com/api/events/all.5.json'
 
-@ctime
+#@ctime
 @cachedRequest
 async def GetBestdoriAllCharactersAPI2():
     return 'https://bestdori.com/api/characters/all.2.json'
 
-@ctime
+#@ctime
 @cachedRequest
 async def GetBestdoriAllCharactersAPI5():
     return 'https://bestdori.com/api/characters/all.5.json'
 
-@ctime
+#@ctime
 @cachedRequest
 async def GetBestdoriBannersAPI(eventId: int):
     eventId = str(eventId)
     return 'https://bestdori.com/api/events/%s.json' % eventId
 
-@ctime
+#@ctime
 @cachedRequest
 async def GetBestdoriEventArchivesAPI():
     return 'https://bestdori.com/api/archives/all.5.json'
 
-@ctime
+#@ctime
 @cachedRequest
 async def get_bestdori_all_cards_api5():
     return 'https://bestdori.com/api/cards/all.5.json'
 
-@ctime
+#@ctime
 @cachedRequest
 async def GetBestdoriAllCharasAPI():
     return 'https://bestdori.com/api/characters/all.2.json'
 
-@ctime
+#@ctime
 @cachedRequest
 async def Get_bestdori_title_names_api(server: str):
     return f'https://bestdori.com/api/explorer/{server}/assets/thumb/degree.json'
 
-@ctime
+#@ctime
 @cachedRequest
 async def GetBestdoriAllTitlesAPI():
     return 'https://bestdori.com/api/degrees/all.3.json'
 
-@ctime
+#@ctime
 @cachedRequest
 async def GetBestdoriCharasAPI(charaId: int):
     eventId = str(charaId)
     return 'https://bestdori.com/api/characters/%s.json' % eventId
 
-@ctime
+#@ctime
 @cachedRequest
 async def GetBestdoriAllGachasAPI():
     return 'https://bestdori.com/api/gacha/all.5.json'
 
-@ctime
+#@ctime
 @cachedRequest
 async def GetBestdoriGachaAPI(gachaid: int):
     return 'https://bestdori.com/api/gacha/%s.json' % str(gachaid)
 
-@ctime
+#@ctime
 @cachedRequest
 async def GetBestdoriCardAPI(cardid: int):
     return 'https://bestdori.com/api/cards/%s.json' % str(cardid)
 
-@ctime
+#@ctime
 @cachedRequest
 async def GetSongMetaAPI():
     return 'https://bestdori.com/api/songs/meta/all.5.json'

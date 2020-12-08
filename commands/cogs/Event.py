@@ -79,7 +79,7 @@ class Event(commands.Cog):
                 brief="t10 info",
                 description="Posts t10 info. You can also include the songs parameter at the end to look at song info (given the event is CL or VS)",
                 help=".t10 en 30\n.t10 jp 78 songs\n.t10 (defaults to en and the current event id, no songs")
-    @ctime
+    #@ctime
     async def t10(self, ctx, server: str = 'en', eventid: int = 0, *songs):
         if server.isnumeric():
             raise commands.errors.BadArgument
@@ -106,7 +106,7 @@ class Event(commands.Cog):
                     aliases=['t10i'],
                     description="Posts t10 info with each player's id. You can also include the songs parameter at the end to look at song info (given the event is CL or VS)",
                     help=".t10ids en 30\n.t10ids jp 78 songs\n.t10i (defaults to en and the current event id, no songs)")
-    @ctime
+    #@ctime
     async def t10ids(self, ctx, server: str = 'en', eventid: int = 0, *songs):
         if server.isnumeric():
             raise commands.errors.BadArgument
@@ -132,7 +132,7 @@ class Event(commands.Cog):
                     aliases=['t10m'],
                     description="Posts t10 info with each player's team in their profile along with skill level for each member. You can also include the songs parameter at the end to look at song info (given the event is CL or VS)",
                     help=".t10members en 50\n.t10members jp 100 songs\n.t10m (defaults to en and the current event id, no songs)")
-    @ctime
+    #@ctime
     async def t10members(self, ctx, server: str = 'en', eventid: int = 0, *songs):
         if server.isnumeric():
             raise commands.errors.BadArgument
@@ -164,7 +164,7 @@ class Event(commands.Cog):
                     aliases=['tl'],
                     description="Provides the amount of time left (in hours) for an event",
                     help=".timeleft (defaults to en)\n.timeleft jp")
-    @ctime
+    #@ctime
     async def timeLeftBotCommand(self, ctx, server: str = 'en'):
         EventID = await GetCurrentEventID(server)
         if EventID:
@@ -195,7 +195,7 @@ class Event(commands.Cog):
                     aliases=['cutoffarchives','ch','ca'],
                     description="Gets the highest cutoff value for a given server and tier\n\nNote: This is based off Bestdori's data, so it's possible data could be incorrect because that value isn't known",
                     help = ".cutoffhistory en 100\n.ch jp 1")
-    @ctime
+    #@ctime
     async def cutoffhistory(self, ctx, server: str = 'en', tier: str = '10'):
         from commands.formatting.EventCommands import GetCutoffHistory
         try:
@@ -208,7 +208,7 @@ class Event(commands.Cog):
                       aliases=['t100','t500','t1000', 't2000','t2500','t5000','t10000','t1k','t2k','t2.5k','t5k','t10k','co'],
                       description="Cutoff estimate for t100, t1000, and t2000 (experimental support for t2500, t5000, and t10000). Input the tier and server (defaulted to en and 100). Add graph as an argument to see a graph",
                       help=".cutoff 100\n.cutoff 1000 en\n.cutoff 2000 jp graph\n.cutoff en t1000\n.t100\n.t100 jp graph")
-    @ctime
+    #@ctime
     async def cutoff(self, ctx, *args):
         valid_servers = {'jp', 'cn', 'en', 'tw', 'kr'}
         valid_servers_by_tier = {
