@@ -47,6 +47,10 @@ async def GetBestdoriRateAPI():
 async def GetBestdoriEventAPI(EventID: int):
     return 'https://bestdori.com/api/events/%s.json' % str(EventID)
 
+@ctime 
+@cachedRequest
+async def get_bestdori_all_cards_api2():
+    return 'https://bestdori.com/api/cards/all.2.json'
 
 async def GetTierKey(tier):
     if tier == 100:
@@ -109,8 +113,13 @@ async def GetBestdoriAllEventsAPI():
 
 @ctime
 @cachedRequest
-async def GetBestdoriAllCharactersAPI():
+async def GetBestdoriAllCharactersAPI2():
     return 'https://bestdori.com/api/characters/all.2.json'
+
+@ctime
+@cachedRequest
+async def GetBestdoriAllCharactersAPI5():
+    return 'https://bestdori.com/api/characters/all.5.json'
 
 @ctime
 @cachedRequest
@@ -125,7 +134,7 @@ async def GetBestdoriEventArchivesAPI():
 
 @ctime
 @cachedRequest
-async def GetBestdoriAllCardsAPI():
+async def get_bestdori_all_cards_api5():
     return 'https://bestdori.com/api/cards/all.5.json'
 
 @ctime

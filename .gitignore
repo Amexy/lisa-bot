@@ -36,3 +36,4 @@ commands/database_handler.py
 commands/cogs/CommandErrorHandler.py
 disc/disc.py
 disc/disc.pyproj
+*.db

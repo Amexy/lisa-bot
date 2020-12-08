@@ -9,11 +9,10 @@ class Help(commands.Cog):
     @commands.has_permissions(embed_links=True)
     async def help(self,ctx,*commands):
         try:
-            user = self.bot.get_user(523337807847227402)
-            BotIconURL = user.avatar_url.BASE + user.avatar_url._url
+            bot_icon_url = f"{self.bot.user.avatar_url.BASE}{self.bot.user.avatar_url._url}"
             if not commands:
                 help=discord.Embed(title='Available Commands',color=discord.Color.blue(),description='Run this command again followed by a command or list of commands to receive further help (e.g. `.help cutoff`)')
-                help.set_thumbnail(url=BotIconURL)
+                help.set_thumbnail(url=bot_icon_url)
                 for x in self.bot.cogs:
                     cog_commands = (self.bot.get_cog(x)).get_commands()
                     if cog_commands and x not in ['Help','Admin']:
@@ -45,9 +44,9 @@ class Help(commands.Cog):
                     if not found:
                         """Reminds you if that cog doesn't exist."""
                         help = discord.Embed(title=f'No command with name {command} found',color=discord.Color.red())
-                        help.set_thumbnail(url=BotIconURL)
+                        help.set_thumbnail(url=bot_icon_url)
                     else:
-                        help.set_thumbnail(url=BotIconURL)
+                        help.set_thumbnail(url=bot_icon_url)
                         await ctx.send(embed=help)                     
         except Exception as e:
             await ctx.send(str(e))

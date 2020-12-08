@@ -83,18 +83,18 @@ class Fun(commands.Cog):
 
         for folder in os.listdir("img/icons/"):
             if folder != '.DS_Store':
-                    for subfolder in os.listdir(f"img/icons/{folder}"):
-                        if subfolder == '2':
-                            for file in os.listdir(f"img/icons/{folder}/{subfolder}"):
-                                AllTwoStarCards.append(f"img/icons/{folder}/{subfolder}/" + file)
-                        elif subfolder == '3':
-                            for file in os.listdir(f"img/icons/{folder}/{subfolder}"):
-                                AllThreeStarCards.append(f"img/icons/{folder}/{subfolder}/" + file)
-                        elif subfolder == '4':
-                            for file in os.listdir(f"img/icons/{folder}/{subfolder}"):
-                                AllFourStarCards.append(f"img/icons/{folder}/{subfolder}/" + file)
-                        else:
-                            pass
+                for subfolder in os.listdir(f"img/icons/{folder}"):
+                    if subfolder == '2':
+                        for file in os.listdir(f"img/icons/{folder}/{subfolder}"):
+                            AllTwoStarCards.append(f"img/icons/{folder}/{subfolder}/" + file)
+                    elif subfolder == '3':
+                        for file in os.listdir(f"img/icons/{folder}/{subfolder}"):
+                            AllThreeStarCards.append(f"img/icons/{folder}/{subfolder}/" + file)
+                    elif subfolder == '4':
+                        for file in os.listdir(f"img/icons/{folder}/{subfolder}"):
+                            AllFourStarCards.append(f"img/icons/{folder}/{subfolder}/" + file)
+                    else:
+                        pass
 
         return AllTwoStarCards, AllThreeStarCards, AllFourStarCards
 
@@ -287,8 +287,8 @@ class Fun(commands.Cog):
 
     @ctime
     async def GetCardRarityCount(self, rarity: int):
-        from commands.apiFunctions import GetBestdoriAllCardsAPI
-        all_cards_api = await GetBestdoriAllCardsAPI()
+        from commands.apiFunctions import get_bestdori_all_cards_api5
+        all_cards_api = await get_bestdori_all_cards_api5()
         count = sum(map(lambda value: value["rarity"] == rarity, all_cards_api.values()))
         return count
 
@@ -321,52 +321,59 @@ class Fun(commands.Cog):
                      description='Returns the stats from the roll command for a particular user',
                      help='.rollstats (this defaults to the user running the command)\n.rollstats @Lisa#4081\n.rollstats Lisa (this searches all the users with Lisa as their Discord name and returns the first user found)\n.rs Lisa Rinko (returns the stats for user Lisa and character Rinko)\n.rs total (returns ALL stats accumulated so far)')
     @ctime
-    async def rollstats(self, ctx, user: Union[discord.Member, str, int]=None, *Chara):
-        import json
+    async def roll_stats(self, ctx, user: Union[discord.Member, str, int]=None, *character):
+        from commands.formatting.DatabaseFormatting import get_roll_info
+        if character and len(character) > 1:
+            await ctx.send(f"Note: Currently only 1 character rolls stats can be pulled at a time. Grabbing stats for {character[0]}")
         if user:
             if not isinstance(user, discord.Member):
                 if user.isnumeric():
-                    id = user
+                    user_id = user
                     user = self.bot.get_user(523337807847227402)
-                    Title = "Roll Stats"
+                    title = "Roll Stats"
 
                 elif user == 'total':
-                    user = self.bot.get_user(523337807847227402)   
+                    user = self.bot.get_user(523337807847227402)
                     id = user.id
-                    Title = "Total Roll Stats" if not Chara else f"{Chara[0].capitalize()} Total Roll Stats"
+                    title = "Total Roll Stats" if not character else f"{character[0].capitalize()} Total Roll Stats"
             else:
-                id = user.id
-                Title = f"{user.display_name}#{user.discriminator}'s Roll Stats" if not Chara else f"{user.display_name}#{user.discriminator}'s {Chara[0].capitalize()} Roll Stats"
+                user_id = user.id
+                title = f"{user.display_name}#{user.discriminator}'s Roll Stats" if not character else f"{user.display_name}#{user.discriminator}'s {character[0].capitalize()} Roll Stats"
 
-        elif user is None:
-            user = self.bot.get_user(ctx.message.author.id)   
-            id = ctx.message.author.id
-            Title = f"{user.display_name}#{user.discriminator}'s Roll Stats"
-     
+        else:
+            user = ctx.author
+            user_id = user.id
+            title = f"{user.display_name}#{user.discriminator}'s Roll Stats"
+
         try:
-            if Chara:
-                RolledStats = self.GetRollStats(ctx.message.author.id, Chara[0])
+            if not character:
+                roll_info = await get_roll_info(user_id)
             else:
-                RolledStats = self.GetRollStats(id)
-                
-            TotalRolled = RolledStats[0]
-            TwoStarsRolled = RolledStats[1]
-            ThreeStarsRolled = RolledStats[2]
-            FourStarsRolled = RolledStats[3]
-            FourStarRate = RolledStats[4]
-            Icon = RolledStats[5]
-            embed=discord.Embed(title=Title,color=discord.Color.blue())
-            embed.set_thumbnail(url=Icon)
-            embed.add_field(name='Total Cards Rolled',value="{:,}".format(TotalRolled),inline=True)
-            embed.add_field(name='4* Rate',value=FourStarRate,inline=True)
+                roll_info = await get_roll_info(user_id, character[0])
+            from commands.formatting.misc_functions import get_avatar_url
+            avatar = user.avatar_url.BASE + user.avatar_url._url
+            if user_id != 523337807847227402: # Bot
+                two_star_count = roll_info[0][1]
+                three_star_count = roll_info[0][2]
+                four_star_count = roll_info[0][3]
+            else:
+                two_star_count = roll_info[0][0]
+                three_star_count = roll_info[0][1]
+                four_star_count = roll_info[0][2]
+            total_count = two_star_count + three_star_count + four_star_count
+            four_star_rate = f"{round(((four_star_count / total_count) * 100), 2)}%"
+            embed = discord.Embed(title=title, color=discord.Color.blue())
+            embed.set_thumbnail(url=avatar)
+            embed.add_field(name='Total Cards Rolled',value="{:,}".format(total_count),inline=True)
+            embed.add_field(name='4* Rate',value=four_star_rate, inline=True)
             embed.add_field(name='\u200b', value='\u200b', inline=True)
-            embed.add_field(name='2* Rolled',value="{:,}".format(TwoStarsRolled),inline=True)
-            embed.add_field(name='3* Rolled',value="{:,}".format(ThreeStarsRolled),inline=True)
-            embed.add_field(name='4* Rolled',value="{:,}".format(FourStarsRolled),inline=True)
+            embed.add_field(name='2* Rolled',value="{:,}".format(two_star_count),inline=True)
+            embed.add_field(name='3* Rolled',value="{:,}".format(three_star_count),inline=True)
+            embed.add_field(name='4* Rolled',value="{:,}".format(four_star_count),inline=True)
             await ctx.send(embed=embed)
-        except discord.errors.HTTPException:
-            await ctx.send('No stats found for that user and character')
-        except KeyError:
+        except UnboundLocalError:
+           await ctx.send('No user found. They must be in this server and their names must match (e.g. lisa will not work for the bot since its name is Lisa') 
+        except IndexError:
             await ctx.send('No stats found for that user')
         except:
             await ctx.send('Unknown error. If this keeps happening please use the `notify` command to let Josh know')
@@ -375,73 +382,123 @@ class Fun(commands.Cog):
                       aliases=['al'],
                       description='Shows a picture containing all the 4* (and 3* if requested) one has rolled using the `roll` command as well as how many total has been obtained from the current pool',
                       help='By default, the album only shows 4 stars and uploads a PNG image. To show 3 stars as well, add 3 to the command. For a JPG image (use this if you receive an error about file size) add JPG to the command\n\nExamples:\n\n.album\n.al 3\n.al 3 jpg')
-    @ctime
-    async def getrollalbum(self, ctx, *args):
+    async def get_roll_album(self, ctx, *args):
         try:
             from PIL import Image
             from PIL.ImageDraw import Draw
             from PIL.ImageFont import truetype
             from discord import File
-            embed=discord.Embed(title=f"{ctx.message.author.name}'s Album",color=discord.Color.blue())
-            embed.set_thumbnail(url=ctx.message.author.avatar_url.BASE + ctx.message.author.avatar_url._url)
-            AllFourStars = await self.GetCardRarityCount(4)
-            if '3' in args:
-                AllThreeStars = await self.GetCardRarityCount(3)
-                Cards = self.GetUsersRolls(ctx.author.id, True)
-                TotalThreeStars = len(Cards[0])
-                TotalFourStars = len(Cards[1])
-                embed.add_field(name='3*',value=f'{TotalThreeStars} / {AllThreeStars}',inline=True)
-            else: 
-                Cards = await self.GetUsersRolls(ctx.author.id, False)
-                TotalFourStars = len(Cards)
+            from commands.formatting.DatabaseFormatting import get_album_card_ids
+            album_card_ids = await get_album_card_ids(ctx.author.id)
+            if not album_card_ids:
+                await ctx.send(f"That user has no cards rolled. Use the roll command to start generating cards")
+            else:
+                import uuid
+                embed=discord.Embed(title=f"{ctx.message.author.name}'s Album", color=discord.Color.blue())
+                embed.set_thumbnail(url=ctx.message.author.avatar_url.BASE + ctx.message.author.avatar_url._url)
+                owned_four_star_ids = album_card_ids[0]['four_star_ids']
+                owned_four_star_ids.sort(reverse=True)
+                owned_four_star_count = []
+                owned_three_star_count = []
+                owned_card_ids = []
+                total_four_stars = 0
+                total_three_stars = 0
+                trained_icons_paths = []                
+                include_three_stars = False
+                if not args:
+                    total_four_stars = await self.GetCardRarityCount(4)
+                    owned_card_ids += owned_four_star_ids
+                else:
+                    if '3' in args:
+                        args = list(args)
+                        args.remove('3')
+                        owned_three_star_ids = album_card_ids[0]['three_star_ids']
+                        owned_three_star_ids.sort(reverse=True)
+                        include_three_stars = True
+                    if args:  
+                        characters = [] 
+                        owned_four_star_count = 0 # reset original value
+                        owned_three_star_count = 0
+                        for x in args:                 
+                            if x.lower() not in characters:                  
+                                if x.lower() in ['roselia','popipa', 'hhw', 'pasupare', 'afterglow','morfonica', 'ras']:
+                                    if x.lower() == 'roselia':
+                                        characters.extend(('lisa', 'yukina','sayo', 'ako', 'rinko'))
+                                    elif x.lower() == 'popipa':
+                                        characters.extend(('kasumi', 'rimi', 'saya', 'tae', 'arisa'))
+                                    elif x.lower() == 'hhw':
+                                        characters.extend(('kokoro', 'kaoru', 'kanon', 'hagumi', 'misaki'))
+                                    elif x.lower() == 'pasupare':
+                                        characters.extend(('aya', 'eve', 'maya', 'chisato', 'hina'))
+                                    elif x.lower() == 'afterglow':
+                                        characters.extend(('ran', 'moca', 'himari', 'tsugumi', 'tomoe'))
+                                    elif x.lower() == 'morfonica':
+                                        characters.extend(('mashiro', 'nanami', 'toko', 'rui', 'tsukushi'))
+                                    elif x.lower() == 'ras':
+                                        characters.extend(('chiyu', 'reona', 'masuki', 'rokka', 'rei'))
+                                else:
+                                    if x.lower() in ['rinboi', 'rin boi']:
+                                        characters.append('hagumi')
+                                    elif x.lower() in ['rock', 'rokku', 'lock', 'rokka', 'locku']:
+                                        characters.append('rokka')
+                                    elif x.lower() in ['chu', 'chu2']:
+                                        characters.append('chiyu')
+                                    elif x.lower() in ['npc', 'tsugu']:
+                                        characters.append('tsugumi')
+                                    elif x.lower() in ['saaya']:
+                                        characters.append('saya')
+                                    elif x.lower() in ['josh', 'john']: #for you qwewqa
+                                        characters.append('lisa')
+                                    else:
+                                        characters.append(x)
+                        from commands.formatting.GameCommands import check_album_ids, get_chara_card_count
+                        owned_four_star_ids = await check_album_ids(owned_four_star_ids, characters)
+                        owned_three_star_ids = await check_album_ids(owned_three_star_ids, characters) if include_three_stars else []
+                        owned_card_ids = owned_four_star_ids + owned_three_star_ids
+                        for chara in characters:
+                            total_four_stars += await get_chara_card_count(chara, 4)
+                            if include_three_stars:
+                                total_three_stars += await get_chara_card_count(chara, 3)
+                    else:
+                        owned_three_star_count = len(owned_three_star_ids)
+                        total_three_stars = await self.GetCardRarityCount(3)
+                        owned_card_ids += owned_three_star_ids
+                        total_four_stars = await self.GetCardRarityCount(4)
+                        
+                for card_id in owned_card_ids:
+                    trained_icons_paths.append(f"img/icons/full_icons/{card_id}_trained.png")
                 
-            import uuid
-            TotalCards = 0
-            # TotalTwoStars = len(Cards['2'])
-            # AllTwoStars = await self.GetCardRarityCount(2)
-            FullIconPaths = []
-            if type(Cards) is tuple:
-                for x in Cards:
-                    TotalCards += len(x)
-                for x in reversed(Cards): # Go through the dict with 4* first since those need to be painted first in the album
-                    SortedCards = x
-                    SortedCards.sort(reverse=True)
-                    for y in SortedCards:
-                        FullIconPaths.append(f"img/icons/full_icons/{y}_trained.png")
-            else:
-                TotalCards = len(Cards)
-                Cards.sort(reverse=True)
-                for y in Cards:
-                    FullIconPaths.append(f"img/icons/full_icons/{y}_trained.png")
-
-            Rows = math.ceil(TotalCards / 10)
-            Width = 1800 # 10 cards per row, 180px per icon
-            Height = Rows * 180
-            
-            if 'jpg' not in [x.lower() for x in args]:
-                Album = Image.new('RGBA', (int(Width), Height))
-                FileName = f"{uuid.uuid4()}.png"
-            else:
-                Album = Image.new('RGB', (int(Width), Height))
-                FileName = f"{uuid.uuid4()}.jpg"
-     
-            x_offset = 0
-            y_offset = 0
-            Icons = [Image.open(x) for x in FullIconPaths]
-            for icon in Icons:
-                Album.paste(icon, (x_offset, y_offset))
-                x_offset += 180
-                if x_offset >= Width: # new row
-                    x_offset = 0
-                    y_offset += 180
-            SavedFile = FileName
-            Album.save(SavedFile,optimize=True,qualiy=100)
-            DiscordFileObject = File(SavedFile,filename=SavedFile)
-            embed.add_field(name='4*',value=f'{TotalFourStars} / {AllFourStars}',inline=True)
-            # embed.add_field(name='2*',value=f'{TotalTwoStars} / {AllTwoStars}',inline=True)
-            embed.set_image(url=f"attachment://{SavedFile}")
-            await ctx.send(file=DiscordFileObject, embed=embed)
-            os.remove(SavedFile)
+                owned_four_star_count = len(owned_four_star_ids)
+                embed.add_field(name='4*',value=f'{owned_four_star_count} / {total_four_stars}', inline=True)
+                if include_three_stars:
+                    owned_three_star_count = len(owned_three_star_ids)
+                    embed.add_field(name='3*',value=f'{owned_three_star_count} / {total_three_stars}', inline=True)
+                total_cards_owned = len(owned_card_ids)
+                rows = math.ceil(total_cards_owned / 10)
+                width = 1800 # 10 cards per row, 180px per icon
+                height = rows * 180                
+                if 'jpg' not in [x.lower() for x in args]:
+                    album = Image.new('RGBA', (int(width), height))
+                    file_name = f"{uuid.uuid4()}.png"
+                else:
+                    album = Image.new('RGB', (int(width), height))
+                    file_name = f"{uuid.uuid4()}.jpg"    
+                x_offset = 0
+                y_offset = 0
+                icons = [Image.open(x) for x in trained_icons_paths]
+                for icon in icons:
+                    album.paste(icon, (x_offset, y_offset))
+                    x_offset += 180
+                    if x_offset >= width: # new row
+                        x_offset = 0
+                        y_offset += 180
+                album.save(file_name, optimize=True,qualiy=100)
+                discord_file = File(file_name, filename=file_name)
+                embed.set_image(url=f"attachment://{file_name}")
+                message = await ctx.send('Uploading..')
+                await ctx.send(file=discord_file, embed=embed)
+                await message.delete()
+                os.remove(file_name)
         except json.JSONDecodeError:
             await ctx.send(f'No rolls found for your user, please use the `roll` command to generate roll data')
         except SystemError:
@@ -455,8 +512,10 @@ class Fun(commands.Cog):
                       description='Simulates a 10 roll using the default rates and all the permanent/limited cards that have been released in JP so far. Event cards are not included. Add df and/or the bands/characters names to the input to simulate increased rates/only roll those cards.',
                       help='For bands, the values below are valid, if an invalid value is entered, the command will fail\n\nRoselia\nAfterglow\nPopipa\nPasupare\nHHW\nMorfonica\n\n.roll\n.roll df\n.roll lisa\n.roll df yukina lisa\n.roll roselia\n.roll roselia popipa')
     @ctime
-    async def gacharoll(self, ctx, *args):
+    async def gacha_roll(self, ctx, *args):
         from timeit import default_timer
+        from functools import wraps
+        user = self.bot.get_user(ctx.message.author.id)
         time = default_timer()
         try:
             import re
@@ -464,168 +523,182 @@ class Fun(commands.Cog):
             from PIL import Image
             from PIL.ImageDraw import Draw
             from PIL.ImageFont import truetype
-            Rates = [.97,.885]
-            CardsRolled = []
-            Rolled = []
+            from commands.formatting.DatabaseFormatting import get_roll_info, update_rolls_db, update_roll_album_db
+            rates = [.97, .885]
+            cards_rolled_paths = []
+            rolled_card_rarities = []
+            all_two_star_cards_paths = self.AllTwoStarCards
+            all_three_star_cards_paths = self.AllThreeStarCards
+            all_four_star_cards_paths = self.AllFourStarCards
             if args:
                 args = list(args)
                 for x in args:
                     if '/' in x: # /\\
                         args.remove(x)
                         x = re.sub('[^A-Za-z0-9]+', ' ', x)
-                        SplitAmount = 0
+                        split_amount = 0
                         for y in x:
                             if y == ' ':
-                                SplitAmount += 1
-                        SplitList = x.split(' ', SplitAmount)
-                        for x in SplitList:
+                                split_amount += 1
+                        split_list = x.split(' ', split_amount)
+                        for x in split_list:
                             if x:
                                 args.append(x)
                 if 'df' in [x.lower() for x in args]:
-                    Rates = [.94,.855]
+                    rates = [.94,.855]
                     args.remove('df')
                 if args: # Check again since the value may not exist anymore after removing df from the step above
-                    AllTwoStarCards = []
-                    AllThreeStarCards = []
-                    AllFourStarCards = []
-                    Characters = []
+                    characters = []                    
+                    all_two_star_cards_paths = []
+                    all_three_star_cards_paths = []
+                    all_four_star_cards_paths = []
 
                     for x in args:
-                        if x.lower() not in Characters:                  
-                            if x.lower() in ['roselia','popipa','hhw','pasupare','afterglow','morfonica','ras']:
+                        if x.lower() not in characters:                  
+                            if x.lower() in ['roselia','popipa', 'hhw', 'pasupare', 'afterglow','morfonica', 'ras']:
                                 if x.lower() == 'roselia':
-                                    Characters.extend(('lisa','yukina','sayo','ako','rinko'))
+                                    characters.extend(('lisa', 'yukina','sayo', 'ako', 'rinko'))
                                 elif x.lower() == 'popipa':
-                                    Characters.extend(('kasumi', 'rimi', 'saya', 'tae', 'arisa'))
+                                    characters.extend(('kasumi', 'rimi', 'saya', 'tae', 'arisa'))
                                 elif x.lower() == 'hhw':
-                                    Characters.extend(('kokoro', 'kaoru', 'kanon', 'hagumi', 'misaki'))
+                                    characters.extend(('kokoro', 'kaoru', 'kanon', 'hagumi', 'misaki'))
                                 elif x.lower() == 'pasupare':
-                                    Characters.extend(('aya', 'eve', 'maya', 'chisato', 'hina'))
+                                    characters.extend(('aya', 'eve', 'maya', 'chisato', 'hina'))
                                 elif x.lower() == 'afterglow':
-                                    Characters.extend(('ran', 'moca', 'himari', 'tsugumi', 'tomoe'))
+                                    characters.extend(('ran', 'moca', 'himari', 'tsugumi', 'tomoe'))
                                 elif x.lower() == 'morfonica':
-                                    Characters.extend(('mashiro', 'nanami', 'toko', 'rui', 'tsukushi'))
+                                    characters.extend(('mashiro', 'nanami', 'toko', 'rui', 'tsukushi'))
                                 elif x.lower() == 'ras':
-                                    Characters.extend(('chiyu', 'reona', 'masuki', 'rokka', 'rei'))
+                                    characters.extend(('chiyu', 'reona', 'masuki', 'rokka', 'rei'))
                             else:
-                                if x.lower() in ['rinboi','rin boi']:
-                                    Characters.append('hagumi')
-                                elif x.lower() in ['rock','rokku','lock','rokka','locku']:
-                                    Characters.append('rokka')
-                                elif x.lower() in ['chu','chu2']:
-                                    Characters.append('chiyu')
-                                elif x.lower() in ['npc','tsugu']:
-                                    Characters.append('tsugumi')
+                                if x.lower() in ['rinboi', 'rin boi']:
+                                    characters.append('hagumi')
+                                elif x.lower() in ['rock', 'rokku', 'lock', 'rokka', 'locku']:
+                                    characters.append('rokka')
+                                elif x.lower() in ['chu', 'chu2']:
+                                    characters.append('chiyu')
+                                elif x.lower() in ['npc', 'tsugu']:
+                                    characters.append('tsugumi')
                                 elif x.lower() in ['saaya']:
-                                    Characters.append('saya')
+                                    characters.append('saya')
                                 elif x.lower() in ['josh', 'john']: #for you qwewqa
-                                    Characters.append('lisa')
+                                    characters.append('lisa')
                                 else:
-                                    Characters.append(x)
-                    for chara in Characters:
+                                    characters.append(x)
+                    for chara in characters:
                         for x in os.listdir(f"img/icons/{chara}/2"):
-                            AllTwoStarCards.append(f"img/icons/{chara}/2/" + x)
+                            all_two_star_cards_paths.append(f"img/icons/{chara}/2/" + x)
                         for x in os.listdir(f"img/icons/{chara}/3"):
-                            AllThreeStarCards.append(f"img/icons/{chara}/3/" + x)
+                            all_three_star_cards_paths.append(f"img/icons/{chara}/3/" + x)
                         for x in os.listdir(f"img/icons/{chara}/4"):
-                            AllFourStarCards.append(f"img/icons/{chara}/4/" + x),
-                else:
-                    AllTwoStarCards = self.AllTwoStarCards
-                    AllThreeStarCards = self.AllThreeStarCards
-                    AllFourStarCards = self.AllFourStarCards
-            else:
-                AllTwoStarCards = self.AllTwoStarCards
-                AllThreeStarCards = self.AllThreeStarCards
-                AllFourStarCards = self.AllFourStarCards
-            
+                            all_four_star_cards_paths.append(f"img/icons/{chara}/4/" + x),
+
             for _ in range(0,9):
                 value = random.random()
-                if value > Rates[0]:
-                    Rolled.append(4)
-                elif Rates[0] >= value > Rates[1]:
-                    Rolled.append(3)
+                if value > rates[0]:
+                    rolled_card_rarities.append(4)
+                elif rates[0] >= value > rates[1]:
+                    rolled_card_rarities.append(3)
                 else:
-                    Rolled.append(2)
+                    rolled_card_rarities.append(2)
             # For guaranteed 3*
             value = random.random()
-            if value > Rates[0]:
-                Rolled.append(4)
+            if value > rates[0]:
+                rolled_card_rarities.append(4)
             else:
-                Rolled.append(3)
-            TwoStarsRolled = Rolled.count(2)
-            ThreeStarsRolled = Rolled.count(3)
-            FourStarsRolled = Rolled.count(4)
-
-            for x in Rolled:
+                rolled_card_rarities.append(3)
+            two_stars_rolled = rolled_card_rarities.count(2)
+            three_stars_rolled = rolled_card_rarities.count(3)
+            four_stars_rolled = rolled_card_rarities.count(4)
+            roll_info = {'user_id': user.id, 'user_name' : f'{user.name}#{user.discriminator}', 'two_stars': two_stars_rolled, 'three_stars': three_stars_rolled, 'four_stars': four_stars_rolled}
+            for x in rolled_card_rarities:
                 if x == 2:
-                    random.shuffle(AllTwoStarCards)
-                    CardsRolled.append(str(AllTwoStarCards[0]))
+                    random.shuffle(all_two_star_cards_paths)
+                    cards_rolled_paths.append(str(all_two_star_cards_paths[0]))
                 elif x == 3:
-                    random.shuffle(AllThreeStarCards)
-                    CardsRolled.append(str(AllThreeStarCards[0]))
+                    random.shuffle(all_three_star_cards_paths)
+                    cards_rolled_paths.append(str(all_three_star_cards_paths[0]))
                 else:
-                    random.shuffle(AllFourStarCards)
-                    CardsRolled.append(str(AllFourStarCards[0]))
+                    random.shuffle(all_four_star_cards_paths)
+                    cards_rolled_paths.append(str(all_four_star_cards_paths[0]))
         
-            FirstHalfCardsRolled = CardsRolled[:len(CardsRolled)//2]        
-            SecondtHalfCardsRolled = CardsRolled[len(CardsRolled)//2:]
+            first_half_cards_rolled = cards_rolled_paths[:len(cards_rolled_paths)//2]        
+            second_half_cards_rolled = cards_rolled_paths[len(cards_rolled_paths)//2:]
 
-            images = [Image.open(x) for x in CardsRolled]
+            images = [Image.open(x) for x in cards_rolled_paths]
             widths, heights = zip(*(i.size for i in images))
             total_width = sum(widths) / 2
             max_height = 2 * max(heights)
-            new_im = Image.new('RGB', (int(total_width), max_height))
-            FirstHalfImages = [Image.open(x) for x in FirstHalfCardsRolled]
-            SecondHalfImages = [Image.open(x) for x in SecondtHalfCardsRolled]
+            new_im = Image.new('RGBA', (int(total_width), max_height))
+            first_half_icons = [Image.open(x) for x in first_half_cards_rolled]
+            second_half_icons = [Image.open(x) for x in second_half_cards_rolled]
             x_offset = 0
-            for im in FirstHalfImages:
-                new_im.paste(im, (x_offset,0))
+            for im in first_half_icons:
+                new_im.paste(im, (x_offset, 0))
                 x_offset += im.size[0]        
             x_offset = 0
 
-            for im in SecondHalfImages:
-                new_im.paste(im, (x_offset,180))
+            for im in second_half_icons:
+                new_im.paste(im, (x_offset, 180))
                 x_offset += im.size[0]        
                    
             # Update roll database
-            user = self.bot.get_user(ctx.message.author.id)
-            user = user.name + '#' + user.discriminator
-            await self.UpdateRollsJSON(523337807847227402, 'self', TwoStarsRolled, ThreeStarsRolled, FourStarsRolled)
-            await self.UpdateRollsJSON(ctx.message.author.id, user, TwoStarsRolled, ThreeStarsRolled, FourStarsRolled)
-            await self.UpdateRollAlbumJSON(ctx.message.author.id, user, CardsRolled)
-            for chara in CardsRolled:
-                search = re.search('icons/([a-zA-Z]*)\/([0-9]*)', chara)
+            roll_info['chara'] = {}
+            roll_info['card_ids'] = {}
+            # use sets instead of lists for the IDs since they're faster at updating and we don't need to insert duplicates
+            roll_info['card_ids']['two_star_ids'] = []
+            roll_info['card_ids']['three_star_ids'] = []
+            roll_info['card_ids']['four_star_ids'] = []
+            for card in cards_rolled_paths:
+                search = re.search('icons/([a-zA-Z]*)\/([0-9]*)\/([0-9]*)', card)
                 name = search[1]
-                cardtype = search[2]
-                await self.UpdateCharaRollsJSON(523337807847227402, 'self', name, cardtype)
-                await self.UpdateCharaRollsJSON(ctx.message.author.id, user, name, cardtype)
-
-            if 4 not in Rolled:
-                Title = "Haha no 4*"
-            else:
-                Title = "mbn getting a 4*"
-
+                rarity = search[2]
+                card_id = int(search[3])
+                if rarity == '2':
+                    roll_info['card_ids']['two_star_ids'].append(card_id) 
+                elif rarity == '3':
+                    roll_info['card_ids']['three_star_ids'].append(card_id) 
+                else:
+                    roll_info['card_ids']['four_star_ids'].append(card_id) 
+                if name not in roll_info['chara']: 
+                    roll_info['chara'][name] = {'2' : 0, '3': 0, '4': 0}
+                    roll_info['chara'][name][rarity] += 1
+                else:
+                    roll_info['chara'][name][rarity] += 1
+            
+            title = "mbn getting a 4*" if four_stars_rolled > 0 else "haha no 4*"
             import uuid
             from discord import File
-            FileName = str(ctx.message.author.id) + '_' + str(uuid.uuid4()) + '.png'
-            SavedFile = "img/rolls/" + FileName
-            new_im.save(SavedFile)
-            DiscordFileObject = File(SavedFile,filename=FileName)
-            RolledStats =  await self.GetRollStats(ctx.message.author.id)
-            
-            embed=discord.Embed(title=Title,color=discord.Color.blue())
-            embed.set_thumbnail(url=RolledStats[5])
-            embed.add_field(name='Total Cards Rolled',value="{:,}".format(RolledStats[0]),inline=True)
+            file_name = str(ctx.message.author.id) + '_' + str(uuid.uuid4()) + '.png'
+            saved_file_path = "img/rolls/" + file_name
+            new_im.save(saved_file_path)
+            discord_file = File(saved_file_path,filename=file_name)
+            await update_rolls_db(roll_info)
+            roll_stats = await get_roll_info(user.id)    
+            two_star_count = roll_stats[0][1]
+            three_star_count = roll_stats[0][2]
+            four_star_count = roll_stats[0][3]
+            total_count = two_star_count + three_star_count + four_star_count
+            four_star_rate = f"{round(((four_star_count / total_count) * 100), 2)}%"
+            icon =  f"{ctx.author.avatar_url.BASE}{ctx.author.avatar_url._url}"
+            print(f'{round((default_timer() - time),2)}')
+            embed=discord.Embed(title=title,color=discord.Color.blue())
+            embed.set_thumbnail(url=icon)
+            embed.add_field(name='Total Cards Rolled',value="{:,}".format(total_count),inline=True)
             embed.add_field(name='Total 4* Rolled',
-                            value=RolledStats[3], inline=True)
-            embed.add_field(name='4* Rate', value=RolledStats[4], inline=True)
-            embed.add_field(name='2* Rolled',value=TwoStarsRolled,inline=True)
-            embed.add_field(name='3* Rolled',value=ThreeStarsRolled,inline=True)
-            embed.add_field(name='4* Rolled',value=FourStarsRolled,inline=True) 
-            embed.set_image(url=f"attachment://{FileName}")
+                            value=roll_stats[0][3], inline=True)
+            embed.add_field(name='4* Rate', value=four_star_rate, inline=True)
+            embed.add_field(name='2* Rolled',value=two_stars_rolled,inline=True)
+            embed.add_field(name='3* Rolled',value=three_stars_rolled,inline=True)
+            embed.add_field(name='4* Rolled',value=four_stars_rolled,inline=True) 
+            embed.set_image(url=f"attachment://{file_name}")
             embed.set_footer(text="Want to see an album with all your 4 and 3*? Use the album command\nWant to see all your stats? Use the rollstats command\nWant to check the leaderboards? Use the rolllb command")
-            await ctx.send(file=DiscordFileObject, embed=embed)
-            os.remove(SavedFile)
+            time = default_timer()
+            await ctx.send(file=discord_file, embed=embed)
+            print(f'{round((default_timer() - time),2)}')
+            os.remove(saved_file_path)
+            await update_roll_album_db(roll_info)
+            
         except IndexError:
             await ctx.send("Failed generating a roll. This is likely because the bot rolled a card that doesn't exist (e.g. 3* rokka)")
         except Exception as e:
@@ -748,32 +821,20 @@ class Fun(commands.Cog):
                       description='Shows the top 20 leaderboards for the roll command',
                       help='You can specify which leaderboard you want to check by including the character name at the end, if omitted, it will return the overall leaderboards\n\n.rolllb\n.rlb lisa')
     @ctime
-    async def rolllb(self, ctx, *Chara):
+    async def roll_leaderboards(self, ctx, *character):
+        character = character[0] if character else ""
         try:
             from operator import itemgetter
             from tabulate import tabulate
-            if Chara:
-                Chara = Chara[0] 
-                FileName = f'databases/rolls/{Chara}.json'
-            else:
-                FileName = 'databases/rolls/rolls.json'
-            with open(FileName) as file:
-                api = json.load(file)
-            Rolls = []
-            for key in api:
-                if key != '523337807847227402' and key != 'overall':
-                    if 'Name' in api[key]:
-                        Name = api[key]['Name']
-                    else:
-                        Name = key
-                    TotalRolled = int(api[key]['TotalRolls']) * 10 if not Chara else int(api[key]['TotalRolls'])
-                    #FourStarPercent = str(round((((int(api[key]['FourStars']) / TotalRolled ) * 100), 2)) + '%')
-                    FourStarPercent = str(round(((int(api[key]['FourStars']) / TotalRolled) * 100), 2)) + '%'
-                    Rolls.append([Name,api[key]['TotalRolls'],api[key]['FourStars'],FourStarPercent])
-                    Rolls = sorted(Rolls,key=itemgetter(1),reverse=True)
-            Rolls = Rolls[0:20]
-            RollsHeader = 'Total Rolls' if not Chara else f"Total {Chara.capitalize()}s rolled"
-            output = "```" + tabulate(Rolls,headers=['User',RollsHeader,'Total 4*','4* %'],tablefmt='plain') + "```"
+            from commands.formatting.DatabaseFormatting import get_roll_leaderboards_info
+            stats = await get_roll_leaderboards_info(character) if character else await get_roll_leaderboards_info()
+            leaderboards = []
+            for stat in stats:
+                total_rolls = stat[1] + stat[2] + stat[3]
+                four_star_rate = f"{round(((stat[3] / total_rolls) * 100), 2)}%"
+                leaderboards.append([stat[5],total_rolls,stat[3],four_star_rate])
+            header = 'Total Cards Rolled' if not character else f"Total {character.capitalize()}s Rolled"
+            output = "```" + tabulate(leaderboards,headers=['User',header,'Total 4*','4* %'],tablefmt='plain') + "```"
         except FileNotFoundError:
             output = 'No rolls have been generated for that character yet'
         except Exception as e:
@@ -868,14 +929,14 @@ class Fun(commands.Cog):
 
 @ctime
 async def UpdateCardIcons():
-    from commands.apiFunctions import GetBestdoriAllCardsAPI, GetBestdoriAllCharactersAPI        
+    from commands.apiFunctions import get_bestdori_all_cards_api5, GetBestdoriAllCharactersAPI2        
     from PIL import Image
     from PIL.ImageDraw import Draw
     from PIL.ImageFont import truetype
     from io import BytesIO
     from os import path
-    CardAPI = await GetBestdoriAllCardsAPI()
-    CharaAPI = await GetBestdoriAllCharactersAPI()
+    CardAPI = await get_bestdori_all_cards_api5()
+    CharaAPI = await GetBestdoriAllCharactersAPI2()
     for x in CardAPI:
         try:
             print(f'Card {x}')

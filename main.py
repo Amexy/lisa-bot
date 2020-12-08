@@ -1,8 +1,7 @@
 from discord.ext import commands
-from discord.ext.commands import CommandNotFound
 from discord.utils import find, get
 from tinydb import TinyDB, where
-from commands.formatting.DatabaseFormatting import GetReactAssignmentList, CheckMessageForReactAssignment
+#from commands.formatting.DatabaseFormatting import GetReactAssignmentList, CheckMessageForReactAssignment
 import json
 import requests
 import discord
@@ -24,11 +23,11 @@ def prefix(bot, message):
 
 bot = commands.Bot(command_prefix=prefix, case_insensitive=True)
 
-
 # read config information
 with open("config.json") as file:
     config_json = json.load(file)
     TOKEN = config_json["token"]
+    
 
 #################
 #   Bot Stuff   #
@@ -81,40 +80,40 @@ async def on_guild_join(guild):
         await general.send("Thanks for inviting me! You can get started by typing .help to find the current command list and change the command prefix by typing .setprefix followed by the desired prefix e.g. !.\nSource Code: https://github.com/Amexy/lisa-bot\nSupport: https://ko-fi.com/lisabot\nIf you have any feedback or requests, please dm Josh#1373 or join discord.gg/wDu5CAA.")
 
 
-@bot.event
-async def on_raw_reaction_add(payload):
-    if CheckMessageForReactAssignment(payload.message_id):
-        reactList = GetReactAssignmentList(payload.message_id)
-        for rolename in reactList:
-            if str(payload.emoji) == reactList[rolename]:
-                role = discord.utils.find(lambda r: r.name == rolename, payload.member.guild.roles)
-                if role:
-                    try:
-                        if not payload.member.bot:
-                            await payload.member.add_roles(role)
-                        return
-                    except:
-                        print("Could not complete action for react based role assignment.")
+# @bot.event
+# async def on_raw_reaction_add(payload):
+#     if CheckMessageForReactAssignment(payload.message_id):
+#         reactList = GetReactAssignmentList(payload.message_id)
+#         for rolename in reactList:
+#             if str(payload.emoji) == reactList[rolename]:
+#                 role = discord.utils.find(lambda r: r.name == rolename, payload.member.guild.roles)
+#                 if role:
+#                     try:
+#                         if not payload.member.bot:
+#                             await payload.member.add_roles(role)
+#                         return
+#                     except:
+#                         print("Could not complete action for react based role assignment.")
 
 
-@bot.event
-async def on_raw_reaction_remove(payload):
-    if CheckMessageForReactAssignment(payload.message_id):
-        reactList = GetReactAssignmentList(payload.message_id)
-        for rolename in reactList:
-            if str(payload.emoji) == reactList[rolename]:
-                # raw reaction removal does not provide us with the member object, so we have to fetch the guild, then the member :(
-                # this is literally the saddest thing :eve:
-                guild = bot.get_guild(payload.guild_id)
-                member = guild.get_member(payload.user_id)
-                if not member.bot:
-                    role = discord.utils.find(lambda r: r.name == rolename, guild.roles)
-                    if role:
-                        try:
-                            await member.remove_roles(role)
-                            return
-                        except:
-                            print("Could not complete action for react based role assignment.")
+# @bot.event
+# async def on_raw_reaction_remove(payload):
+#     if CheckMessageForReactAssignment(payload.message_id):
+#         reactList = GetReactAssignmentList(payload.message_id)
+#         for rolename in reactList:
+#             if str(payload.emoji) == reactList[rolename]:
+#                 # raw reaction removal does not provide us with the member object, so we have to fetch the guild, then the member :(
+#                 # this is literally the saddest thing :eve:
+#                 guild = bot.get_guild(payload.guild_id)
+#                 member = guild.get_member(payload.user_id)
+#                 if not member.bot:
+#                     role = discord.utils.find(lambda r: r.name == rolename, guild.roles)
+#                     if role:
+#                         try:
+#                             await member.remove_roles(role)
+#                             return
+#                         except:
+#                             print("Could not complete action for react based role assignment.")
 
 
 bot.remove_command('help')

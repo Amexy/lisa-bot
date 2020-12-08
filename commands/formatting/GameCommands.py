@@ -8,6 +8,39 @@ from discord.guild import Guild
 import math
 import time
 import discord
+
+
+# This function is used in the album command when requesting character specific albums. Instead of making multiple calls to a bestdori api, this only calls it once 
+from main import ctime
+@ctime
+async def check_album_ids(card_ids: list, characters: list):
+    from commands.apiFunctions import GetBestdoriAllCharactersAPI5, get_bestdori_all_cards_api5
+    card_api = await get_bestdori_all_cards_api5()
+    chara_api = await GetBestdoriAllCharactersAPI5()
+    card_ids = [str(x) for x in card_ids]
+    for card_id in card_ids[:]:
+        chara_id_from_card_id = str(card_api[card_id]['characterId'])
+        chara_name = chara_api[chara_id_from_card_id]['firstName'][1].lower()
+        if chara_name not in characters:
+            card_ids.remove(card_id)
+    return card_ids
+
+from main import ctime
+@ctime
+async def get_chara_card_count(character, rarity):
+    from commands.apiFunctions import GetBestdoriAllCharactersAPI5, get_bestdori_all_cards_api5
+    card_api = await get_bestdori_all_cards_api5()
+    chara_api = await GetBestdoriAllCharactersAPI5()
+    count = 0
+    for chara in chara_api:
+        if character in chara_api[chara]['characterName'][1].lower():
+            chara_id = int(chara)
+            break 
+    for card in card_api:
+        if chara_id == card_api[card]['characterId'] and rarity == card_api[card]['rarity']:
+            count += 1
+    return count
+
 #######################
 #    Game Commands    #
 #######################

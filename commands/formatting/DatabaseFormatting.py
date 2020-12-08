@@ -24,8 +24,107 @@ jp2MinuteTracking = 'databases/jp2MinuteTrackingDB.json'
 jp1HourTracking = 'databases/jp1HourTrackingDB.json'
 botupdatesDB = 'databases/botupdates.json'
 premium_db = 'databases/premium_users.json'
+rolls_db = 'databases/rolls/rolls_new.json'
 
+from main import ctime
+@ctime
+async def update_rolls_db(roll_info):
+    from commands.database_handler import create_connection
+    conn = create_connection()            
+    update_user_info_query =    '''
+                                INSERT OR IGNORE INTO users(discord_id, discord_name) VALUES (?, ?) 
+                                '''
+    update_users_rolls_info_query = '''
+                                INSERT OR IGNORE INTO user_roll_stats(discord_id, two_stars_count, three_stars_count, four_stars_count) VALUES (?, ?, ?, ?)
+                                    '''
+    update_users_rolls_stats_query = '''
+                                UPDATE user_roll_stats
+                                SET two_stars_count = two_stars_count + ?,
+                                    three_stars_count = three_stars_count + ?,
+                                    four_stars_count = four_stars_count + ?
+                                WHERE discord_id = ?
+                               '''
+    c = conn.cursor()
+    c.execute(update_user_info_query, (roll_info['user_id'], roll_info['user_name']))
+    c.execute(update_users_rolls_info_query, (roll_info['user_id'], 0, 0, 0))
+    c.execute(update_users_rolls_stats_query, (roll_info['two_stars'], roll_info['three_stars'], roll_info['four_stars'], roll_info['user_id']))
+    for chara in roll_info['chara']:
+        # have to use format here because sqlite doesn't let you use ? for table names
+        c.execute("INSERT OR IGNORE INTO {}(discord_id, two_stars_count, three_stars_count, four_stars_count) VALUES (?, ?, ?, ?)".format(chara), (roll_info['user_id'], 0, 0, 0)) 
+        c.execute('''
+                  UPDATE {} 
+                  SET 
+                  two_stars_count = two_stars_count + ?, 
+                  three_stars_count = three_stars_count + ?, 
+                  four_stars_count = four_stars_count + ? 
+                  WHERE discord_id = ?
+                  '''.format(chara), (roll_info['chara'][chara]['2'], roll_info['chara'][chara]['3'], roll_info['chara'][chara]['4'], roll_info['user_id']))
+    conn.commit()
 
+async def get_roll_info(user, *character):
+    from commands.database_handler import create_connection
+    conn = create_connection()           
+    c = conn.cursor()
+    table = "user_roll_stats" if not character else character[0]
+    if user == 523337807847227402: # Bot
+        query = f"SELECT SUM(two_stars_count), SUM(three_stars_count), SUM(four_stars_count) FROM user_roll_stats"
+    else:
+        query = f"SELECT * FROM {table} WHERE discord_id = {user}"
+    r = c.execute(query)
+    return r.fetchall()
+
+async def get_roll_leaderboards_info(*character):
+    from commands.database_handler import create_connection
+    conn = create_connection()           
+    c = conn.cursor()
+    table = "user_roll_stats" if not character else character[0]
+    r = c.execute(f"SELECT * FROM {table} INNER JOIN users ON users.discord_id = {table}.discord_id ORDER BY two_stars_count DESC LIMIT 20")
+    return r.fetchall()
+
+@ctime
+async def update_roll_album_db(roll_info):
+    album_db = 'data/databases/albums.json'
+    db = TinyDB(album_db)
+    success = True
+    q = Query()
+    user_check = db.search(q.user_id == roll_info['user_id'])
+    if not user_check:
+        try:
+            db.upsert({'user_id': roll_info['user_id'],
+                       'two_star_ids': (roll_info['card_ids']['two_star_ids']),
+                       'three_star_ids': (roll_info['card_ids']['three_star_ids']),
+                       'four_star_ids': (roll_info['card_ids']['four_star_ids'])
+                      }, where('user_id') == roll_info['user_id']) 
+        except Exception as e:
+            print(e)
+            success = False
+    else:
+        user_info = user_check[0]
+        # Sets are supposedly faster than lists at checking if a value exists, so use that
+        for rarity in roll_info['card_ids']:
+            u = set(user_info[rarity])
+            u.update(set(roll_info['card_ids'][rarity]))
+            user_info[rarity] = list(u)
+        try:
+            db.upsert({'user_id': user_info['user_id'],
+                       'two_star_ids': user_info['two_star_ids'],
+                       'three_star_ids': user_info['three_star_ids'],
+                       'four_star_ids': user_info['four_star_ids']
+                      }, where('user_id') == user_info['user_id']) 
+        except Exception as e:
+            print(e)
+            success = False
+ 
+@ctime
+async def get_album_card_ids(user):
+    album_db = 'data/databases/albums.json'
+    db = TinyDB(album_db)
+    success = True
+    q = Query()
+    album_card_ids = db.search(q.user_id == user)
+    return album_card_ids
+
+@ctime
 def add_user_to_premium_db(user: User, guild: Guild, event_id, server: str):
     db = TinyDB(premium_db)
     success = True
@@ -108,28 +207,28 @@ def addChannelToDatabase(channel: TextChannel, interval: int, server: str):
     success = True
     if server == 'en':
         if(interval == 2):
-                db = TinyDB(eventCheckDb2min)
-                interval = '2 minute'
+            db = TinyDB(eventCheckDb2min)
+            interval = '2 minute'
         if(interval == 1):
-                db = TinyDB(eventCheckDb1min)
-                interval = '1 minute'
+            db = TinyDB(eventCheckDb1min)
+            interval = '1 minute'
         if(interval == 3600):
-                db = TinyDB(eventCheckDb1hr)
-                interval = '1 hour'
+            db = TinyDB(eventCheckDb1hr)
+            interval = '1 hour'
     else:
         if(interval == 2):
-                db = TinyDB(jp2MinuteTracking)
-                interval = '2 minute'
+            db = TinyDB(jp2MinuteTracking)
+            interval = '2 minute'
         if(interval == 3600):
-                db = TinyDB(jp1HourTracking)
-                interval = '1 hour'
+            db = TinyDB(jp1HourTracking)
+            interval = '1 hour'
         
     try:
         db.upsert({'name': channel.name,
-                'guild': channel.guild.id,
-                'guildName': channel.guild.name,
-                'id': channel.id
-                }, where('id') == channel.id)
+                   'guild': channel.guild.id,
+                   'guildName': channel.guild.name,
+                   'id': channel.id
+                  }, where('id') == channel.id)
     except Exception as e:
         print(e)
         success = False

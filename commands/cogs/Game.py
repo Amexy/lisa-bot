@@ -6,10 +6,10 @@ from pytz import timezone
 from operator import itemgetter
 from time import strftime, gmtime
 from commands.cogs.Cards import parseCards, generateImage, Palette, filterArguments, findCardFromArguments, Card
-from commands.formatting.GameCommands import GetStarsUsedOutput, GetEPGainOutput, characterOutput, GetSongInfo, GetSongMetaOutput, GetLeaderboardsOutput
 from commands.formatting.TimeCommands import GetCurrentTime
 import discord, shutil, time, requests, math, asyncio, traceback, os
 from main import ctime
+
 class Game(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -19,8 +19,8 @@ class Game(commands.Cog):
                       enabled=False)
     @ctime
     async def uci(self, ctx):
-        from commands.apiFunctions import GetBestdoriAllCardsAPI, GetBestdoriAllCharactersAPI        
-        CardAPI = await GetBestdoriAllCardsAPI()
+        from commands.apiFunctions import get_bestdori_all_cards_api5, GetBestdoriAllCharactersAPI2        
+        CardAPI = await get_bestdori_all_cards_api5()
         from PIL import Image
         from PIL.ImageDraw import Draw
         from PIL.ImageFont import truetype
@@ -222,6 +222,7 @@ class Game(commands.Cog):
     @ctime
     async def characterinfo(self, ctx, character: str):
         try:
+            from commands.formatting.GameCommands import characterOutput
             output = await characterOutput(character)
             await ctx.send(embed=output)
         except:
@@ -234,6 +235,7 @@ class Game(commands.Cog):
                       enabled=False)
     @ctime
     async def starsused(self, ctx, epPerSong: int, begRank: int, begEP: int, targetEP: int, flamesUsed: int, *ServerOrHoursLeft):
+        from commands.formatting.GameCommands import GetStarsUsedOutput
         starsUsedTable = await GetStarsUsedOutput(epPerSong, begRank, begEP, targetEP, flamesUsed, *ServerOrHoursLeft)
         await ctx.send(starsUsedTable)
 
@@ -243,6 +245,7 @@ class Game(commands.Cog):
                       enabled=False)
     @ctime
     async def epgain(self, ctx, yourScore: int, multiScore: int, bpPercent: int, flamesUsed: int, eventType: int, bbPlace: int = 0):
+        from commands.formatting.GameCommands import GetEPGainOutput
         ep = GetEPGainOutput(yourScore, multiScore, bpPercent, flamesUsed, eventType, bbPlace)
         await ctx.send("EP Gain: " + str(math.floor(ep)))
 
@@ -252,12 +255,12 @@ class Game(commands.Cog):
     @ctime
     async def event(self, ctx, server: str = 'en', *event):
         from commands.formatting.EventCommands import GetEventName, GetCurrentEventID, GetEventAttribute
-        from commands.apiFunctions import GetBestdoriAllCharactersAPI, GetBestdoriAllEventsAPI, GetBestdoriBannersAPI, GetBestdoriEventArchivesAPI, GetServerAPIKey
+        from commands.apiFunctions import GetBestdoriAllCharactersAPI2, GetBestdoriAllEventsAPI, GetBestdoriBannersAPI, GetBestdoriEventArchivesAPI, GetServerAPIKey
         from protodefs.ranks import GetEventType
         try:
             validServer = ["en","jp","tw","cn"]
             if server in validServer:
-                charaAPI = await GetBestdoriAllCharactersAPI()
+                charaAPI = await GetBestdoriAllCharactersAPI2()
                 eventAPI = await GetBestdoriAllEventsAPI()
                 
                 if event:
@@ -366,6 +369,7 @@ class Game(commands.Cog):
     @ctime
     async def songinfo(self, ctx, *args: str):
         try:
+            from commands.formatting.GameCommands import GetSongInfo
             songName = args[0]
             for x in args:
                 if x == songName:
@@ -382,6 +386,7 @@ class Game(commands.Cog):
                       help='.songmeta\n.sm\n.meta\n.songmeta unite guren jumpin')
     @ctime
     async def songmeta(self, ctx, *songs):
+        from commands.formatting.GameCommands import GetSongMetaOutput
         if songs:
             output = await GetSongMetaOutput(True, songs)
         else:
@@ -394,6 +399,7 @@ class Game(commands.Cog):
                       help='.songmeta\n.sm\n.meta\n.songmeta unite guren jumpin')
     @ctime
     async def songmetanf(self, ctx, *songs):
+        from commands.formatting.GameCommands import GetSongMetaOutput
         if songs:
             output = await GetSongMetaOutput(False, list(songs))
         else:
@@ -406,6 +412,7 @@ class Game(commands.Cog):
                       help='A valid type of leaderboard must be entered, these valid entries are: highscores/hs, fullcombo/fc, ranks/rank, and cleared\n\n.lb\n.lb en ranks\n.lb jp highscores 50')
     @ctime
     async def playerleaderboards(self, ctx, server: str = 'en', type: str = 'highscores', entries: int = 20):
+        from commands.formatting.GameCommands import GetLeaderboardsOutput
         Output = await GetLeaderboardsOutput(server, type, entries)
         await ctx.send(Output)
 

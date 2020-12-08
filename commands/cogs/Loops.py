@@ -69,9 +69,9 @@ class Loops(commands.Cog):
     async def UpdateCardIcons(self):
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
-            from commands.apiFunctions import GetBestdoriAllCardsAPI
+            from commands.apiFunctions import get_bestdori_all_cards_api5
             initialCardsAPI = self.initialCardsAPI
-            CardsAPI = await GetBestdoriAllCardsAPI()
+            CardsAPI = await get_bestdori_all_cards_api5()
             if(sorted(initialCardsAPI.items()) != sorted(CardsAPI.items())):
                 from commands.cogs.Fun import UpdateCardIcons
                 await UpdateCardIcons
