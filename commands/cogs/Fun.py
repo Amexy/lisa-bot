@@ -13,7 +13,15 @@ class Fun(commands.Cog):
         self.AllFourStarCards = self.AllCards[2]
         self.api = AppPixivAPI()
         # asyncio.run(self.GetImages())
-    
+        
+
+
+    async def GetCardRarityCount(self, rarity: int):
+        from commands.apiFunctions import get_bestdori_all_cards_api5
+        all_cards_api = await get_bestdori_all_cards_api5()
+        count = sum(map(lambda value: value["rarity"] == rarity, all_cards_api.values()))
+        return count
+
     #@ctime
     async def GetImages(self):
         import json

@@ -422,9 +422,9 @@ class Loops(commands.Cog):
                         guilds = guilds_db.search(q.event_id == EventID and q.server == server)
                         if guilds:
                             if server == 'en':
-                                two_min_db = 'databases/eventCheckDb2min.json' 
+                                two_min_db = 'data/databases/tinydb/eventCheckDb2min.json' 
                             elif server == 'jp':
-                                two_min_db = 'databases/jp2MinuteTrackingDB.json'
+                                two_min_db = 'data/databases/tinydb/jp2MinuteTrackingDB.json'
                             if two_min_db:
                                 db = TinyDB(two_min_db)
                                 for guild in guilds:
