@@ -343,7 +343,7 @@ def rmChannelFromCutoffDatabase(channel: TextChannel, tier: int, server: str):
 
 def getCutoffChannels(tier: int, server: str):
     ids = list()
-    db = f"databases/cutoff_updates/{server}_t{tier}.json"
+    db = f"data/databases/tinydb/cutoff_updates/{server}_t{tier}.json"
     db = TinyDB(db)
     try:
         saved = db.all()
@@ -523,7 +523,7 @@ def getNewsChannelsToPost(server: str):
 #     Roles      #
 ##################
 def CheckMessageForReactAssignment(msgID: int):
-    db = TinyDB('databases/reactbasedroles.json')
+    db = TinyDB('data/databases/reactbasedroles.json')
     queryBuilder = Query()
     if db.contains(queryBuilder.msgID == msgID):
         return True
@@ -531,13 +531,13 @@ def CheckMessageForReactAssignment(msgID: int):
         return False
 
 def GetReactAssignmentList(msgID: int):
-    db = TinyDB('databases/reactbasedroles.json')
+    db = TinyDB('data/databases/tomydb/reactbasedroles.json')
     queryBuilder = Query()
     document = db.get(queryBuilder.msgID == msgID)
     return document['reactList']
 
 def CheckRoleForAssignability(RoleName: str, GuildID: int):
-    db = TinyDB('databases/selfassignableroles.json')
+    db = TinyDB('data/databases/tinydb/selfassignableroles.json')
     QueryBuilder = Query()
     AllServerRoles = db.search(QueryBuilder.GuildID == GuildID)
     RoleFound = bool
@@ -552,7 +552,7 @@ def CheckRoleForAssignability(RoleName: str, GuildID: int):
     return RoleFound
 
 def RemoveRoleFromAssingability(RoleName: str, GuildID: int):
-    db = TinyDB('databases/selfassignableroles.json')
+    db = TinyDB('data/databases/tinydb/selfassignableroles.json')
     QueryBuilder = Query()
     AllServerRoles = db.search(QueryBuilder.GuildID == GuildID)
     RoleFound = bool
@@ -568,7 +568,7 @@ def RemoveRoleFromAssingability(RoleName: str, GuildID: int):
     return RoleFound
 
 def GetAllRoles(GuildID: int):
-    db = TinyDB('databases/selfassignableroles.json')
+    db = TinyDB('data/databases/tinydb/selfassignableroles.json')
     Roles = []
     QueryBuilder = Query()
     AllServerRoles = db.search(QueryBuilder.GuildID == GuildID)
@@ -578,7 +578,7 @@ def GetAllRoles(GuildID: int):
 
 def AddRoleToDatabase(channel: TextChannel, role: str):
     success = True
-    db = TinyDB('databases/selfassignableroles.json') 
+    db = TinyDB('data/databases/tinydb/selfassignableroles.json') 
     try:
         db.upsert({'GuildID': channel.guild.id,
                 'GuildName': channel.guild.name,
@@ -599,7 +599,7 @@ def AddRoleToDatabase(channel: TextChannel, role: str):
 
 def AddReactToDatabase(msgID: int, data: dict):
     success = True
-    db = TinyDB('databases/reactbasedroles.json')
+    db = TinyDB('data/databases/tinydb/reactbasedroles.json')
     try:
         db.upsert({'msgID': msgID,
                 'reactList': data
@@ -617,7 +617,7 @@ def AddReactToDatabase(msgID: int, data: dict):
 
 def RemoveReactFromDatabase(msgID: int):
     success = True
-    db = TinyDB('databases/reactbasedroles.json')
+    db = TinyDB('data/databases/tinydb/reactbasedroles.json')
     try:
         db.remove(where('msgID') == msgID)
 

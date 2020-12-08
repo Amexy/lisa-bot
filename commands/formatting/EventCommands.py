@@ -141,7 +141,7 @@ def GetManualCutoffJSONFile(Server, Tier, EventID):
     return FileName
 
 def GetCutoffJSONFile(Server, Tier):
-    FileName = f'databases/{Server}t{Tier}.json'
+    FileName = f'data/databases/tinydb/{Server}t{Tier}.json'
     return FileName
 
 def UpdateManualTrackingCutoffJSON(Server, Tier, EventID, Current, Epoch):
