@@ -24,7 +24,7 @@ class Misc(commands.Cog):
             FileExtension = '.gif'
         else:
             FileExtension = '.png'
-        SavedPicPath = 'img/imgTmp/' + str(GuildInfo.id) + FileExtension
+        SavedPicPath = 'data/img/imgTmp/' + str(GuildInfo.id) + FileExtension
         response = requests.get(GuildPicURL, stream=True)
         if os.path.exists(SavedPicPath):
             os.remove(SavedPicPath)
@@ -116,7 +116,7 @@ class Misc(commands.Cog):
             FileExtension = '.gif'
         else:
             FileExtension = '.png'
-        SavedPicPath = 'img/imgTmp/' + str(user.id) + FileExtension
+        SavedPicPath = 'data/img/imgTmp/' + str(user.id) + FileExtension
         response = requests.get(UserPicUrl, stream=True)
         if os.path.exists(SavedPicPath):
             os.remove(SavedPicPath)

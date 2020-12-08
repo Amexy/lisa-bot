@@ -40,10 +40,10 @@ class Loops(commands.Cog):
         while not self.bot.is_closed():
             from os import listdir
             import os, random
-            path = "img/pfps/"
+            path = "data/img/pfps/"
             files = []
             for file in os.listdir(path):
-                files.append('img/pfps/' + file)
+                files.append('data/img/pfps/' + file)
             pic = random.choice(files)
             try:
                 with open(pic, 'rb') as f:
@@ -95,10 +95,10 @@ class Loops(commands.Cog):
             PicURL = pic['image_urls']['large']
             if charaId == '23':
                 SaveImage = True
-                SavedPicPath = f'img/pfps/{PicID}_p0.jpg'
+                SavedPicPath = f'data/img/pfps/{PicID}_p0.jpg'
             else:
                 SaveImage = False
-                SavedPicPath = f'img/imgTmp/{PicID}_p0.jpg'
+                SavedPicPath = f'data/img/imgTmp/{PicID}_p0.jpg'
             response = requests.get(PicURL, 
                                     headers={
                                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36', 

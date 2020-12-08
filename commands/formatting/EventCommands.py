@@ -408,7 +408,7 @@ async def CreateGraph(Server, EventID, Tier, CurrentEPValues, CurrentTimes, Esti
         template='plotly_dark'
     )
     FileName = f"{EventID}_{Server}_{Tier}.png"
-    SavedFile = f"img/graphs/{FileName}"
+    SavedFile = f"data/img/graphs/{FileName}"
 
     with open("config.json") as file:
         config_json = json.load(file)
@@ -509,7 +509,7 @@ async def GetCutoffFormatting(server: str, tier: int, graph: bool):
                 EPPerHour = "{:,}".format(EPPerHour)
             if graph:
                 FileName = f"{EventID}_{server}_{tier}.png"
-                SavedFile = f"img/graphs/{FileName}"
+                SavedFile = f"data/img/graphs/{FileName}"
                 if os.path.exists(SavedFile):
                     from discord import File
                     DiscordFileObject = File(SavedFile,filename=FileName)

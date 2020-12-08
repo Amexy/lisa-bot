@@ -31,7 +31,7 @@ class Game(commands.Cog):
                 im = Image.new("RGBA", (180, 180))
                 Folder = str(math.floor(int(x) / 50)).zfill(2)
                 ResourceSetName = CardAPI[x]['resourceSetName']
-                IconsPath = f"img/icons/base_icons/{x}.png"
+                IconsPath = f"data/img/icons/base_icons/{x}.png"
                 Rarity = str(CardAPI[x]['rarity']) 
                  
                 if int(Rarity) > 0:
@@ -128,7 +128,7 @@ class Game(commands.Cog):
             BandMembers.append(info.current_band.card5)
             BandFileName = await GenerateBandandTitlesImage(BandMembers,TitlesInfo, server)
             BandImageFile = discord.File(BandFileName[1], filename=BandFileName[0])
-            icon = discord.File(f"img/icons/base_icons/{ProfilePicture}", filename=f'{ProfilePicture}')
+            icon = discord.File(f"data/img/icons/base_icons/{ProfilePicture}", filename=f'{ProfilePicture}')
             embed.set_thumbnail(url=f"attachment://{ProfilePicture}")
             embed.set_image(url=f"attachment://{BandFileName[0]}")
 
@@ -190,7 +190,7 @@ class Game(commands.Cog):
                         gachasEnd.append(time.strftime("%d %b %Y", time.localtime(int(closedAt / 1000))))        
         IconPaths = []
         for chara, id in zip(CardCharaNames, CardIds):
-            IconPaths.append(f"img/icons/{chara.lower()}/4/{id}.png")
+            IconPaths.append(f"data/img/icons/{chara.lower()}/4/{id}.png")
         images = [Image.open(x) for x in IconPaths]
         widths, heights = zip(*(i.size for i in images))
         total_width = sum(widths) 
@@ -203,7 +203,7 @@ class Game(commands.Cog):
         from discord import File
         import uuid
         FileName = str(uuid.uuid4()) + '.png'
-        SavedFile = "img/imgTmp/" + FileName
+        SavedFile = "data/img/imgTmp/" + FileName
         new_im.save(SavedFile)
         DiscordFileObject = File(SavedFile, filename=FileName)
         embed=discord.Embed()
@@ -441,7 +441,7 @@ class Game(commands.Cog):
             enRelease = card.enRelease
             jpRelase = card.jpRelease
             ImageFileObject = File(imagePath[0],filename=imagePath[1])
-            ThumbnailFileObject = File(f'img/icons/full_icons/{card.cardId}.png',filename=f'{card.cardId}.png')
+            ThumbnailFileObject = File(f'data/img/icons/full_icons/{card.cardId}.png',filename=f'{card.cardId}.png')
             embed = discord.Embed(title=f'{card.cardName}',color=discord.Color.blue(),url=f'https://bestdori.com/info/cards/{card.cardId}')
             embed.set_thumbnail(url=f'attachment://{card.cardId}.png')
             embed.add_field(name='EN Release',value=enRelease,inline=True)

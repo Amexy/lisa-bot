@@ -68,9 +68,9 @@ class Fun(commands.Cog):
         from commands.apiFunctions import get_bestdori_title_names_api
         titles = await get_bestdori_title_names_api(server)
         for title in tqdm(titles, "Extracting titles.."):
-            if not os.path.isfile(f'img/titles/{server}/{title}'):
+            if not os.path.isfile(f'data/img/titles/{server}/{title}'):
                 r = requests.get(f'https://bestdori.com/assets/{server}/thumb/degree_rip/{title}',stream=True)
-                with open(f'img/titles/{server}/{title}', 'wb') as out_file:
+                with open(f'data/img/titles/{server}/{title}', 'wb') as out_file:
                     shutil.copyfileobj(r.raw, out_file)
                 del r  
         print('Finished extracting titles')
@@ -81,216 +81,23 @@ class Fun(commands.Cog):
         AllThreeStarCards = []
         AllTwoStarCards = []
 
-        for folder in os.listdir("img/icons/"):
+        for folder in os.listdir("data/img/icons/"):
             if folder != '.DS_Store':
-                for subfolder in os.listdir(f"img/icons/{folder}"):
+                for subfolder in os.listdir(f"data/img/icons/{folder}"):
                     if subfolder == '2':
-                        for file in os.listdir(f"img/icons/{folder}/{subfolder}"):
-                            AllTwoStarCards.append(f"img/icons/{folder}/{subfolder}/" + file)
+                        for file in os.listdir(f"data/img/icons/{folder}/{subfolder}"):
+                            AllTwoStarCards.append(f"data/img/icons/{folder}/{subfolder}/" + file)
                     elif subfolder == '3':
-                        for file in os.listdir(f"img/icons/{folder}/{subfolder}"):
-                            AllThreeStarCards.append(f"img/icons/{folder}/{subfolder}/" + file)
+                        for file in os.listdir(f"data/img/icons/{folder}/{subfolder}"):
+                            AllThreeStarCards.append(f"data/img/icons/{folder}/{subfolder}/" + file)
                     elif subfolder == '4':
-                        for file in os.listdir(f"img/icons/{folder}/{subfolder}"):
-                            AllFourStarCards.append(f"img/icons/{folder}/{subfolder}/" + file)
+                        for file in os.listdir(f"data/img/icons/{folder}/{subfolder}"):
+                            AllFourStarCards.append(f"data/img/icons/{folder}/{subfolder}/" + file)
                     else:
                         pass
 
         return AllTwoStarCards, AllThreeStarCards, AllFourStarCards
 
-    @ctime
-    async def GetRollStats(self, user, *Chara):
-        import json
-        try:
-            if Chara:
-                Chara = Chara[0] 
-                FileName = f'databases/rolls/{Chara}.json'
-            else:
-                FileName = 'databases/rolls/rolls.json'
-            with open(FileName) as file:
-                api = json.load(file)
-            user = self.bot.get_user(user)
-            Rolled = []
-            # Character specific roll databases store the amount of cards rolled for that character, not how many rolls have been done total, hence this logic below
-            TotalRolls = api[str(user.id)]['TotalRolls'] * 10 if not Chara else api[str(user.id)]['TotalRolls']
-            Rolled.append(TotalRolls)
-            Rolled.append(api[str(user.id)]['TwoStars'])
-            Rolled.append(api[str(user.id)]['ThreeStars'])
-            Rolled.append(api[str(user.id)]['FourStars'])
-            Rolled.append(str(round(((Rolled[3] / Rolled[0]) * 100), 2)) + '%')
-            Rolled.append(user.avatar_url.BASE + user.avatar_url._url)
-            return Rolled
-        except KeyError:
-            return 'No stats found for that user'
-        except:
-            return 'Unknown error. If this keeps happening please use the `notify` command to let Josh know'
-
-    @ctime
-    async def GetUsersRolls(self, user, Include3Star: True):
-        FileName = 'databases/rolls/roll_albums.json'
-        with open(FileName) as file:
-            api = json.load(file)
-        user = str(user)
-        if api[user]:
-            if Include3Star:
-                return api[user]['Cards']['3'],api[user]['Cards']['4']
-            else:
-                return api[user]['Cards']['4']
-    
-    @ctime
-    async def UpdateRollAlbumJSON(self, UserID, Name, Roll):
-        # how many times will i manually make a json file before putting it into its own function
-        import json
-        FileName = 'databases/rolls/roll_albums.json'
-        try:
-            with open(FileName) as file:
-                api = json.load(file)
-        except (json.JSONDecodeError, FileNotFoundError):
-            # Create the file and add an empty dict to it so we can load the json file
-            with open(FileName, 'a+') as file:
-                data = {}
-                json.dump(data, file, indent=2)
-            
-            # Load the newly created file
-            with open(FileName) as file:
-                api = json.load(file)
-
-        import re
-        TwoStars = []
-        ThreeStars = []
-        FourStars = []
-        for CardID in Roll:
-            CardInfo = re.search('icons/([a-zA-Z]*)\/([0-9]*)\/([0-9]*)', CardID)
-            CardRarity = CardInfo[2]
-            if CardRarity == '2':
-                TwoStars.append(int(CardInfo[3]))
-            elif CardRarity == '3':
-                ThreeStars.append(int(CardInfo[3]))
-            else:
-                FourStars.append(int(CardInfo[3]))
-                
-        # Check if there's an entry for the UserID in the json file 
-        if str(UserID) in api:
-            [api[str(UserID)]['Cards']['2'].append(x) for x in TwoStars if x not in api[str(UserID)]['Cards']['2']]
-            [api[str(UserID)]['Cards']['3'].append(x) for x in ThreeStars if x not in api[str(UserID)]['Cards']['3']]
-            [api[str(UserID)]['Cards']['4'].append(x) for x in FourStars if x not in api[str(UserID)]['Cards']['4']]
-            if 'Name' not in api[str(UserID)]:
-                api[str(UserID)].update({'Name' : Name})
-            with open(FileName, 'w') as f:
-                json.dump(api, f)
-                
-        # This adds a new user to the database/dict
-        else:
-            data = {UserID: {
-                            "Name" : Name,
-                            "Cards" : {2: TwoStars, 3: ThreeStars, 4: FourStars}
-                            }
-                    }
-            with open(FileName, 'w') as f:
-                api.update(data)
-                json.dump(api, f)
-
-    @ctime
-    async def UpdateCharaRollsJSON(self, UserIDOrOverall, Name, Chara, CardType):
-        import json
-        FileName = f'databases/rolls/{Chara}.json'
-        try:
-            with open(FileName) as file:
-                api = json.load(file)
-        except (json.JSONDecodeError, FileNotFoundError):
-            # Create the file and add an empty dict to it so we can load the json file
-            with open(FileName, 'a+') as file:
-                data = {}
-                json.dump(data, file, indent=2)
-            
-            # Load the newly created file
-            with open(FileName) as file:
-                api = json.load(file)
-        if str(UserIDOrOverall) in api:
-            if CardType == '2':
-                Key = 'TwoStars'
-            elif CardType == '3':
-                Key = 'ThreeStars'
-            elif CardType == '4':
-                Key = 'FourStars'
-            api[str(UserIDOrOverall)][Key] += 1  
-            api[str(UserIDOrOverall)]['TotalRolls'] += 1
-
-            if 'Name' not in api[str(UserIDOrOverall)]:
-                api[str(UserIDOrOverall)].update({'Name' : Name})
-            with open(FileName, 'w') as f:
-                json.dump(api, f)
-        # This adds a new key to the dictionary
-        else:
-            TwoStars = 0
-            ThreeStars = 0
-            FourStars = 0
-            if CardType == '2':
-                TwoStars += 1
-            elif CardType == '3':
-                ThreeStars += 1
-            elif CardType == '4':
-                FourStars += 1
-  
-            data = {UserIDOrOverall: {
-                            "TotalRolls" : 1,
-                            "TwoStars" : TwoStars,
-                            "ThreeStars" : ThreeStars,
-                            "FourStars" : FourStars,
-                            "Name" : Name
-                            }
-                    }
-            with open(FileName, 'w') as f:
-                api.update(data)
-                json.dump(api, f)
-
-    @ctime
-    async def UpdateRollsJSON(self, UserIDOrOverall, Name, TwoStars, ThreeStars, FourStars):
-        import json
-        FileName = 'databases/rolls/rolls.json'
-        try:
-            with open(FileName) as file:
-                api = json.load(file)
-        except (json.JSONDecodeError, FileNotFoundError):
-            # Create the file and add an empty dict to it so we can load the json file
-            with open(FileName, 'a+') as file:
-                data = {}
-                json.dump(data, file, indent=2)
-            
-            # Load the newly created file
-            with open(FileName) as file:
-                api = json.load(file)
-
-        # Check if there's an entry for the EventID in the json file 
-        if str(UserIDOrOverall) in api:
-            api[str(UserIDOrOverall)]['TwoStars'] += TwoStars        
-            api[str(UserIDOrOverall)]['ThreeStars'] += ThreeStars
-            api[str(UserIDOrOverall)]['FourStars'] += FourStars
-            api[str(UserIDOrOverall)]['TotalRolls'] += 1
-            if 'Name' not in api[str(UserIDOrOverall)]:
-                api[str(UserIDOrOverall)].update({'Name' : Name})
-            with open(FileName, 'w') as f:
-                json.dump(api, f)
-        # This adds a new key to the dictionary
-        else:
-            data = {UserIDOrOverall: {
-                            "TotalRolls" : 1,
-                            "TwoStars" : TwoStars,
-                            "ThreeStars" : ThreeStars,
-                            "FourStars" : FourStars,
-                            "Name" : Name
-                            }
-                    }
-            with open(FileName, 'w') as f:
-                api.update(data)
-                json.dump(api, f)
-
-    @ctime
-    async def GetCardRarityCount(self, rarity: int):
-        from commands.apiFunctions import get_bestdori_all_cards_api5
-        all_cards_api = await get_bestdori_all_cards_api5()
-        count = sum(map(lambda value: value["rarity"] == rarity, all_cards_api.values()))
-        return count
 
     @commands.command(name='updatecards',
                       hidden=True,
@@ -466,7 +273,7 @@ class Fun(commands.Cog):
                         total_four_stars = await self.GetCardRarityCount(4)
                         
                 for card_id in owned_card_ids:
-                    trained_icons_paths.append(f"img/icons/full_icons/{card_id}_trained.png")
+                    trained_icons_paths.append(f"data/img/icons/full_icons/{card_id}_trained.png")
                 
                 owned_four_star_count = len(owned_four_star_ids)
                 embed.add_field(name='4*',value=f'{owned_four_star_count} / {total_four_stars}', inline=True)
@@ -586,12 +393,12 @@ class Fun(commands.Cog):
                                 else:
                                     characters.append(x)
                     for chara in characters:
-                        for x in os.listdir(f"img/icons/{chara}/2"):
-                            all_two_star_cards_paths.append(f"img/icons/{chara}/2/" + x)
-                        for x in os.listdir(f"img/icons/{chara}/3"):
-                            all_three_star_cards_paths.append(f"img/icons/{chara}/3/" + x)
-                        for x in os.listdir(f"img/icons/{chara}/4"):
-                            all_four_star_cards_paths.append(f"img/icons/{chara}/4/" + x),
+                        for x in os.listdir(f"data/img/icons/{chara}/2"):
+                            all_two_star_cards_paths.append(f"data/img/icons/{chara}/2/" + x)
+                        for x in os.listdir(f"data/img/icons/{chara}/3"):
+                            all_three_star_cards_paths.append(f"data/img/icons/{chara}/3/" + x)
+                        for x in os.listdir(f"data/img/icons/{chara}/4"):
+                            all_four_star_cards_paths.append(f"data/img/icons/{chara}/4/" + x),
 
             for _ in range(0,9):
                 value = random.random()
@@ -670,7 +477,7 @@ class Fun(commands.Cog):
             import uuid
             from discord import File
             file_name = str(ctx.message.author.id) + '_' + str(uuid.uuid4()) + '.png'
-            saved_file_path = "img/rolls/" + file_name
+            saved_file_path = "data/img/rolls/" + file_name
             new_im.save(saved_file_path)
             discord_file = File(saved_file_path,filename=file_name)
             await update_rolls_db(roll_info)
@@ -723,7 +530,7 @@ class Fun(commands.Cog):
         # Pubcord
         if ctx.message.guild.id != 432379300684103699:
             from discord import File
-            SavedFile = "img/lisaxodia.png"
+            SavedFile = "data/img/lisaxodia.png"
             DiscordFileObject = File(SavedFile)
             await ctx.send(file=DiscordFileObject)
         else:
@@ -789,7 +596,7 @@ class Fun(commands.Cog):
                 pic = random.choice(db[newquery]['pics'])
                 PicID = pic['id']
                 PicURL = pic['image_urls']['large']
-                SavedPicPath = f'img/imgTmp/{PicID}_p0.jpg'
+                SavedPicPath = f'data/img/imgTmp/{PicID}_p0.jpg'
                 response = requests.get(PicURL, 
                                         headers={
                                             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36', 
@@ -951,9 +758,9 @@ async def UpdateCardIcons():
             SplitList = CharaName.split(' ', 1)
             CharaName = SplitList[0].lower()
             Type = CardAPI[x]['type']
-            BaseIconsPath = f"img/icons/base_icons/{x}.png"
-            FullIconsPath  = f"img/icons/full_icons/{x}.png"
-            GachaIconsPath = f"img/icons/{CharaName}/{Rarity}/{x}.png"
+            BaseIconsPath = f"data/img/icons/base_icons/{x}.png"
+            FullIconsPath  = f"data/img/icons/full_icons/{x}.png"
+            GachaIconsPath = f"data/img/icons/{CharaName}/{Rarity}/{x}.png"
             GachaTypes = ['limited','permanent']
             # DO THE GACHA ICONS IN THIS LOGIC TOO IF RARITY > 1
             if not path.exists(FullIconsPath):
@@ -965,25 +772,25 @@ async def UpdateCardIcons():
                     URLList.append(TrainedCardURL)
                 for url in URLList:
                     if path.exists(FullIconsPath):
-                        FullIconsPath = f"img/icons/full_icons/{x}_trained.png"
-                        BaseIconsPath = f"img/icons/base_icons/{x}_trained.png"
+                        FullIconsPath = f"data/img/icons/full_icons/{x}_trained.png"
+                        BaseIconsPath = f"data/img/icons/base_icons/{x}_trained.png"
                     image = requests.get(url)
                     try:
                         image = Image.open(BytesIO(image.content))
                         im.paste(image)
                         im.save(BaseIconsPath)
                         if Rarity == '1':
-                            rarityPng = "img/2star.png"
-                            starPng = "img/star1.png"
+                            rarityPng = "data/img/2star.png"
+                            starPng = "data/img/star1.png"
                         elif Rarity == '2':
-                            rarityPng = "img/2star.png"
-                            starPng = "img/star2.png"
+                            rarityPng = "data/img/2star.png"
+                            starPng = "data/img/star2.png"
                         elif Rarity == '3':
-                            rarityPng = "img/3star.png"
-                            starPng = "img/star3.png"
+                            rarityPng = "data/img/3star.png"
+                            starPng = "data/img/star3.png"
                         else:
-                            rarityPng = "img/4star.png"
-                            starPng = "img/star4.png"
+                            rarityPng = "data/img/4star.png"
+                            starPng = "data/img/star4.png"
                         rarityBg = Image.open(rarityPng)
                         starBg = Image.open(starPng)
                         if Rarity == '1':
@@ -993,17 +800,17 @@ async def UpdateCardIcons():
                         im.paste(rarityBg, mask=rarityBg)
                     
                         if Attribute == 'powerful':
-                            attrPng = "img/power2.png"
+                            attrPng = "data/img/power2.png"
                         elif Attribute == 'cool':
-                            attrPng = "img/cool2.png"
+                            attrPng = "data/img/cool2.png"
                         elif Attribute == 'pure':
-                            attrPng = "img/pure2.png"
+                            attrPng = "data/img/pure2.png"
                         else:
-                            attrPng = "img/happy2.png"
+                            attrPng = "data/img/happy2.png"
                         attrBg = Image.open(attrPng)
                         im.paste(attrBg, (132, 2), mask=attrBg)
                         
-                        bandPng = f"img/band_{BandID}.png"
+                        bandPng = f"data/img/band_{BandID}.png"
                         bandBg = Image.open(bandPng)
                         im.paste(bandBg, (1, 2), mask=bandBg)
                         # The last URL in the list will always be the trained card which isn't needed for the gacha cards

@@ -6,25 +6,24 @@ from discord.user import User
 from discord import RawReactionActionEvent
 
 # Databases
-eventCheckDb2min = 'databases/eventCheckDb2min.json'
-songUpdates1Min = 'databases/songUpdates1Min.json'
-eventCheckDb1hr = 'databases/eventCheckDb1hr.json'
-eventCheckDb1min = 'databases/eventCheckDb1min.json'
-enEventUpdatesDB = 'databases/enEventUpdatesDB.json'
-jpEventUpdatesDB = 'databases/jpEventUpdatesDB.json'
-bestdoriENNewsDB = 'databases/enNewsDB.json'
-bestdoriJPNewsDB = 'databases/jpNewsDB.json'
-bestdoriCNNewsDB = 'databases/cnNewsDB.json'
-bestdoriAllNewsDB = 'databases/allNewsDB.json'
-prefixDb = 'databases/prefixdb.json'
-t100DB = 'databases/t100DB.json'
-t1000DB = 'databases/t1000DB.json'
-t2500DB = 'databases/t2500DB.json'
-jp2MinuteTracking = 'databases/jp2MinuteTrackingDB.json'
-jp1HourTracking = 'databases/jp1HourTrackingDB.json'
-botupdatesDB = 'databases/botupdates.json'
-premium_db = 'databases/premium_users.json'
-rolls_db = 'databases/rolls/rolls_new.json'
+eventCheckDb2min = 'data/databases/tinydb/eventCheckDb2min.json'
+songUpdates1Min = 'data/databases/tinydb/songUpdates1Min.json'
+eventCheckDb1hr = 'data/databases/tinydb/eventCheckDb1hr.json'
+eventCheckDb1min = 'data/databases/tinydb/eventCheckDb1min.json'
+enEventUpdatesDB = 'data/databases/tinydb/enEventUpdatesDB.json'
+jpEventUpdatesDB = 'data/databases/tinydb/jpEventUpdatesDB.json'
+bestdoriENNewsDB = 'data/databases/tinydb/enNewsDB.json'
+bestdoriJPNewsDB = 'data/databases/tinydb/jpNewsDB.json'
+bestdoriCNNewsDB = 'data/databases/tinydb/cnNewsDB.json'
+bestdoriAllNewsDB = 'data/databases/tinydb/allNewsDB.json'
+prefixDb = 'data/databases/tinydb/prefixdb.json'
+t100DB = 'data/databases/tinydb/t100DB.json'
+t1000DB = 'data/databases/tinydb/t1000DB.json'
+t2500DB = 'data/databases/tinydb/t2500DB.json'
+jp2MinuteTracking = 'data/databases/tinydb/jp2MinuteTrackingDB.json'
+jp1HourTracking = 'data/databases/tinydb/jp1HourTrackingDB.json'
+botupdatesDB = 'data/databases/tinydb/botupdates.json'
+premium_db = 'data/databases/tinydb/premium_users.json'
 
 from main import ctime
 @ctime
@@ -310,7 +309,7 @@ def addChannelToDatabaseSongs(channel: TextChannel):
 #######################
 def addChannelToCutoffDatabase(channel: TextChannel, tier: int, server: str):
     success = True
-    db = f"databases/cutoff_updates/{server}_t{tier}.json"
+    db = f"data/databases/tinydb/cutoff_updates/{server}_t{tier}.json"
     db = TinyDB(db)
     try:
         db.upsert({'name': channel.name,
@@ -329,7 +328,7 @@ def addChannelToCutoffDatabase(channel: TextChannel, tier: int, server: str):
 
 def rmChannelFromCutoffDatabase(channel: TextChannel, tier: int, server: str):
     success = True
-    db = f"databases/cutoff_updates/{server}_t{tier}.json"
+    db = f"data/databases/tinydb/cutoff_updates/{server}_t{tier}.json"
     db = TinyDB(db)
     try:
         db.remove((where('id') == channel.id) & (where('guild') == channel.guild.id))

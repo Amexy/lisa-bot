@@ -436,24 +436,24 @@ def generateImage(card: Card, palette: Palette) -> str:
 
     rarity = card.rarity
     if rarity == Rarity.Normal:
-        rarityPng = "img/normal.png"
+        rarityPng = "data/img/normal.png"
         InitialXOffset = 570        
         TextOffset1 = 290
         TextOffset2 = 540
     elif rarity == Rarity.Rare:
-        rarityPng = "img/rare.png"
+        rarityPng = "data/img/rare.png"
         InitialXOffset = 570
         TextOffset1 = 290
         TextOffset2 = 540
     elif rarity == Rarity.Sr:
-        rarityPng = "img/sr.png"
+        rarityPng = "data/img/sr.png"
         trained_card: requests.models.Response = requests.get('https://bestdori.com/assets/jp/characters/resourceset/' + card.resourceName + '_rip/card_after_training.png')
         cards.append(Image.open(BytesIO(trained_card.content)))
         InitialXOffset = 855
         TextOffset1 = 568
         TextOffset2 = 818
     else:
-        rarityPng = "img/ssr.png"
+        rarityPng = "data/img/ssr.png"
         trained_card: requests.models.Response = requests.get('https://bestdori.com/assets/jp/characters/resourceset/' + card.resourceName + '_rip/card_after_training.png')
         cards.append(Image.open(BytesIO(trained_card.content)))
         InitialXOffset = 855
@@ -479,13 +479,13 @@ def generateImage(card: Card, palette: Palette) -> str:
         xoffset += 277
     attribute = card.attribute
     if attribute == Attribute.Powerful:
-        attrPng = "img/power.png"
+        attrPng = "data/img/power.png"
     elif attribute == Attribute.Cool:
-        attrPng = "img/cool.png"
+        attrPng = "data/img/cool.png"
     elif attribute == Attribute.Pure:
-        attrPng = "img/pure.png"
+        attrPng = "data/img/pure.png"
     else:
-        attrPng = "img/happy.png"
+        attrPng = "data/img/happy.png"
     attrBg = Image.open(attrPng)
     im.paste(attrBg, (796, 4), mask=attrBg)
 
@@ -557,6 +557,6 @@ def generateImage(card: Card, palette: Palette) -> str:
     imageDraw.text((TextOffset1, baseY), skillText, font=segoe14, spacing=-2, fill="white", stroke_width=1, stroke_fill="black")
 
     fileName = str(uuid.uuid1()) + ".png"
-    filePath = "img/imgTmp/" + fileName
+    filePath = "data/img/imgTmp/" + fileName
     im.save(filePath)
     return filePath, fileName

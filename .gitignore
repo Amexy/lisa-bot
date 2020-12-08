@@ -4,10 +4,10 @@ databases/
 protodefs/
 serverlogs/
 venv/
-img/rolls/*
-img/icons/*
-img/imgTmp/*
-img/graphs/*
+data/img/rolls/*
+data/img/icons/*
+data/img/imgTmp/*
+data/img/graphs/*
 startup/login.py
 commands/cogs/seiyuu.py
 commands/cogs/admin.py
@@ -37,3 +37,6 @@ commands/cogs/CommandErrorHandler.py
 disc/disc.py
 disc/disc.pyproj
 *.db
+data/img/pfps/*
+data/img/chibis/*
+data/img/titles/*
