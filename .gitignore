@@ -40,3 +40,5 @@ data/img/pfps/*
 data/img/chibis/*
 data/img/titles/*
 apps/
+*.pickle
+chromedriver

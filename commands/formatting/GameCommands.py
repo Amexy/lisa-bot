@@ -77,6 +77,7 @@ def getEPPerFlame(flamesUsed: int):
     return flamesEPModifier
 
 async def GetSongInfo(songName: str):
+    from commands.apiFunctions import GetSongAPI
     songAPI = await GetSongAPI()
     for key in songAPI:
         element = songAPI[key]['musicTitle'][1]
