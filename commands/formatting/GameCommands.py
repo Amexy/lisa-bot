@@ -32,14 +32,19 @@ async def get_chara_card_count(character, rarity):
     card_api = await get_bestdori_all_cards_api5()
     chara_api = await GetBestdoriAllCharactersAPI5()
     count = 0
-    for chara in chara_api:
-        if character in chara_api[chara]['characterName'][1].lower():
-            chara_id = int(chara)
-            break 
+    # I think I did this because saya came first and yes it's a hack
+    if character.lower() == 'aya':
+        chara_id = 16
+    else:
+        for chara in chara_api:
+            if character in chara_api[chara]['characterName'][1].lower():
+                chara_id = int(chara)
+                break 
     for card in card_api:
-        if chara_id == card_api[card]['characterId'] and rarity == card_api[card]['rarity']:
+        if chara_id == card_api[card]['characterId'] and rarity == card_api[card]['rarity'] and card_api[card]['type'] in ['permanent', 'limited']:
             count += 1
     return count
+
 
 #######################
 #    Game Commands    #

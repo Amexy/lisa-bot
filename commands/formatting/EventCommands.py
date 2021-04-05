@@ -277,14 +277,14 @@ async def CalculatecutoffEstimates(server, tier, EventID):
     Key = await GetServerAPIKey(server)
     RatesAPI = await GetBestdoriRateAPI()
     EventType = await GetEventType(EventID)
-    TierKey = await GetTierKey(tier)
+    #TierKey = await GetTierKey(tier)
     if EventType == 'livetry':
         EventType = 'live_try'
     elif EventType == 'mission':
         EventType = 'mission_live'
     Rate = ''
     for x in RatesAPI:
-        if x['type'] == EventType and x['server'] == Key and x['tier'] == TierKey:
+        if x['type'] == EventType and x['server'] == Key and x['tier'] == tier:
             Rate = x['rate']
     if not Rate:
         Rate = .01

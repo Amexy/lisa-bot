@@ -121,6 +121,8 @@ class Acquisition(Enum):
     Limited = "limited"
     Event = "event"
     Campaign = "campaign"
+    Dreamfes = "dreamfes"
+    Birthday = "birthday"
     Others = "others"
 
 
@@ -234,7 +236,9 @@ def mapJsonToCards(k, v, skills) -> Card:
     enName = v['prefix'][1]
     if enName:
         cardName = enName
-
+    else:
+        cardName = v['prefix'][0]
+        
     stat = v['stat']
     from datetime import datetime
 
@@ -253,7 +257,11 @@ def mapJsonToCards(k, v, skills) -> Card:
         technique = maxLvl['technique']
         visual = maxLvl['performance']
     else:
-        maxLvl = stat[str(levelLimit + 10)]
+        if acquisition.value != 'birthday':
+            maxLvl = stat[str(levelLimit + 10)]
+        else:
+            # birthday cards come max level
+            maxLvl = stat[str(levelLimit)]
         performance = maxLvl['performance']
         technique = maxLvl['technique']
         visual = maxLvl['performance']
@@ -431,34 +439,43 @@ def findCardFromArguments(cardList: List[Card], arg: FilteredArguments) -> Resul
 
 def generateImage(card: Card, palette: Palette) -> str:
     cards = []
-    normal_card: requests.models.Response = requests.get('https://bestdori.com/assets/jp/characters/resourceset/' + card.resourceName + '_rip/card_normal.png')
-    cards.append(Image.open(BytesIO(normal_card.content)))
-
-    rarity = card.rarity
-    if rarity == Rarity.Normal:
-        rarityPng = "data/img/normal.png"
+    if card.acquisition.value != 'birthday':
+        normal_card: requests.models.Response = requests.get('https://bestdori.com/assets/jp/characters/resourceset/' + card.resourceName + '_rip/card_normal.png')
+        cards.append(Image.open(BytesIO(normal_card.content)))
+        rarity = card.rarity
+        if rarity == Rarity.Normal:
+            rarityPng = "data/img/normal.png"
+            InitialXOffset = 570        
+            TextOffset1 = 290
+            TextOffset2 = 540
+        elif rarity == Rarity.Rare:
+            rarityPng = "data/img/rare.png"
+            InitialXOffset = 570
+            TextOffset1 = 290
+            TextOffset2 = 540
+        elif rarity == Rarity.Sr:
+            rarityPng = "data/img/sr.png"
+            trained_card: requests.models.Response = requests.get('https://bestdori.com/assets/jp/characters/resourceset/' + card.resourceName + '_rip/card_after_training.png')
+            cards.append(Image.open(BytesIO(trained_card.content)))
+            InitialXOffset = 855
+            TextOffset1 = 568
+            TextOffset2 = 818
+        else:
+            rarityPng = "data/img/ssr.png"
+            trained_card: requests.models.Response = requests.get('https://bestdori.com/assets/jp/characters/resourceset/' + card.resourceName + '_rip/card_after_training.png')
+            cards.append(Image.open(BytesIO(trained_card.content)))
+            InitialXOffset = 855
+            TextOffset1 = 568
+            TextOffset2 = 818
+    else:
+        rarity = card.rarity
+        normal_card: requests.models.Response = requests.get('https://bestdori.com/assets/jp/characters/resourceset/' + card.resourceName + '_rip/card_after_training.png')
+        cards.append(Image.open(BytesIO(normal_card.content))) 
+        rarityPng = "data/img/ssr.png"
         InitialXOffset = 570        
         TextOffset1 = 290
         TextOffset2 = 540
-    elif rarity == Rarity.Rare:
-        rarityPng = "data/img/rare.png"
-        InitialXOffset = 570
-        TextOffset1 = 290
-        TextOffset2 = 540
-    elif rarity == Rarity.Sr:
-        rarityPng = "data/img/sr.png"
-        trained_card: requests.models.Response = requests.get('https://bestdori.com/assets/jp/characters/resourceset/' + card.resourceName + '_rip/card_after_training.png')
-        cards.append(Image.open(BytesIO(trained_card.content)))
-        InitialXOffset = 855
-        TextOffset1 = 568
-        TextOffset2 = 818
-    else:
-        rarityPng = "data/img/ssr.png"
-        trained_card: requests.models.Response = requests.get('https://bestdori.com/assets/jp/characters/resourceset/' + card.resourceName + '_rip/card_after_training.png')
-        cards.append(Image.open(BytesIO(trained_card.content)))
-        InitialXOffset = 855
-        TextOffset1 = 568
-        TextOffset2 = 818
+
     rarityBg = Image.open(rarityPng)
     im = Image.new("RGBA", (InitialXOffset, 360))
     im.paste(rarityBg, mask=rarityBg)
@@ -496,15 +513,16 @@ def generateImage(card: Card, palette: Palette) -> str:
     for _ in range(rarity.value):
         rarityText = rarityText + star
 
-    # This font isn't installed by default on macOS. The name must entered exactly how it was installed as well
+    # This font isn't installed by default on all operating systems. The name must entered exactly how it was installed as well
     # seguisym.ttf for Windows
     # SEGUISYM.TTF for MacOS
-    segoe26 = truetype('seguisym.ttf', 22)
+    # SegoeUISymbol.pfb for Linux
+    segoe26 = truetype('SegoeUISymbol.pfb', 22)
     imageDraw.text((TextOffset1, 3), rarityText, font=segoe26, fill="white", stroke_width=1, stroke_fill="black")
 
-    segoe18 = truetype('seguisym.ttf', 22)
-    segoe16 = truetype('seguisym.ttf', 20)
-    segoe14 = truetype('seguisym.ttf', 16)
+    segoe18 = truetype('SegoeUISymbol.pfb', 22)
+    segoe16 = truetype('SegoeUISymbol.pfb', 20)
+    segoe14 = truetype('SegoeUISymbol.pfb', 16)
 
     cardNameText = card.cardName
     cardNameSizeX = segoe18.getsize(cardNameText)[0]

@@ -33,10 +33,10 @@ out.profile
 temp.dat
 temp2.dat
 commands/database_handler.py
-commands/cogs/CommandErrorHandler.py
 disc/disc.py
 disc/disc.pyproj
 *.db
 data/img/pfps/*
 data/img/chibis/*
 data/img/titles/*
+apps/

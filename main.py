@@ -8,11 +8,11 @@ import discord
 import asyncio
 import time
 # checks prefix database for each message. could probably improve this
-default_prefix = ","
+default_prefix = "."
 
 
 def prefix(bot, message):
-    prefixList = TinyDB('data/databases/prefixdb.json')
+    prefixList = TinyDB('data/databases/tinydb/prefixdb.json')
     results = prefixList.search(where('id') == message.guild.id)
     if results:
         prefix = results[0]['prefix']
@@ -69,8 +69,24 @@ async def on_member_join(member):
 async def on_message(message):
     ctx = await bot.get_context(message)
     if ctx.author.bot is False:
-        await bot.invoke(ctx)
-
+        await bot.invoke(ctx)    
+ 
+async def on_command(ctx):
+    from tabulate import tabulate
+    from pytz import timezone
+    from datetime import datetime
+    fmt = "%Y-%m-%d %H:%M:%S %Z%z"
+    now_time = datetime.now(timezone('US/Central'))
+    channel = bot.get_channel(666793281522368533)
+    message = []
+    message.append(["Time", now_time.strftime(fmt)])
+    message.append(["ID", str(ctx.message.author.id)]) 
+    message.append(["User", str(ctx.message.author.name) + "#" + str(ctx.message.author.discriminator)]) 
+    message.append(["Server", str(ctx.message.guild.name)]) 
+    message.append(["Channel", str(ctx.message.channel.name)]) 
+    message.append(["Command", str(ctx.invoked_with)]) 
+    message.append(["Parameters", str(ctx.message.content)])
+    await channel.send("```" + tabulate(message,tablefmt="plain") + "```")
 
 @bot.event
 async def on_guild_join(guild):
@@ -125,4 +141,5 @@ bot.load_extension("commands.cogs.Moderation")
 bot.load_extension("commands.cogs.Loops")
 bot.load_extension("commands.cogs.Help")
 bot.load_extension("commands.cogs.Fun")
+bot.load_extension("commands.cogs.CommandErrorHandler")
 bot.run(TOKEN)

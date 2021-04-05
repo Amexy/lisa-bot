@@ -8,11 +8,7 @@ import discord, os, shutil, requests, asyncio
 class Misc(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
-    @commands.command(name='premium')
-    async def premium(self, ctx):
-        await ctx.send("As a way to recoup hosting costs, 2 minute tracking/archive data will become a premium feature of Lisabot. **Current pricing is $10/event**. Hourly will remain free for now.\n\nIf you'd like to purchase 2 minute tracking for your event, please send your payment through ko-fi and DM Josh#1373 your server ID and channel ID that will be used for 2 minute tracking. Developer mode must be enabled in Discord under your settings, right click the server and channel and select the `Copy ID` option.\n\nIf you have any questions, please let Josh#1373 know.\n\nhttps://ko-fi.com/lisabot")
-    
+            
     @commands.command(name='servericon',
                     aliases=['sp','si','serverpic'],
                     description="Uploads the server's icon")
@@ -41,10 +37,8 @@ class Misc(commands.Cog):
                      description='In the event that the loops (in particular 2 minute/1hr t10 posting) stop working, run this command to restart that process. If you want access to this command, please use the .notify command')
     async def reload(self, ctx, cog: str = ''):
         if not cog: #By default, it will reload the Loops command since this is the most common one that fails and users need access to
-            ValidUsers = [158699060893581313,384333652344963074,117394661886263302,119252023395876864,485843748647993375, 99640840929943552, 202289392394436609, 102201838752784384, 358733607151599636, 229933911717707776, 181690542730641408, 154997108603224064]
-            from commands.cogs.Updates import Updates
-            u = Updates
-            if ctx.message.author.id not in ValidUsers and ctx.message.guild.id not in u.premium_guilds:
+            ValidUsers = [133048058756726784,158699060893581313,384333652344963074,117394661886263302,119252023395876864,485843748647993375, 99640840929943552, 202289392394436609, 102201838752784384, 358733607151599636, 229933911717707776, 181690542730641408, 154997108603224064]
+            if ctx.message.author.id not in ValidUsers:
                 await ctx.send("You are not authorized to use this command. If you'd like access, please use the .notify command requesting access")
             else: 
                 for task in asyncio.Task.all_tasks():
@@ -153,7 +147,7 @@ class Misc(commands.Cog):
                     if x == FullMessage:
                         continue
                     FullMessage += " %s" % x
-                translator = Translator()
+                translator = Translator(service_urls=['translate.googleapis.com'])
                 TranslatedMessage = translator.translate(FullMessage)
                 output = TranslatedMessage.text
             except:

@@ -52,9 +52,9 @@ class Game(commands.Cog):
                 pass
     
     @commands.command(name='lookup',
-                      aliases=['find','search','lu'],
+                      aliases=['find','search', 'lu'],
                       description='Searches a player on the specified server by ID',
-                      help='Currently only supports EN. JP functionality coming at a later date.\n\n.lookup en 1540')
+                      help='.lookup en 1540')
     #@ctime
     async def lookup(self, ctx, server: str, player_id: int):
         try:
@@ -135,9 +135,11 @@ class Game(commands.Cog):
             await ctx.send(files=[icon,BandImageFile],embed=embed)
         except requests.exceptions.HTTPError:
             await ctx.send("```Failed looking up that player\n\nReason: Player ID not found```")
+        except FileNotFoundError:
+            await ctx.send("```Failed looking up that player\n\nReason: Titles haven't been updated. Please use the notify command to remind Josh```")
         except Exception as e:
             print(traceback.format_exc())
-            await ctx.send('Failed looking up that player. If you believe this to be a mistake, please use the notify command to let Josh know')
+            await ctx.send('Failed looking up that player. If you believe this to be a mistake, please use the notify command to let Josh know. Please include as much info as you can, such as the ID you were looking up and the server')
     @commands.command(name='level',
                     description='Given a current level, xp earned per song, and the amount of songs played, the end level will be provided',
                     help='.level 100 500 10')
@@ -422,37 +424,41 @@ class Game(commands.Cog):
                       help="There are several filters one can use to search. Rarity goes bEnter the character with optional filters to see card information\n\n.card lisa - Most recent Lisa 4* Card\n.card lisa df - Lisa Dreamfes Card\n.card lisa last - Last released Lisa 4*\n.card lisa last sr happy - Last released happy 3* Lisa\n.card title maritime detective - Lookup card with title \"Maritime Detective\"")
     #@ctime
     async def card(self, ctx: discord.abc.Messageable, *args):
-        from discord import File
-        if not args:
-            await ctx.send('No filters were entered. For help please use `.help card`')
-        else:
-            resultFilteredArguments = filterArguments(*args)
-            if resultFilteredArguments.failure:
-                return await ctx.send(resultFilteredArguments.failure)
-            cardsApi = requests.get('https://bestdori.com/api/cards/all.5.json').json()
-            skillsApi = requests.get('https://bestdori.com/api/skills/all.5.json').json()
-            cards = parseCards(cardsApi, skillsApi)
-            resultCard = findCardFromArguments(cards, resultFilteredArguments.success)
-            if resultCard.failure:
-                return await ctx.send(resultCard.failure)
-            card: Card = resultCard.success
-            palette = Palette(card.attribute)
-            imagePath = generateImage(card, palette)
-            enRelease = card.enRelease
-            jpRelase = card.jpRelease
-            ImageFileObject = File(imagePath[0],filename=imagePath[1])
-            ThumbnailFileObject = File(f'data/img/icons/full_icons/{card.cardId}.png',filename=f'{card.cardId}.png')
-            embed = discord.Embed(title=f'{card.cardName}',color=discord.Color.blue(),url=f'https://bestdori.com/info/cards/{card.cardId}')
-            embed.set_thumbnail(url=f'attachment://{card.cardId}.png')
-            embed.add_field(name='EN Release',value=enRelease,inline=True)
-            embed.add_field(name='\u200b',value='\u200b',inline=True)
-            embed.add_field(name='\u200b',value='\u200b',inline=True)
-            embed.add_field(name='JP Release',value=jpRelase,inline=True)
-            embed.add_field(name='\u200b',value='\u200b',inline=True)
-            embed.add_field(name='\u200b',value='\u200b',inline=True)
-            embed.set_image(url=f'attachment://{imagePath[1]}')
-            await ctx.send(embed=embed,files=[ThumbnailFileObject,ImageFileObject])
-
+        try:
+            from discord import File
+            if not args:
+                await ctx.send('No filters were entered. For help please use `.help card`')
+            else:
+                resultFilteredArguments = filterArguments(*args)
+                if resultFilteredArguments.failure:
+                    return await ctx.send(resultFilteredArguments.failure)
+                cardsApi = requests.get('https://bestdori.com/api/cards/all.5.json').json()
+                skillsApi = requests.get('https://bestdori.com/api/skills/all.5.json').json()
+                cards = parseCards(cardsApi, skillsApi)
+                resultCard = findCardFromArguments(cards, resultFilteredArguments.success)
+                if resultCard.failure:
+                    return await ctx.send(resultCard.failure)
+                card: Card = resultCard.success
+                palette = Palette(card.attribute)
+                imagePath = generateImage(card, palette)
+                enRelease = card.enRelease
+                jpRelase = card.jpRelease
+                ImageFileObject = File(imagePath[0],filename=imagePath[1])
+                ThumbnailFileObject = File(f'data/img/icons/full_icons/{card.cardId}.png',filename=f'{card.cardId}.png')
+                embed = discord.Embed(title=f'{card.cardName}',color=discord.Color.blue(),url=f'https://bestdori.com/info/cards/{card.cardId}')
+                embed.set_thumbnail(url=f'attachment://{card.cardId}.png')
+                embed.add_field(name='EN Release',value=enRelease,inline=True)
+                embed.add_field(name='\u200b',value='\u200b',inline=True)
+                embed.add_field(name='\u200b',value='\u200b',inline=True)
+                embed.add_field(name='JP Release',value=jpRelase,inline=True)
+                embed.add_field(name='\u200b',value='\u200b',inline=True)
+                embed.add_field(name='\u200b',value='\u200b',inline=True)
+                embed.set_image(url=f'attachment://{imagePath[1]}')
+                await ctx.send(embed=embed,files=[ThumbnailFileObject,ImageFileObject])
+        except Exception as e:
+            print(traceback.format_exc())
+            await ctx.send('Failed getting card info, please use the `notify` command and include the search options used')
+            
     @songinfo.error
     async def songinfo_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):

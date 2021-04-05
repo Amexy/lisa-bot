@@ -23,7 +23,7 @@ t2500DB = 'data/databases/tinydb/t2500DB.json'
 jp2MinuteTracking = 'data/databases/tinydb/jp2MinuteTrackingDB.json'
 jp1HourTracking = 'data/databases/tinydb/jp1HourTrackingDB.json'
 botupdatesDB = 'data/databases/tinydb/botupdates.json'
-premium_db = 'data/databases/tinydb/premium_users.json'
+# premium_db = 'data/databases/tinydb/premium_users.json'
 
 #from main import ctime
 #@ctime
@@ -77,7 +77,9 @@ async def get_roll_leaderboards_info(*character):
     conn = create_connection()           
     c = conn.cursor()
     table = "user_roll_stats" if not character else character[0]
-    r = c.execute(f"SELECT * FROM {table} INNER JOIN users ON users.discord_id = {table}.discord_id ORDER BY two_stars_count DESC LIMIT 20")
+    r = c.execute(f"SELECT SUM(two_stars_count + three_stars_count + four_stars_count) AS cards_rolled FROM {table} INNER JOIN users ON users.discord_id = {table}.discord_id ORDER BY cards_rolled DESC LIMIT 20")
+    # may need this later
+    # r = c.execute(f"SELECT * FROM {table} INNER JOIN users ON users.discord_id = {table}.discord_id ORDER BY two_stars_count DESC LIMIT 20")
     return r.fetchall()
 
 #@ctime
@@ -141,7 +143,20 @@ def add_user_to_premium_db(user: User, guild: Guild, event_id, server: str):
     else:
         text = f'Failed adding user {user} as a premium user for event id {event_id}'
     return text    
-    
+
+# goodnight
+# def get_premium_guild_ids(server):
+#     db = TinyDB(premium_db)
+#     success = True
+#     premium_guilds = []
+#     try:
+#         saved = db.all()
+#         for i in saved:
+#             premium_guilds.append(i['guild'])
+#     except:
+#         premium_guilds = []
+#     return premium_guilds
+        
 #######################
 #     Bot Updates     #
 #######################

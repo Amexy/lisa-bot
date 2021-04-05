@@ -166,15 +166,18 @@ class Event(commands.Cog):
                     help=".timeleft (defaults to en)\n.timeleft jp")
     #@ctime
     async def timeLeftBotCommand(self, ctx, server: str = 'en'):
-        EventID = await GetCurrentEventID(server)
-        if EventID:
-            timeLeftBotOutput = await GetTimeLeftCommandOutput(server, EventID)
-            if isinstance(timeLeftBotOutput, str):
-                await ctx.send(timeLeftBotOutput)
+        try:
+            EventID = await GetCurrentEventID(server)
+            if EventID:
+                timeLeftBotOutput = await GetTimeLeftCommandOutput(server, EventID)
+                if isinstance(timeLeftBotOutput, str):
+                    await ctx.send(timeLeftBotOutput)
+                else:
+                    await ctx.send(embed=timeLeftBotOutput)
             else:
-                await ctx.send(embed=timeLeftBotOutput)
-        else:
-            await ctx.send("The %s event hasn't started yet." %server)
+                await ctx.send("The %s event hasn't started yet." %server)
+        except TypeError:
+            await ctx.send(f"```Details for the next event on {server} haven't been released yet```")
 
     @commands.command(name='coasting',
                 description="Given an input of server, ep gained per song, and beginning EP, the bot provides how much EP you'll have at the end of the event if you natural flame for the rest of the event",
@@ -284,7 +287,7 @@ class Event(commands.Cog):
                 await ctx.send(embed=output)
         except IndexError:
             await ctx.send('Failed getting cutoff data')
-
+                
     @coasting.error
     async def coasting_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
@@ -304,10 +307,12 @@ class Event(commands.Cog):
                 await ctx.send("Missing argument, please check required arguments using `.help <command>`! Required arguments are enclosed in < >")
         if isinstance(error, commands.BadArgument):
             await ctx.send("Invalid argument, please check argument positioning using `.help t10`")
+            
     @t10ids.error
     async def t10ids_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
             await ctx.send("Invalid argument, please check argument positioning using `.help t10ids`")
+            
     @t10members.error
     async def t10members_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
@@ -315,10 +320,12 @@ class Event(commands.Cog):
                 await ctx.send("Missing argument, please check required arguments using `.help <command>`! Required arguments are enclosed in < >")
         if isinstance(error, commands.BadArgument):
             await ctx.send("Invalid argument, please check argument positioning using `.help t10members`")
+            
     @t10archives.error
     async def t10archives_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
             await ctx.send("Invalid argument, please check argument positioning using `.help t10archives`")
+            
     @cutoff.error
     async def cutoff_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):

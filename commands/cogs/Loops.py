@@ -53,18 +53,18 @@ class Loops(commands.Cog):
             await asyncio.sleep(1200)
             
     def StartLoops(self):
-        #self.bot.loop.create_task(self.PostYukiLisa())
-        self.bot.loop.create_task(self.post_t10_updates('en', 2))
-        self.bot.loop.create_task(self.post_t10_updates('en', 3600))
-        self.bot.loop.create_task(self.post_t10_updates('jp', 2))
-        self.bot.loop.create_task(self.post_t10_updates('jp', 3600))
+        self.bot.loop.create_task(self.post_en_t10_updates(2))
+        self.bot.loop.create_task(self.post_en_t10_updates(3600))
+        self.bot.loop.create_task(self.post_jp_t10_updates(2))
+        self.bot.loop.create_task(self.post_jp_t10_updates(3600))
         self.bot.loop.create_task(self.postSongUpdates1min())
         self.bot.loop.create_task(self.postEventNotif('en'))
         self.bot.loop.create_task(self.postEventNotif('jp'))
         self.bot.loop.create_task(self.postBestdoriNews())
         self.bot.loop.create_task(self.UpdateAvatar())
         self.bot.loop.create_task(self.UpdateCardIcons())
-        self.bot.loop.create_task(self.postCutoffUpdates())
+        self.bot.loop.create_task(self.post_en_cutoff_updates())
+        self.bot.loop.create_task(self.post_jp_cutoff_updates())
 
     async def UpdateCardIcons(self):
         await self.bot.wait_until_ready()
@@ -76,6 +76,42 @@ class Loops(commands.Cog):
                 from commands.cogs.Fun import UpdateCardIcons
                 await UpdateCardIcons
                 self.initialCardsAPI = CardsAPI
+            await asyncio.sleep(300)
+            
+    async def post_en_cutoff_updates(self):
+        await self.bot.wait_until_ready()
+        while not self.bot.is_closed():
+            try:
+                event_id = await GetCurrentEventID('en')
+            except Exception as e:
+                print('Error getting current event id. Exception: ' + str(e))      
+            if event_id:
+                time_left = await GetEventTimeLeftSeconds('en', event_id)
+                if(time_left > 0):
+                    for tier in self.ENCutoffs:
+                        try:
+                            UpdateCheck = await self.CutoffUpdatesFormatting('en', tier)
+                            if UpdateCheck:
+                                self.ENCutoffs[tier] = UpdateCheck[1]
+                        except (commands.BotMissingPermissions, discord.errors.NotFound, discord.errors.Forbidden) as e:
+                            print(f"failed posting en updates")      
+
+            await asyncio.sleep(120)
+    
+    async def post_jp_cutoff_updates(self):
+        await self.bot.wait_until_ready()
+        while not self.bot.is_closed():
+            try:
+                event_id = await GetCurrentEventID('jp')
+            except Exception as e:
+                print('Error getting current event id. Exception: ' + str(e))      
+            if event_id:
+                time_left = await GetEventTimeLeftSeconds('jp', event_id)
+                if(time_left > 0):
+                    for tier in self.JPCutoffs:
+                        UpdateCheck = await self.CutoffUpdatesFormatting('jp', tier)
+                        if UpdateCheck:
+                            self.JPCutoffs[tier] = UpdateCheck[1]
             await asyncio.sleep(300)
             
     # This was for NR1 server, but I'll leave it for now incase I feel like reusing it
@@ -134,28 +170,35 @@ class Loops(commands.Cog):
             channel = self.bot.get_channel(523339468229312555)
             await channel.send(embed=embed)
             await asyncio.sleep(180)
-
-    async def post_t10_updates(self, server: str, interval: int):
+    
+    # had to split en and jp up since i wasn't able to see what loop would fail because i couldn't get parameter info. i'll probably make 4 loops again to separate our intervals for the same reason unless i find a fix
+    async def post_en_t10_updates(self, interval: int):
+        import traceback
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
             try:
+                server = 'en'
                 event_id = await GetCurrentEventID(server)
             except Exception as e:
                 print(f'Failed posting {interval} minute data for {server}.\nException: ' + {e})            
-            if event_id:
-                time_left = await GetEventTimeLeftSeconds(server, event_id)
-                if(time_left > 0):
-                    message = await t10formatting(server, event_id, True)
-                    ids = getChannelsToPost(interval, server)
-                    for i in ids:
-                        channel = self.bot.get_channel(i)
-                        if channel != None:
-                            try:
-                                await channel.send(message)
-                            except (commands.BotMissingPermissions, discord.errors.NotFound, discord.errors.Forbidden): 
-                                LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
-                                await LoopRemovalUpdates.send(f'Removing {interval} updates from channel: {channel.name} in server: {channel.guild.name}')
-                                removeChannelFromDatabase(channel, interval, server)
+            try:
+                if event_id:
+                    time_left = await GetEventTimeLeftSeconds(server, event_id)
+                    if(time_left > 0):
+                        message = await t10formatting(server, event_id, True)
+                        ids = getChannelsToPost(interval, server)
+                        for i in ids:
+                            channel = self.bot.get_channel(i)
+                            if channel != None:
+                                try:
+                                    await channel.send(message)
+                                except (commands.BotMissingPermissions, discord.errors.NotFound, discord.errors.Forbidden) as e:
+                                    print(f"{traceback.format.exc()}")      
+                                    LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
+                                    await LoopRemovalUpdates.send(f'Removing {interval} updates from channel: {channel.name} in server: {channel.guild.name}')
+                                    removeChannelFromDatabase(channel, interval, server)
+            except Exception as e:
+                print(f"{traceback.format.exc()}")
             timeStart = datetime.now()
             if interval == 2:
                 if (timeStart.minute % 2) != 0: 
@@ -166,7 +209,45 @@ class Loops(commands.Cog):
                 timeFinish = (timeStart + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0).timestamp()
             timeStart = timeStart.timestamp()
             await asyncio.sleep(timeFinish - timeStart)
-                            
+
+    async def post_jp_t10_updates(self, interval: int):
+        import traceback
+        await self.bot.wait_until_ready()
+        while not self.bot.is_closed():
+            try:
+                server = 'jp'
+                event_id = await GetCurrentEventID(server)
+            except Exception as e:
+                print(f'Failed posting {interval} minute data for {server}.\nException: ' + {e})            
+            try:
+                if event_id:
+                    time_left = await GetEventTimeLeftSeconds(server, event_id)
+                    if(time_left > 0):
+                        message = await t10formatting(server, event_id, True)
+                        ids = getChannelsToPost(interval, server)
+                        for i in ids:
+                            channel = self.bot.get_channel(i)
+                            if channel != None:
+                                try:
+                                    await channel.send(message)
+                                except (commands.BotMissingPermissions, discord.errors.NotFound, discord.errors.Forbidden) as e:
+                                    print(f"{traceback.format.exc()}")      
+                                    LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
+                                    await LoopRemovalUpdates.send(f'Removing {interval} updates from channel: {channel.name} in server: {channel.guild.name}')
+                                    removeChannelFromDatabase(channel, interval, server)
+            except Exception as e:
+                print(f"{traceback.format.exc()}")
+            timeStart = datetime.now()
+            if interval == 2:
+                if (timeStart.minute % 2) != 0: 
+                    timeFinish = (timeStart + timedelta(minutes=1)).replace(second=0, microsecond=0).timestamp()
+                else:
+                    timeFinish = (timeStart + timedelta(minutes=2)).replace(second=0, microsecond=0).timestamp()
+            else:
+                timeFinish = (timeStart + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0).timestamp()
+            timeStart = timeStart.timestamp()
+            await asyncio.sleep(timeFinish - timeStart)   
+                        
     async def postSongUpdates1min(self):
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
@@ -206,8 +287,9 @@ class Loops(commands.Cog):
         if sorted(CurrentCutoffs.items()) != sorted(CachedCutoffs[tier].items()):
             output = await GetCutoffFormatting(server, tier, False)
             ids = getCutoffChannels(tier, server)
-            for i in ids:
-                channel = self.bot.get_channel(i)
+            try:
+                for i in ids:
+                    channel = self.bot.get_channel(i)
                 if channel != None:
                     try:
                         await channel.send(f't{tier} update found!')
@@ -215,118 +297,34 @@ class Loops(commands.Cog):
                         UpdateCheck = True                                
                     except (commands.BotMissingPermissions, discord.errors.NotFound): 
                         rmChannelFromCutoffDatabase(channel, tier, 'en')
-        return UpdateCheck, CurrentCutoffs
-
-    async def postCutoffUpdates(self):
-        await self.bot.wait_until_ready()
-        while not self.bot.is_closed():
-            try:
-                ENEventID = await GetCurrentEventID('en')
-                JPEventID = await GetCurrentEventID('jp')
             except Exception as e:
-                print('Error getting current event ids. Exception: ' + str(e))      
-            if ENEventID:
-                timeLeft = await GetEventTimeLeftSeconds('en', ENEventID)
-                if(timeLeft > 0):
-                    for tier in self.ENCutoffs:
-                        UpdateCheck = await self.CutoffUpdatesFormatting('en', tier)
-                        if UpdateCheck:
-                            self.ENCutoffs[tier] = UpdateCheck[1]
-            if JPEventID:
-                timeLeft = await GetEventTimeLeftSeconds('jp', JPEventID)
-                if(timeLeft > 0):
-                    for tier in self.JPCutoffs:
-                        UpdateCheck = await self.CutoffUpdatesFormatting('jp', tier)
-                        if UpdateCheck:
-                            self.JPCutoffs[tier] = UpdateCheck[1]
-            await asyncio.sleep(120)
+                print(f"Failed posting en cutoff update:\n\n{e}")
+        return UpdateCheck, CurrentCutoffs
     
-    # async def postT100CutoffUpdates(self):
+    # had to split en and jp up since i wasn't able to see what loop would fail because i couldn't get parameter info. 
+    # async def postCutoffUpdates(self):
     #     await self.bot.wait_until_ready()
     #     while not self.bot.is_closed():
     #         try:
-    #             EventID = await GetCurrentEventID('en')
+    #             ENEventID = await GetCurrentEventID('en')
+    #             JPEventID = await GetCurrentEventID('jp')
     #         except Exception as e:
-    #             print('Failed posting t100 update. Exception: ' + str(e))            
-    #         if EventID:
-    #             timeLeft = await GetEventTimeLeftSeconds('en', EventID)
+    #             print('Error getting current event ids. Exception: ' + str(e))      
+    #         if ENEventID:
+    #             timeLeft = await GetEventTimeLeftSeconds('en', ENEventID)
     #             if(timeLeft > 0):
-    #                 ids = getCutoffChannels(100)
-    #                 initialT100Cutoffs = self.initialT100Cutoffs
-    #                 cutoffAPI = await GetBestdoriCutoffAPI('en', 100)
-    #                 if(sorted(initialT100Cutoffs.items()) != sorted(cutoffAPI.items())):
-    #                     output = await GetCutoffFormatting('en', 100, False)
-    #                     ids = getCutoffChannels(100)
-    #                     for i in ids:
-    #                         channel = self.bot.get_channel(i)
-    #                         if channel != None:
-    #                             try:
-    #                                 await channel.send('t100 update found!')
-    #                                 await channel.send(embed=output)                                
-    #                             except (commands.BotMissingPermissions, discord.errors.NotFound): 
-    #                                 LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
-    #                                 await LoopRemovalUpdates.send('Removing t100 updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
-    #                                 rmChannelFromCutoffDatabase(channel, 100)
-    #                     self.initialT100Cutoffs = cutoffAPI
-    #             await asyncio.sleep(60)
-
-    # async def postT1000CutoffUpdates(self):
-    #     await self.bot.wait_until_ready()
-    #     while not self.bot.is_closed():
-    #         try:
-    #             EventID = await GetCurrentEventID('en')
-    #         except Exception as e:
-    #             print('Failed posting t1000 update. Exception: ' + str(e))   
-    #         if EventID:
-    #             timeLeft = await GetEventTimeLeftSeconds('en', EventID)
+    #                 for tier in self.ENCutoffs:
+    #                     UpdateCheck = await self.CutoffUpdatesFormatting('en', tier)
+    #                     if UpdateCheck:
+    #                         self.ENCutoffs[tier] = UpdateCheck[1]
+    #         if JPEventID:
+    #             timeLeft = await GetEventTimeLeftSeconds('jp', JPEventID)
     #             if(timeLeft > 0):
-    #                 ids = getCutoffChannels(1000)
-    #                 initialT1000Cutoffs = self.initialT1000Cutoffs  
-    #                 cutoffAPI = await GetBestdoriCutoffAPI('en', 1000)
-    #                 if(sorted(initialT1000Cutoffs.items()) != sorted(cutoffAPI.items())):
-    #                     output = await GetCutoffFormatting('en', 1000, False)
-    #                     ids = getCutoffChannels(1000)
-    #                     for i in ids:
-    #                         channel = self.bot.get_channel(i)
-    #                         if channel != None:
-    #                             try:
-    #                                 await channel.send('t1000 update found!')
-    #                                 await channel.send(embed=output)                                
-    #                             except (commands.BotMissingPermissions, discord.errors.NotFound): 
-    #                                 LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
-    #                                 await LoopRemovalUpdates.send('Removing t1000 updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
-    #                                 rmChannelFromCutoffDatabase(channel, 1000)
-    #                     self.initialT1000Cutoffs = cutoffAPI
-    #             await asyncio.sleep(60)
-                
-    # async def postT2500CutoffUpdates(self):
-    #     await self.bot.wait_until_ready()
-    #     while not self.bot.is_closed():
-    #         try:
-    #             EventID = await GetCurrentEventID('en')
-    #         except Exception as e:
-    #             print('Failed posting t2500 update. Exception: ' + str(e))   
-    #         if EventID:
-    #             timeLeft = await GetEventTimeLeftSeconds('en', EventID)
-    #             if(timeLeft > 0):
-    #                 ids = getCutoffChannels(2500)
-    #                 initialT2500Cutoffs = self.initialT2500Cutoffs  
-    #                 cutoffAPI = await GetBestdoriCutoffAPI('en', 2500)
-    #                 if(sorted(initialT2500Cutoffs.items()) != sorted(cutoffAPI.items())):
-    #                     output = await GetCutoffFormatting('en', 2500, False)
-    #                     ids = getCutoffChannels(2500)
-    #                     for i in ids:
-    #                         channel = self.bot.get_channel(i)
-    #                         if channel != None:
-    #                             try:
-    #                                 await channel.send('t2500 update found!')
-    #                                 await channel.send(embed=output)                                
-    #                             except (commands.BotMissingPermissions, discord.errors.NotFound): 
-    #                                 LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
-    #                                 await LoopRemovalUpdates.send('Removing t2500 updates from channel: ' + str(channel.name) + " in server: " + str(channel.guild.name))
-    #                                 rmChannelFromCutoffDatabase(channel, 2500)
-    #                     self.initialT2500Cutoffs = cutoffAPI
-    #             await asyncio.sleep(60)
+    #                 for tier in self.JPCutoffs:
+    #                     UpdateCheck = await self.CutoffUpdatesFormatting('jp', tier)
+    #                     if UpdateCheck:
+    #                         self.JPCutoffs[tier] = UpdateCheck[1]
+    #         await asyncio.sleep(120)
 
     async def postBestdoriNews(self):
         await self.bot.wait_until_ready()
@@ -433,5 +431,6 @@ class Loops(commands.Cog):
                         await asyncio.sleep(60)
             except aiohttp.client_exceptions.ContentTypeError: # This will typically happen on JP since Bestdori doesn't always have the next event's information available until ~24 hours before event start
                 await asyncio.sleep(60)
+                
 def setup(bot):
     bot.add_cog(Loops(bot))

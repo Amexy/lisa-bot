@@ -23,19 +23,21 @@ def cachedRequest(func):
         url = await func(*args, **kwargs)
         if use_cache:
             async with aiohttp.ClientSession() as session:
-                etag = _etags.get(func)
+                etag = _etags.get(url)
                 async with session.get(url, headers={'If-None-Match': etag} if etag else None) as r:
-                    if r.status != 304:
-                        _etags[func] = r.headers['ETag']
-                        _cache[func] = await r.json()
-            return _cache[func]
+                    if r.status == 200:
+                        _etags[url] = r.headers['ETag']
+                        _cache[url] = await r.json()
+            return _cache[url]
         else:
             async with aiohttp.ClientSession() as session:
                 async with session.get(url) as r:
                     return await r.json()
-
     return wrapper
 
+@cachedRequest
+async def get_bestdori_game_version_api(server: str):
+    return f'https://bestdori.com/api/Versions_{server}.json'
 
 #@ctime
 @cachedRequest
@@ -72,7 +74,6 @@ async def GetTierKey(tier):
 async def GetBestdoriCutoffAPI(server: int, tier: int):
     from commands.formatting.EventCommands import GetCurrentEventID
     EventID = await GetCurrentEventID(server)
-    tier = await GetTierKey(tier)
     ServerKey = await GetServerAPIKey(server)
     return 'https://bestdori.com/api/tracker/data?server={}&event={}&tier={}'.format(
         ServerKey, str(EventID), tier)
@@ -144,7 +145,7 @@ async def GetBestdoriAllCharasAPI():
 
 #@ctime
 @cachedRequest
-async def Get_bestdori_title_names_api(server: str):
+async def get_bestdori_title_names_api(server: str):
     return f'https://bestdori.com/api/explorer/{server}/assets/thumb/degree.json'
 
 #@ctime
