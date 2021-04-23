@@ -77,9 +77,9 @@ async def get_roll_leaderboards_info(*character):
     conn = create_connection()           
     c = conn.cursor()
     table = "user_roll_stats" if not character else character[0]
-    r = c.execute(f"SELECT SUM(two_stars_count + three_stars_count + four_stars_count) AS cards_rolled FROM {table} INNER JOIN users ON users.discord_id = {table}.discord_id ORDER BY cards_rolled DESC LIMIT 20")
+    r = c.execute(f"SELECT * FROM {table} INNER JOIN users ON users.discord_id = {table}.discord_id ORDER BY two_stars_count DESC LIMIT 20")
     # may need this later
-    # r = c.execute(f"SELECT * FROM {table} INNER JOIN users ON users.discord_id = {table}.discord_id ORDER BY two_stars_count DESC LIMIT 20")
+    # r = c.execute(f"SELECT SUM(two_stars_count + three_stars_count + four_stars_count) AS cards_rolled FROM {table} INNER JOIN users ON users.discord_id = {table}.discord_id ORDER BY cards_rolled DESC LIMIT 20")
     return r.fetchall()
 
 #@ctime

@@ -11,7 +11,7 @@ class Fun(commands.Cog):
         self.AllTwoStarCards = self.AllCards[0]
         self.AllThreeStarCards = self.AllCards[1]
         self.AllFourStarCards = self.AllCards[2]
-        self.api = AppPixivAPI()
+        # self.api = AppPixivAPI()
         # asyncio.run(self.GetImages())
 
     async def GetCardRarityCount(self, rarity: int):
@@ -662,8 +662,8 @@ class Fun(commands.Cog):
             leaderboards = []
             for stat in stats:
                 total_rolls = stat[1] + stat[2] + stat[3]
-                four_star_rate = f"{round(((stat[3] / total_rolls) * 100), 2)}%"
-                leaderboards.append([stat[5],total_rolls,stat[3],four_star_rate])
+                four_star_rate =f"{round(((stat[3] / total_rolls) * 100), 2)}%"
+                leaderboards.append([stat[5],"{:,}".format(total_rolls),"{:,}".format(stat[3]),four_star_rate])
             header = 'Total Cards Rolled' if not character else f"Total {character.capitalize()}s Rolled"
             output = "```" + tabulate(leaderboards,headers=['User',header,'Total 4*','4* %'],tablefmt='plain') + "```"
         except FileNotFoundError:
