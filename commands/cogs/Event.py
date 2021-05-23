@@ -77,63 +77,78 @@ class Event(commands.Cog):
 
     @commands.command(name='t10',
                 brief="t10 info",
-                description="Posts t10 info. You can also include the songs parameter at the end to look at song info (given the event is CL or VS)",
-                help=".t10 en 30\n.t10 jp 78 songs\n.t10 (defaults to en and the current event id, no songs")
+                description="Posts t10 info",
+                help=".t10 en 30\n.t10 jp 78\n.t10 (defaults to en and the current event id")
     #@ctime
     async def t10(self, ctx, server: str = 'en', eventid: int = 0, *songs):
         if server.isnumeric():
             raise commands.errors.BadArgument
         else:
             server = server.lower()
-            if server not in self.valid_t10_servers:
-                await ctx.send('This function only works for the `EN` and `JP` servers')
-            else:
-                try:
-                    server = server.lower()
-                    if(eventid == 0):
-                        eventid = await GetCurrentEventID(server)
-                    else:
-                        eventid = eventid
-                    if(songs):
-                        output = await t10songsformatting(server, eventid, False)
-                        output = ''.join(output)
-                    else:
-                        output = await t10formatting(server, eventid, False)
-                    await ctx.send(output)
-                except:
-                    await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify` command to let Josh know")
+            try:
+                if(eventid == 0):
+                    eventid = await GetCurrentEventID(server)
+                else:
+                    eventid = eventid
+                if(songs):
+                    output = "Moved to the `t10songs` command"
+                else:
+                    output = await t10formatting(server, eventid, False)
+            except:
+                output = f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify` command to let Josh know"
+            await ctx.send(output)
+    
     @commands.command(name='t10ids',
                     aliases=['t10i'],
-                    description="Posts t10 info with each player's id. You can also include the songs parameter at the end to look at song info (given the event is CL or VS)",
-                    help=".t10ids en 30\n.t10ids jp 78 songs\n.t10i (defaults to en and the current event id, no songs)")
+                    description="Posts t10 info with each player's id",
+                    help=".t10ids en 30\n.t10ids jp 78\n.t10i (defaults to en and the current event id)")
     #@ctime
     async def t10ids(self, ctx, server: str = 'en', eventid: int = 0, *songs):
         if server.isnumeric():
             raise commands.errors.BadArgument
         else:
             server = server.lower()
-            if server not in self.valid_t10_servers:
-                output = 'This function only works for the `EN` and `JP` servers'
-            else:
-                try:
-                    if(eventid == 0):
-                        eventid = await GetCurrentEventID(server)
-                    else:
-                        eventid = eventid
-                    if(songs):
-                        output = await t10songsformatting(server, eventid, True)
-                        output = ''.join(output)
-                    else:
-                        output = await t10formatting(server, eventid, True)
-                except:
-                    output = f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify` command to let Josh know"
+            try:
+                if(eventid == 0):
+                    eventid = await GetCurrentEventID(server)
+                else:
+                    eventid = eventid
+                if(songs):
+                    output = "Moved to the `t10songs` command"
+                else:
+                    output = await t10formatting(server, eventid, True)
+            except:
+                output = f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify` command to let Josh know"
             await ctx.send(output)
+            
+    @commands.command(name='t10songs',
+                    aliases=['t10s', 't10song'],
+                    description="Posts t10 song info",
+                    help=".t10songs en (defaults to current event id)\n.t10s jp 115\n.t10s (defaults to en and the current event id)")
+    #@ctime
+    async def t10_songs(self, ctx, server: str = 'en', eventid: int = 0, *songs):
+        if server.isnumeric():
+            raise commands.errors.BadArgument
+        else:
+            server = server.lower()
+            try:
+                if(eventid == 0):
+                    eventid = await GetCurrentEventID(server)
+                else:
+                    eventid = eventid
+                output = await t10songsformatting(server, eventid) 
+                output = ''.join(output)
+            except:
+                output = f"Failed getting song data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify` command to let Josh know"
+            await ctx.send(output)
+           
     @commands.command(name='t10members',
                     aliases=['t10m'],
                     description="Posts t10 info with each player's team in their profile along with skill level for each member. You can also include the songs parameter at the end to look at song info (given the event is CL or VS)",
                     help=".t10members en 50\n.t10members jp 100 songs\n.t10m (defaults to en and the current event id, no songs)")
     #@ctime
     async def t10members(self, ctx, server: str = 'en', eventid: int = 0, *songs):
+        msg = await ctx.send('This may take a few seconds..')
         if server.isnumeric():
             raise commands.errors.BadArgument
         else:
@@ -142,13 +157,12 @@ class Event(commands.Cog):
                 await ctx.send('This function only works for the `EN` and `JP` servers')
             else:
                 try:
-                    UserID = ctx.message.author.id
                     if(eventid == 0):
                         eventid = await GetCurrentEventID(server)
                     else:
                         eventid = eventid
                     if(songs):
-                        output = await t10membersformatting(server, eventid, True, UserID)
+                        output = await t10membersformatting(server, eventid, True)
                         if 'No data found for event' in output: # Very scuffed way of doing this, but I don't feel like messing with errors (if that'd even work)
                             await ctx.send(output)
                         else:
@@ -160,6 +174,8 @@ class Event(commands.Cog):
                         await ctx.send(output)
                 except:
                     await ctx.send(f"Failed getting data for event with ID `{eventid}` on the `{server}` server. Please use the `.notify` command to let Josh know")
+        await msg.delete()  
+        
     @commands.command(name='timeleft',
                     aliases=['tl'],
                     description="Provides the amount of time left (in hours) for an event",
