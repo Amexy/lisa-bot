@@ -17,20 +17,20 @@ class Loops(commands.Cog):
         with open("config.json") as file:
             config_json = json.load(file)
             loops_enabled = config_json['loops_enabled']
-        self.initialENT100Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=87&tier=0').json()
-        self.initialENT1000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=87&tier=1').json()
-        self.initialENT2500Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=87&tier=2').json()        
-        self.initialJPT100Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=0&event=123&tier=0').json()
-        self.initialJPT1000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=0&event=123&tier=1').json()
-        self.initialJPT2000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=0&event=123&tier=2').json()
-        self.initialJPT5000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=0&event=123&tier=3').json()
-        self.initialJPT10000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=0&event=123&tier=4').json()
-        self.initialCardsAPI = requests.get('https://bestdori.com/api/cards/all.5.json').json()
-        self.firstAPI = requests.get('https://bestdori.com/api/news/all.5.json').json()
-        self.ENCutoffs = {100: self.initialENT100Cutoffs, 1000: self.initialENT1000Cutoffs, 2500: self.initialENT2500Cutoffs}
-        self.JPCutoffs = {100: self.initialJPT100Cutoffs, 1000: self.initialJPT1000Cutoffs, 2000: self.initialJPT2000Cutoffs, 5000: self.initialJPT5000Cutoffs, 10000: self.initialJPT10000Cutoffs}
         if loops_enabled == 'true':
-            self.StartLoops()            
+            self.StartLoops()         
+            self.initialENT100Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=87&tier=0').json()
+            self.initialENT1000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=87&tier=1').json()
+            self.initialENT2500Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=1&event=87&tier=2').json()        
+            self.initialJPT100Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=0&event=123&tier=0').json()
+            self.initialJPT1000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=0&event=123&tier=1').json()
+            self.initialJPT2000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=0&event=123&tier=2').json()
+            self.initialJPT5000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=0&event=123&tier=3').json()
+            self.initialJPT10000Cutoffs = requests.get('https://bestdori.com/api/tracker/data?server=0&event=123&tier=4').json()
+            self.initialCardsAPI = requests.get('https://bestdori.com/api/cards/all.5.json').json()
+            self.firstAPI = requests.get('https://bestdori.com/api/news/all.5.json').json()
+            self.ENCutoffs = {100: self.initialENT100Cutoffs, 1000: self.initialENT1000Cutoffs, 2500: self.initialENT2500Cutoffs}
+            self.JPCutoffs = {100: self.initialJPT100Cutoffs, 1000: self.initialJPT1000Cutoffs, 2000: self.initialJPT2000Cutoffs, 5000: self.initialJPT5000Cutoffs, 10000: self.initialJPT10000Cutoffs}
         else:
             print('Not loading loops')
         print('Successfully loaded Loops cog')

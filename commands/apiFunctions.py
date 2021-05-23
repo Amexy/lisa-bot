@@ -102,6 +102,20 @@ async def GetBestdoriPlayerLeaderboardsAPI(server: str, lbtype: str, entries: in
     return 'https://bestdori.com/api/sync/list/player?server=%s&stats=%s&limit=%s&offset=0' % (
         str(server), lbtype, str(entries))
 
+@cachedRequest
+async def lookup_bestdori_player(server, player_id):
+    return f'https://bestdori.com/api/player/{server}/{player_id}?mode=2'
+
+@cachedRequest
+async def get_bestdori_t10_api(server, event_id):
+    server_key = await GetServerAPIKey(server)
+    return f'https://bestdori.com/api/eventtop/data?server={server_key}&event={event_id}&mid=0&latest=1'
+
+@cachedRequest
+async def get_bestdori_t10_song_api(server, event_id, song_id):
+    server_key = await GetServerAPIKey(server)
+    return f'https://bestdori.com/api/eventtop/data?server={server_key}&event={event_id}&mid={song_id}&latest=1'
+
 #@ctime
 @cachedRequest
 async def GetSongAPI():
