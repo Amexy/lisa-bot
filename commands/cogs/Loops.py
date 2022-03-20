@@ -1,6 +1,6 @@
 from datetime import timedelta, datetime
 from commands.formatting.T10Commands import t10formatting, t10membersformatting
-from commands.formatting.EventCommands import GetCurrentEventID, GetCutoffFormatting, GetEventName
+from commands.formatting.EventCommands import GetCurrentEventID, GetCutoffFormatting, get_event_name
 from commands.formatting.GameCommands import GetEventTimeLeftSeconds
 from commands.formatting.DatabaseFormatting import getChannelsToPost, removeChannelFromDatabase, updatesDB, getNewsChannelsToPost, getCutoffChannels, rmChannelFromCutoffDatabase, removeChannelFromDatabaseSongs
 from commands.apiFunctions import GetBestdoriCutoffAPI
@@ -55,13 +55,14 @@ class Loops(commands.Cog):
     def StartLoops(self):
         self.bot.loop.create_task(self.post_en_t10_updates(2))
         self.bot.loop.create_task(self.post_en_t10_updates(3600))
+        
         self.bot.loop.create_task(self.post_jp_t10_updates(2))
         self.bot.loop.create_task(self.post_jp_t10_updates(3600))
         self.bot.loop.create_task(self.postSongUpdates1min())
         self.bot.loop.create_task(self.postEventNotif('en'))
         self.bot.loop.create_task(self.postEventNotif('jp'))
         self.bot.loop.create_task(self.postBestdoriNews())
-        self.bot.loop.create_task(self.UpdateAvatar())
+        #self.bot.loop.create_task(self.UpdateAvatar())
         self.bot.loop.create_task(self.UpdateCardIcons())
         self.bot.loop.create_task(self.post_en_cutoff_updates())
         self.bot.loop.create_task(self.post_jp_cutoff_updates())
@@ -193,12 +194,12 @@ class Loops(commands.Cog):
                                 try:
                                     await channel.send(message)
                                 except (commands.BotMissingPermissions, discord.errors.NotFound, discord.errors.Forbidden) as e:
-                                    print(f"{traceback.format.exc()}")      
+                                    print(f"Exception: {e}\nChannel: {channel}")      
                                     LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
                                     await LoopRemovalUpdates.send(f'Removing {interval} updates from channel: {channel.name} in server: {channel.guild.name}')
                                     removeChannelFromDatabase(channel, interval, server)
             except Exception as e:
-                print(f"{traceback.format.exc()}")
+                print(f"{e}")
             timeStart = datetime.now()
             if interval == 2:
                 if (timeStart.minute % 2) != 0: 
@@ -231,12 +232,12 @@ class Loops(commands.Cog):
                                 try:
                                     await channel.send(message)
                                 except (commands.BotMissingPermissions, discord.errors.NotFound, discord.errors.Forbidden) as e:
-                                    print(f"{traceback.format.exc()}")      
+                                    print(f"{e}")      
                                     LoopRemovalUpdates = self.bot.get_channel(523339468229312555)
                                     await LoopRemovalUpdates.send(f'Removing {interval} updates from channel: {channel.name} in server: {channel.guild.name}')
                                     removeChannelFromDatabase(channel, interval, server)
             except Exception as e:
-                print(f"{traceback.format.exc()}")
+                print(f"{e}")
             timeStart = datetime.now()
             if interval == 2:
                 if (timeStart.minute % 2) != 0: 
@@ -258,7 +259,7 @@ class Loops(commands.Cog):
             if EnEventID:
                 timeLeft = await GetEventTimeLeftSeconds('en', EnEventID)
                 if(timeLeft > 0):
-                    message = await t10membersformatting('en', EnEventID, True, 158699060893581313)
+                    message = await t10membersformatting('en', EnEventID, True)
                     if message != "This event doesn't have a song ranking.":
                         #await t10logging('en', eventid, True)
                         ids = getChannelsToPost(1, 'en')
@@ -377,14 +378,14 @@ class Loops(commands.Cog):
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
             from commands.apiFunctions import GetBestdoriEventAPI, GetServerAPIKey
-            from commands.formatting.EventCommands import GetCurrentEventID, IsEventActive, GetEventName
+            from commands.formatting.EventCommands import GetCurrentEventID, is_event_active, get_event_name
             from commands.formatting.TimeCommands import GetEventStartTime
             import aiohttp
             EventID = await GetCurrentEventID(server)
             try:
-                if not await IsEventActive(server, EventID):
+                if not await is_event_active(server, EventID):
                     EventID = int(EventID) + 1                   
-                    EventName = await GetEventName(server, EventID)
+                    EventName = await get_event_name(server, EventID)
                     import time
                     CurrentTime = time.time() * 1000
                     TimeTilNextEventStarts = (int(await GetEventStartTime(server, int(EventID)) - CurrentTime ))/ 1000
@@ -401,7 +402,7 @@ class Loops(commands.Cog):
                         Message = f"{EventName} on `{server.upper()}` has begun!"
                         await self.sendEventUpdates(Message, server)
                 else:
-                    EventName = await GetEventName(server, EventID)
+                    EventName = await get_event_name(server, EventID)
                     TimeLeftSeconds = await GetEventTimeLeftSeconds(server, EventID)
                     if TimeLeftSeconds > 86400:
                         await asyncio.sleep(TimeLeftSeconds - 86400)

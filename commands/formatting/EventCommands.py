@@ -1,3 +1,4 @@
+from pickle import FALSE
 from sklearn.linear_model import LinearRegression
 from bs4 import BeautifulSoup
 from protodefs.ranks import t10ranks
@@ -15,8 +16,8 @@ def getICEObject(server: str):
     return ice
 
 async def GetCutoffHistory(server, tier):
-    from commands.apiFunctions import GetBestdoriEventArchivesAPI, GetServerAPIKey, GetBestdoriBannersAPI
-    from commands.formatting.EventCommands import GetEventName, GetEventAttribute
+    from commands.apiFunctions import GetBestdoriEventArchivesAPI, GetServerAPIKey, get_bestdori_banners_api
+    from commands.formatting.EventCommands import get_event_name, get_event_attribute
     from commands.formatting.TimeCommands import GetEventLengthSeconds
     import math
     HistoryAPI = await GetBestdoriEventArchivesAPI()
@@ -33,9 +34,9 @@ async def GetCutoffHistory(server, tier):
     if not all(x==Histories[0] for x in Histories):
         Cutoff = max(Histories) 
         EventID = Histories.index(Cutoff)+ 1
-        EventName = await GetEventName(server, EventID)
-        Attribute = await GetEventAttribute(EventID)
-        BannerAPI = await GetBestdoriBannersAPI(EventID)
+        EventName = await get_event_name(server, EventID)
+        Attribute = await get_event_attribute(EventID)
+        BannerAPI = await get_bestdori_banners_api(EventID)
         EventLengthHours = await GetEventLengthSeconds(server, EventID) / 3600
         EPPerHour = "{:,}".format(math.floor(Cutoff / EventLengthHours))
         Thumbnail = 'https://bestdori.com/assets/%s/event/%s/images_rip/logo.png'  %(server,BannerAPI['assetBundleName'])
@@ -57,14 +58,14 @@ async def GetCutoffHistory(server, tier):
         embed.add_field(name='EP Per Hour', value=EPPerHour, inline=True)
         return embed
 
-async def GetEventName(server: str, eventid: int):
+async def get_event_name(server: str, eventid: int):
     from commands.apiFunctions import GetBestdoriEventAPI, GetServerAPIKey
     Key = await GetServerAPIKey(server)
     api = await GetBestdoriEventAPI(eventid)  
     EventName = api['eventName'][Key]
     return EventName
 
-async def IsEventActive(server: str, eventid: int):
+async def is_event_active(server: str, eventid: int):
     currentTime = time.time() * 1000
     from commands.apiFunctions import GetBestdoriEventAPI, GetServerAPIKey
     api = await GetBestdoriEventAPI(eventid)
@@ -77,9 +78,8 @@ async def IsEventActive(server: str, eventid: int):
     else:
         return False
 
-async def GetEventAttribute(eventid: int):
+async def get_event_attribute(eventid: int):
     from commands.apiFunctions import GetBestdoriEventAPI
-
     api = await GetBestdoriEventAPI(eventid)  
     EventAttribute = api['attributes'][0]['attribute']
     return EventAttribute
@@ -99,12 +99,11 @@ async def GetCurrentEventID(server: str):
         try:
             for event in api:
                 try:
-                    if float(api[event]['endAt'][TimeKey]) < currentTime < float(api[str(int(event) + 1)]['endAt'][TimeKey]): #In jp's case, there may not be an entry for the next event yet
+                    if currentTime < float(api[event]['startAt'][TimeKey]):
                         CurrentEventID = event
                         break
                 except TypeError: # For between events
-                    CurrentEventID = int(event)
-                    break
+                    continue
         except KeyError:
             CurrentEventID = list(api.keys())[-1]
     if CurrentEventID:
@@ -331,7 +330,10 @@ async def CalculatecutoffEstimates(server, tier, EventID):
             Ests.append(estimate[0])
         if TimeEntry >= TwentyFourHoursBeforeEnd:
             # Calculate the last estimate, but use a new weight
-            estimate = (Intercepts[-1] + Slopes[-1] + (Rate * Slopes[-1]))
+            try:
+                estimate = (Intercepts[-1] + Slopes[-1] + (Rate * Slopes[-1]))
+            except IndexError:
+                estimate = 0
             NonSmoothingEstimates.append(estimate)
             TimeDifference = TimeEntry - EventStartTime
             PercentIntoEvent = TimeDifference / Duration
@@ -432,7 +434,7 @@ async def CreateGraph(Server, EventID, Tier, CurrentEPValues, CurrentTimes, Esti
     return FileName, DiscordFileObject
 
 async def GetCutoffFormatting(server: str, tier: int, graph: bool):
-    from commands.apiFunctions import GetBestdoriEventAPI, GetBestdoriBannersAPI, GetBestdoriCutoffAPI, GetBestdoriRateAPI, GetTierKey, GetServerAPIKey
+    from commands.apiFunctions import GetBestdoriEventAPI, get_bestdori_banners_api, GetBestdoriCutoffAPI, GetBestdoriRateAPI, GetTierKey, GetServerAPIKey
     from commands.formatting.TimeCommands import GetTimeLeftString, GetEventProgress, GetEventTimeLeftSeconds, GetEventLengthSeconds, GetEventStartTime
     import math, time, os
     EventID = await GetCurrentEventID(server)
@@ -584,7 +586,7 @@ async def GetCutoffFormatting(server: str, tier: int, graph: bool):
     timeLeft = await GetTimeLeftString(server,EventID)
     prog = await GetEventProgress(server,EventID) 
     prog = str(prog) + '%'
-    bannerAPI = await GetBestdoriBannersAPI(int(EventID))
+    bannerAPI = await get_bestdori_banners_api(int(EventID))
     bannerName = bannerAPI['assetBundleName']
     eventUrl = 'https://bestdori.com/info/events/' + str(EventID)
     thumbnail = 'https://bestdori.com/assets/%s/event/%s/images_rip/logo.png'  %(server,bannerName)
@@ -592,7 +594,6 @@ async def GetCutoffFormatting(server: str, tier: int, graph: bool):
     if EstimateSmoothing == '0':
         EstimateSmoothing = '?'
         EstimateNoSmoothing = '?'
-        
 
     embed=discord.Embed(title=EventName, url=eventUrl, color=0x09d9fd)
     embed.set_thumbnail(url=thumbnail)

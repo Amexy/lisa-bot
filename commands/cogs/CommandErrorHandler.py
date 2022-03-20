@@ -34,7 +34,7 @@ class CommandErrorHandler(commands.Cog):
             return
 
         if isinstance(error, commands.DisabledCommand):
-            await ctx.send(f'{ctx.command} has been disabled.')
+            await ctx.send(f'The {ctx.command} command has been disabled')
 
         elif isinstance(error, commands.MissingRequiredArgument):
             params = ' '.join([x for x in ctx.command.clean_params])

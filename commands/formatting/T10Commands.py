@@ -7,7 +7,7 @@ from datetime import timedelta
 from pytz import timezone
 from tabulate import tabulate
 from commands.apiFunctions import GetBestdoriAllEventsAPI, GetSongAPI
-from commands.formatting.EventCommands import GetEventName
+from commands.formatting.EventCommands import get_event_name
 from startup.login import enICEObject, jpICEObject
 from protodefs.ranks import t10ranks
 from google.protobuf.json_format import MessageToJson
@@ -105,7 +105,7 @@ async def t10formatting(server: str, event_id: int, ids: bool):
     from commands.formatting.misc_functions import format_number
     import time
     t10_api = await get_bestdori_t10_api(server, event_id)
-    event_name = await GetEventName(server, event_id)
+    event_name = await get_event_name(server, event_id)
     fmt = "%Y-%m-%d %H:%M:%S %Z%z"
     now_time = datetime.now(timezone('US/Central'))    
     i = 1
@@ -173,7 +173,7 @@ async def t10membersformatting(server: str, event_id: int, songs: bool):
     i = 1
     fmt = "%Y-%m-%d %H:%M:%S %Z%z"
     now_time = datetime.now(timezone('US/Central'))
-    event_name = await GetEventName(server, event_id)
+    event_name = await get_event_name(server, event_id)
     if not songs:
         from commands.apiFunctions import get_bestdori_t10_api
         t10_api = await get_bestdori_t10_api(server, event_id)

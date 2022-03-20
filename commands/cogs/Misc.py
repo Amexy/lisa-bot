@@ -37,7 +37,7 @@ class Misc(commands.Cog):
                      description='In the event that the loops (in particular 2 minute/1hr t10 posting) stop working, run this command to restart that process. If you want access to this command, please use the .notify command')
     async def reload(self, ctx, cog: str = ''):
         if not cog: #By default, it will reload the Loops command since this is the most common one that fails and users need access to
-            ValidUsers = [133048058756726784,158699060893581313,384333652344963074,117394661886263302,119252023395876864,485843748647993375, 99640840929943552, 202289392394436609, 102201838752784384, 358733607151599636, 229933911717707776, 181690542730641408, 154997108603224064]
+            ValidUsers = [237056335781429248,536841610848239616,185080245353709568,133048058756726784,158699060893581313,384333652344963074,117394661886263302,119252023395876864,485843748647993375, 99640840929943552, 202289392394436609, 102201838752784384, 358733607151599636, 229933911717707776, 181690542730641408, 154997108603224064]
             if ctx.message.author.id not in ValidUsers:
                 await ctx.send("You are not authorized to use this command. If you'd like access, please use the .notify command requesting access")
             else: 
@@ -136,8 +136,10 @@ class Misc(commands.Cog):
     @commands.command(name='translate',
                       aliases=['t'],
                       description='Translates the message given. Autodetects language',
-                      help='.translate 今井リサ')
+                      help='.translate 今井リサ',
+                      enabled=False)
     async def translate(self, ctx,  *message):
+        await ctx.send("Google's translate library broke and I don't have time to find a fix right now so this command is disabled")
         if not message:
             output = 'Please enter a message to translate'
         else:

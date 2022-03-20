@@ -285,6 +285,8 @@ def mapJsonToCards(k, v, skills) -> Card:
     duration = skill['duration'][4]
     # Life recovery values are not in API
     # fml
+    if not desc:
+        desc: str = skill['description'][0] 
     if "{1}" in desc:
         desc = desc.replace("{0} ", "")
         desc = desc.replace("{1}", "{0}")

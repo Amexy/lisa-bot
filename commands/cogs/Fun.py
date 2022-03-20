@@ -1,7 +1,5 @@
 from discord.ext import commands
-from pixivpy3 import *
 from typing import Union
-#from main import ctime
 import discord, shutil, time, requests, math, asyncio, os, json
 
 class Fun(commands.Cog):
@@ -11,8 +9,6 @@ class Fun(commands.Cog):
         self.AllTwoStarCards = self.AllCards[0]
         self.AllThreeStarCards = self.AllCards[1]
         self.AllFourStarCards = self.AllCards[2]
-        # self.api = AppPixivAPI()
-        # asyncio.run(self.GetImages())
 
     async def GetCardRarityCount(self, rarity: int):
         from timeit import default_timer
@@ -26,55 +22,7 @@ class Fun(commands.Cog):
         #count = sum(map(lambda value: value["rarity"] == rarity, all_cards_api.values()))
         print(f"{default_timer() - time}")
         return count
-
-    #@ctime
-    async def GetImages(self):
-        import json
-        from commands.apiFunctions import GetBestdoriAllCharasAPI
-        api = self.api
-        r = await GetBestdoriAllCharasAPI()
-        AllCharacters = []
-        AllCharactersEnglish = []
-        for x in r:
-            charalist = r[x]['characterName']
-            if charalist[1]:
-                name = "".join(charalist[0].split())
-                AllCharacters.append([charalist[1],name])
-        AllCharacters = AllCharacters[0:34] # Because the API has a lot more than the 25 main characters
-        for chara in AllCharacters:
-            AllPics = {}
-            
-            print(f'Grabbing pictures for {chara[0]}')
-            Pics = []
-            pics = api.search_illust(chara[1])
-            for pic in pics.illusts:
-                if pic['total_bookmarks'] > 100 and pic['sanity_level'] < 3 and pic['page_count'] == 1 and pic['type'] == 'illust':
-                    Pics.append(pic)
-            ContinueSearching = True
-            while ContinueSearching:
-                next_page = api.parse_qs(pics.next_url)
-                pics = api.search_illust(**next_page)
-                if 'illusts' in pics.keys():
-                    for pic in pics.illusts:
-                        if pic['total_bookmarks'] > 100 and pic['sanity_level'] < 3 and pic['page_count'] == 1 and pic['type'] == 'illust':
-                            Pics.append(pic)
-                    if pics.next_url:
-                        ContinueSearching = True
-                    else:
-                        ContinueSearching = False
-                else:
-                    ContinueSearching = False
-            data = {chara[0]: {
-            "pics" : Pics}}
-            AllPics.update(data)
-            newfile = json.dumps(AllPics)
-            f = open(f"{chara[0]}.json","a")
-            f.write(newfile)
-            f.close()
-            await asyncio.sleep(60)
-        return AllPics
     
-    #@ctime
     async def get_titles(self, server):
         import requests, shutil, os
         from tqdm import tqdm
@@ -88,7 +36,6 @@ class Fun(commands.Cog):
                 del r  
         print('Finished extracting titles')
     
-    #@ctime
     async def GetCards(self):
         AllFourStarCards = []
         AllThreeStarCards = []
@@ -115,17 +62,16 @@ class Fun(commands.Cog):
     @commands.command(name='updatecards',
                       hidden=True,
                       enabled=True)
-    #@ctime
     async def GetIcons(self, ctx, gachacards: bool = True):
         try:
             await UpdateCardIcons()
+            await ctx.send('Updated icons successfully')
             print('Updated icons successfully')
         except:
             print('Failed updating icons')
          
     @commands.command(name='updatetitles',
                       hidden=True)
-    #@ctime
     async def update_titles(self, ctx, server: str):
         if ctx.author.id == 158699060893581313:
             try:
@@ -331,19 +277,22 @@ class Fun(commands.Cog):
         except SystemError:
             await ctx.send(f'No 4* were found for your user, please use the `roll` command to get more cards or add `3` to the command to check your 3* album')
         except discord.errors.HTTPException:
+            os.remove(file_name)
             await ctx.send(f"Album size too large, please rerun the command but add `jpg` to it to upload a smaller sized image")
-        except:
+        except Exception as e:
+            print(f"{e}")
             await ctx.send(f'Unknown error. Likely there is no card data for your user yet, please use the `roll` command to get more cards or add `3` to the command to check your 3* album')
-
+        if os.path.exists(file_name):
+            print('Removing file')
+        else:
+            print('Not removing file')
     @commands.command(name='roll',
                       description='Simulates a 10 roll using the default rates and all the permanent/limited cards that have been released in JP so far. Event cards are not included. Add df and/or the bands/characters names to the input to simulate increased rates/only roll those cards.',
                       help='For bands, the values below are valid, if an invalid value is entered, the command will fail\n\nRoselia\nAfterglow\nPopipa\nPasupare\nHHW\nMorfonica\n\n.roll\n.roll df\n.roll lisa\n.roll df yukina lisa\n.roll roselia\n.roll roselia popipa')
-    #@ctime
     async def gacha_roll(self, ctx, *args):
         from timeit import default_timer
         from functools import wraps
         user = self.bot.get_user(ctx.message.author.id)
-        time = default_timer()
         try:
             import re
             import random
@@ -508,7 +457,6 @@ class Fun(commands.Cog):
             total_count = two_star_count + three_star_count + four_star_count
             four_star_rate = f"{round(((four_star_count / total_count) * 100), 2)}%"
             icon =  f"{ctx.author.avatar_url.BASE}{ctx.author.avatar_url._url}"
-            print(f'{round((default_timer() - time),2)}')
             embed=discord.Embed(title=title,color=discord.Color.blue())
             embed.set_thumbnail(url=icon)
             embed.add_field(name='Total Cards Rolled',value="{:,}".format(total_count),inline=True)
@@ -520,22 +468,22 @@ class Fun(commands.Cog):
             embed.add_field(name='4* Rolled',value=four_stars_rolled,inline=True) 
             embed.set_image(url=f"attachment://{file_name}")
             embed.set_footer(text="Want to see an album with all your 4 and 3*? Use the album command\nWant to see all your stats? Use the rollstats command\nWant to check the leaderboards? Use the rolllb command")
-            time = default_timer()
             await ctx.send(file=discord_file, embed=embed)
-            print(f'{round((default_timer() - time),2)}')
             os.remove(saved_file_path)
             await update_roll_album_db(roll_info)
-            
+        except FileNotFoundError:
+            await ctx.send("Failed generating a roll. This is likely because the the name for whatever entered was incorrect")
         except IndexError:
             await ctx.send("Failed generating a roll. This is likely because the bot rolled a card that doesn't exist (e.g. 3* rokka)")
         except Exception as e:
-            print(str(e))
+            import traceback
+            print(traceback.format_exc())
+            #print(str(e))
             await ctx.send('Failed generating a roll. If this keeps happening, please use the `notify` command to let Josh know')
             pass
 
     @commands.command(name='lisafeet',
                     description='Possi and Aura told me to make this so here it is')
-    #@ctime
     async def forpossiandaura(self, ctx):
         # Pubcord
         if ctx.message.guild.id != 432379300684103699:
@@ -559,93 +507,93 @@ class Fun(commands.Cog):
     @commands.command(name='picture',
                       aliases=['p'],
                       description='Note: THIS MAY RETURN NSFW IMAGES\n\nReturns an image (or images if multiple names/bands are entered) with > 100 bookmarks on Pixiv for the specified character/band/or defaults to Bang Dream tag and returns one random image from that list.',
-                      help='For bands, the values below are valid, if an invalid value is entered, the command will fail\n\nRoselia\nAfterglow\nPopipa\nPasupare\nHHW\n\n.picture\n.picture lisa\n.p roselia arisa himari')
-    #@ctime
+                      help='For bands, the values below are valid, if an invalid value is entered, the command will fail\n\nRoselia\nAfterglow\nPopipa\nPasupare\nHHW\n\n.picture\n.picture lisa\n.p roselia arisa himari',
+                      enabled=False)
     async def picture(self, ctx, *queries):
         await ctx.send('Command temporarily disabled until I have time to fix some of its issues.')
         # i really don't want to fix this since the pixiv api is such a pain in the ass to work with
-        # try:
-        #     from commands.apiFunctions import GetBestdoriAllCharasAPI
-        #     from discord import File
-        #     import random, json       
+        try:
+            from commands.apiFunctions import GetBestdoriAllCharasAPI
+            from discord import File
+            import random, json       
             
-        #     AllQueries = []
-        #     CharaImageURLs = []
-        #     if not queries:
-        #         await ctx.send("Please enter a character's name to search")
-        #         # AllQueries.append('バンドリ')
-        #         # CharaImageURLs.append(
-        #         #     'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/BanG_Dream%21_logo.svg/1200px-BanG_Dream%21_logo.svg.png')
-        #     else:
-        #         if queries[0] == 'yukilisa':
-        #             newquery = 'リサゆき'
-        #             AllQueries.append('リサゆき')
-        #             CharaImageURLs.append('https://bestdori.com/res/icon/chara_icon_23.png')
-        #             charaId = '23'
+            AllQueries = []
+            CharaImageURLs = []
+            if not queries:
+                await ctx.send("Please enter a character's name to search")
+                # AllQueries.append('????')
+                # CharaImageURLs.append(
+                #     'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/BanG_Dream%21_logo.svg/1200px-BanG_Dream%21_logo.svg.png')
+            else:
+                if queries[0] == 'yukilisa':
+                    newquery = '????'
+                    AllQueries.append('????')
+                    CharaImageURLs.append('https://bestdori.com/res/icon/chara_icon_23.png')
+                    charaId = '23'
 
-        #         else:
-        #             for query in queries:
-        #                 if query.lower() in ['roselia','afterglow','pasupare','popipa','hhw']:
-        #                     newquery = query.lower()
-        #                     if query.lower() == 'popipa':
-        #                         AllQueries.append("Poppin'Party")
-        #                         CharaImageURLs.append('https://vignette.wikia.nocookie.net/bandori/images/d/d2/Band_1.svg/revision/latest/scale-to-width-down/40?cb=20191102143957')
-        #                     elif query.lower() == 'afterglow':
-        #                         AllQueries.append("afterglow")
-        #                         CharaImageURLs.append('https://vignette.wikia.nocookie.net/bandori/images/2/21/Band_2.svg/revision/latest/scale-to-width-down/40?cb=20191102143958')
-        #                     elif query.lower() == 'hhw':
-        #                         AllQueries.append("ハロー、ハッピーワールド!")
-        #                         CharaImageURLs.append('https://vignette.wikia.nocookie.net/bandori/images/8/82/Band_3.svg/revision/latest/scale-to-width-down/40?cb=20191102143958')
-        #                     elif query.lower() == 'pasupare':
-        #                         AllQueries.append("PastelPalettes")
-        #                         CharaImageURLs.append('https://vignette.wikia.nocookie.net/bandori/images/3/3e/Band_4.svg/revision/latest/scale-to-width-down/40?cb=20191102143958')
-        #                     elif query.lower() == 'roselia':
-        #                         AllQueries.append("roselia")
-        #                         CharaImageURLs.append('https://vignette.wikia.nocookie.net/bandori/images/e/ee/Icon_roselia.png/revision/latest/scale-to-width-down/40?cb=20190316121700')
-        #                 else:
-        #                     r = await GetBestdoriAllCharasAPI()
-        #                     charaId = False
-        #                     for x in r:
-        #                         if charaId:
-        #                             break
-        #                         charalist = r[x]['characterName']
-        #                         if query.capitalize() in charalist[1]:
-        #                             charaId = x
-        #                             AllQueries.append("".join(charalist[1]))
-        #                             CharaImageURLs.append('https://bestdori.com/res/icon/chara_icon_%s.png' % charaId)
-        #         for newquery, charaImageURL in zip(AllQueries, CharaImageURLs):
-        #             db = f'data/databases/tinydb/{newquery}.json'
-        #             with open(db, 'r') as file:
-        #                 db = json.load(file)
-        #             pic = random.choice(db[newquery]['pics'])
-        #             PicID = pic['id']
-        #             PicURL = pic['image_urls']['large']
-        #             SavedPicPath = f'data/img/imgTmp/{PicID}_p0.jpg'
-        #             response = requests.get(PicURL, 
-        #                                     headers={
-        #                                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36', 
-        #                                         'referer' : PicURL,
-        #                                         'scheme' : 'https',
-        #                                         'accept' : 'image/webp,image/apng,image/*,*/*;q=0.8'
-        #                                         },
-        #                                     stream=True)
-        #             if os.path.exists(SavedPicPath):
-        #                 os.remove(SavedPicPath)
-        #             with open(SavedPicPath, 'ab') as Out_file:
-        #                 response.raw.decode_content = True
-        #                 Out_file.write(response.content)   
-        #                 DiscordFileObject = File(SavedPicPath)
-        #             channel: discord.TextChannel = self.bot.get_channel(712732064381927515)  # Change this channel to the channel you want the bot to send images to so it can grab a URL for the embed
-        #             fileSend: discord.Message = await channel.send(file=DiscordFileObject)
-        #             TitleURL = f"https://www.pixiv.net/en/artworks/{PicID}"
-        #             embed=discord.Embed(title=pic['title'],url=TitleURL,color=discord.Color.blue())
-        #             embed.set_thumbnail(url=charaImageURL)
-        #             embed.set_image(url=fileSend.attachments[0].url)
-        #             embed.add_field(name='Artist',value=pic['user']['name'],inline=True)
-        #             embed.add_field(name='Date',value=pic['create_date'],inline=True)
-        #             await ctx.send(embed=embed)
-        # except:
-        #     await ctx.send('Failed posting image. Please use the `notify` command if this keeps happening')   
+                else:
+                    for query in queries:
+                        if query.lower() in ['roselia','afterglow','pasupare','popipa','hhw']:
+                            newquery = query.lower()
+                            if query.lower() == 'popipa':
+                                AllQueries.append("Poppin'Party")
+                                CharaImageURLs.append('https://vignette.wikia.nocookie.net/bandori/images/d/d2/Band_1.svg/revision/latest/scale-to-width-down/40?cb=20191102143957')
+                            elif query.lower() == 'afterglow':
+                                AllQueries.append("afterglow")
+                                CharaImageURLs.append('https://vignette.wikia.nocookie.net/bandori/images/2/21/Band_2.svg/revision/latest/scale-to-width-down/40?cb=20191102143958')
+                            elif query.lower() == 'hhw':
+                                AllQueries.append("????????????!")
+                                CharaImageURLs.append('https://vignette.wikia.nocookie.net/bandori/images/8/82/Band_3.svg/revision/latest/scale-to-width-down/40?cb=20191102143958')
+                            elif query.lower() == 'pasupare':
+                                AllQueries.append("PastelPalettes")
+                                CharaImageURLs.append('https://vignette.wikia.nocookie.net/bandori/images/3/3e/Band_4.svg/revision/latest/scale-to-width-down/40?cb=20191102143958')
+                            elif query.lower() == 'roselia':
+                                AllQueries.append("roselia")
+                                CharaImageURLs.append('https://vignette.wikia.nocookie.net/bandori/images/e/ee/Icon_roselia.png/revision/latest/scale-to-width-down/40?cb=20190316121700')
+                        else:
+                            r = await GetBestdoriAllCharasAPI()
+                            charaId = False
+                            for x in r:
+                                if charaId:
+                                    break
+                                charalist = r[x]['characterName']
+                                if query.capitalize() in charalist[1]:
+                                    charaId = x
+                                    AllQueries.append("".join(charalist[1]))
+                                    CharaImageURLs.append('https://bestdori.com/res/icon/chara_icon_%s.png' % charaId)
+                for newquery, charaImageURL in zip(AllQueries, CharaImageURLs):
+                    db = f'data/databases/tinydb/{newquery}.json'
+                    with open(db, 'r') as file:
+                        db = json.load(file)
+                    pic = random.choice(db[newquery]['pics'])
+                    PicID = pic['id']
+                    PicURL = pic['image_urls']['large']
+                    SavedPicPath = f'data/img/imgTmp/{PicID}_p0.jpg'
+                    response = requests.get(PicURL, 
+                                            headers={
+                                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36', 
+                                                'referer' : PicURL,
+                                                'scheme' : 'https',
+                                                'accept' : 'image/webp,image/apng,image/*,*/*;q=0.8'
+                                                },
+                                            stream=True)
+                    if os.path.exists(SavedPicPath):
+                        os.remove(SavedPicPath)
+                    with open(SavedPicPath, 'ab') as Out_file:
+                        response.raw.decode_content = True
+                        Out_file.write(response.content)   
+                        DiscordFileObject = File(SavedPicPath)
+                    channel: discord.TextChannel = self.bot.get_channel(712732064381927515)  # Change this channel to the channel you want the bot to send images to so it can grab a URL for the embed
+                    fileSend: discord.Message = await channel.send(file=DiscordFileObject)
+                    TitleURL = f"https://www.pixiv.net/en/artworks/{PicID}"
+                    embed=discord.Embed(title=pic['title'],url=TitleURL,color=discord.Color.blue())
+                    embed.set_thumbnail(url=charaImageURL)
+                    embed.set_image(url=fileSend.attachments[0].url)
+                    embed.add_field(name='Artist',value=pic['user']['name'],inline=True)
+                    embed.add_field(name='Date',value=pic['create_date'],inline=True)
+                    await ctx.send(embed=embed)
+        except:
+             await ctx.send('Failed posting image. Please use the `notify` command if this keeps happening')   
                             
     @commands.command(name='rolllb',
                       aliases=['rlb'],
@@ -670,7 +618,7 @@ class Fun(commands.Cog):
             output = 'No rolls have been generated for that character yet'
         except Exception as e:
             output = 'Failed getting the roll leaderboards. Please use the `notify` command if this keeps happening'
-        await ctx.send(output)
+        await ctx.send(output)        
         
     @commands.command(name='birthdays',
                       aliases=['bdays','bday'],
@@ -679,8 +627,7 @@ class Fun(commands.Cog):
     #@ctime
     async def bdays(self,ctx,*add):
         if add and add[0] == 'add':
-            user = self.bot.get_user(ctx.message.author.id)
-            Name = user.name + '#' + user.discriminator
+            Name = ctx.message.author.name + '#' + ctx.message.author.discriminator
             ServerID = ctx.message.guild.id
             Date = add[1].capitalize() + ' ' + add[2]
             try:
@@ -689,8 +636,7 @@ class Fun(commands.Cog):
             except:
                 output = "Failed adding user to the birthdays list. Please use the `notify` command if this keeps happening"
         elif add and add[0] == 'del':
-            user = self.bot.get_user(ctx.message.author.id)
-            Name = user.name + '#' + user.discriminator
+            Name = ctx.message.author.name + '#' + ctx.message.author.discriminator
             ServerID = ctx.message.guild.id
             Date = '0 0'
             try:
@@ -716,7 +662,7 @@ class Fun(commands.Cog):
     #@ctime    
     def UpdateBirthdaysJSON(self, Server, User, Date, Delete: bool = False):
         import json
-        FileName = 'databases/birthdays.json'
+        FileName = 'data/databases/tinydb/birthdays.json'
         try:
             with open(FileName) as file:
                 api = json.load(file)
@@ -785,13 +731,19 @@ async def UpdateCardIcons():
             BaseIconsPath = f"data/img/icons/base_icons/{x}.png"
             FullIconsPath  = f"data/img/icons/full_icons/{x}.png"
             GachaIconsPath = f"data/img/icons/{CharaName}/{Rarity}/{x}.png"
-            GachaTypes = ['limited','permanent']
+            GachaTypes = ['limited','permanent','birthday']
             # DO THE GACHA ICONS IN THIS LOGIC TOO IF RARITY > 1
             if not path.exists(FullIconsPath):
                 URLList = []
-                UntrainedCardURL = f'https://bestdori.com/assets/jp/thumb/chara/card000{Folder}_rip/{ResourceSetName}_normal.png' 
-                URLList.append(UntrainedCardURL)
-                if int(Rarity) > 2:
+                if Type != 'birthday':
+                    UntrainedCardURL = f'https://bestdori.com/assets/jp/thumb/chara/card000{Folder}_rip/{ResourceSetName}_normal.png' 
+                    URLList.append(UntrainedCardURL)
+                    if int(Rarity) > 2:
+                        TrainedCardURL = f'https://bestdori.com/assets/jp/thumb/chara/card000{Folder}_rip/{ResourceSetName}_after_training.png'
+                        URLList.append(TrainedCardURL)
+                else:
+                    UntrainedCardURL = f'https://bestdori.com/assets/jp/thumb/chara/card000{Folder}_rip/{ResourceSetName}_after_training.png' 
+                    URLList.append(UntrainedCardURL)
                     TrainedCardURL = f'https://bestdori.com/assets/jp/thumb/chara/card000{Folder}_rip/{ResourceSetName}_after_training.png'
                     URLList.append(TrainedCardURL)
                 for url in URLList:
@@ -839,11 +791,14 @@ async def UpdateCardIcons():
                         im.paste(bandBg, (1, 2), mask=bandBg)
                         # The last URL in the list will always be the trained card which isn't needed for the gacha cards
                         if Type in GachaTypes:
-                            if int(Rarity) == 2:
-                                im.save(GachaIconsPath)
-                            elif int(Rarity) > 2:
-                                if url != URLList[-1]:
+                            if not path.exists(GachaIconsPath):
+                                if int(Rarity) == 2:
                                     im.save(GachaIconsPath)
+                                elif int(Rarity) > 2:
+                                    if Type == 'birthday':
+                                        im.save(GachaIconsPath)
+                                    elif url != URLList[-1]:
+                                        im.save(GachaIconsPath)
                         im.save(FullIconsPath)
                     except:
                         print(f"Failed adding card with ID {x}")

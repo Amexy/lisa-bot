@@ -1,4 +1,5 @@
 lb/*
+env/*
 config.json
 t10archives/
 databases/
@@ -45,3 +46,5 @@ apps/
 chromedriver
 discord.log
 EXCEPTIONS.log
+*.svg
+commands/cogs/Loops.old.py

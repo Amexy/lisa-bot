@@ -6,6 +6,7 @@ from pytz import timezone
 from operator import itemgetter
 from time import strftime, gmtime
 from commands.cogs.Cards import parseCards, generateImage, Palette, filterArguments, findCardFromArguments, Card
+from commands.formatting.EventCommands import is_event_active
 from commands.formatting.TimeCommands import GetCurrentTime
 import discord, shutil, time, requests, math, asyncio, traceback, os
 #from main import ctime
@@ -133,7 +134,8 @@ class Game(commands.Cog):
             embed.set_image(url=f"attachment://{BandFileName[0]}")
 
             await ctx.send(files=[icon,BandImageFile],embed=embed)
-        except requests.exceptions.HTTPError:
+        except requests.exceptions.HTTPError as e:
+            print(f"{e}")
             await ctx.send("```Failed looking up that player\n\nReason: Player ID not found```")
         except FileNotFoundError:
             await ctx.send("```Failed looking up that player\n\nReason: Titles haven't been updated. Please use the notify command to remind Josh```")
@@ -256,8 +258,8 @@ class Game(commands.Cog):
                       help='event\n.event jp\n.event en 12\n.event en Lisa\n.event jp 一閃')
     #@ctime
     async def event(self, ctx, server: str = 'en', *event):
-        from commands.formatting.EventCommands import GetEventName, GetCurrentEventID, GetEventAttribute
-        from commands.apiFunctions import GetBestdoriAllCharactersAPI2, GetBestdoriAllEventsAPI, GetBestdoriBannersAPI, GetBestdoriEventArchivesAPI, GetServerAPIKey
+        from commands.formatting.EventCommands import get_event_name, GetCurrentEventID, get_event_attribute
+        from commands.apiFunctions import GetBestdoriAllCharactersAPI2, GetBestdoriAllEventsAPI, get_bestdori_banners_api, GetBestdoriEventArchivesAPI, GetServerAPIKey
         from protodefs.ranks import GetEventType
         try:
             validServer = ["en","jp","tw","cn"]
@@ -267,7 +269,7 @@ class Game(commands.Cog):
                 
                 if event:
                     if event[0].isnumeric():
-                        EventName = await GetEventName(server, event[0])
+                        EventName = await get_event_name(server, event[0])
                         EventID = event[0]
                     else:
                         eventString = event[0]
@@ -293,12 +295,12 @@ class Game(commands.Cog):
                                     break
                 else:
                     EventID = await GetCurrentEventID(server)
-                    EventName = await GetEventName(server,EventID)
+                    EventName = await get_event_name(server,EventID)
 
-                attribute = await GetEventAttribute(EventID)
+                attribute = await get_event_attribute(EventID)
                 eventType = await GetEventType(EventID)
-                if(eventType == 'live_try'):
-                    eventType = 'Live Try'
+                if(eventType == 'live_try' or eventType == 'livetry'):
+                    eventType = 'live'
                 if(attribute == 'powerful'):
                     embedColor = 0x0ff345a
                 elif(attribute == 'cool'):
@@ -339,7 +341,7 @@ class Game(commands.Cog):
                 #check to see if event requested is an active event or not
                 currentTime = int(round(time.time() * 1000))
                 
-                bannerAPI = await GetBestdoriBannersAPI(int(EventID))
+                bannerAPI = await get_bestdori_banners_api(int(EventID))
                 bannerName = bannerAPI['assetBundleName']
                 eventUrl = 'https://bestdori.com/info/events/' + str(EventID)
                 thumbnail = 'https://bestdori.com/assets/%s/event/%s/images_rip/logo.png'  %(server,bannerName)
@@ -347,6 +349,8 @@ class Game(commands.Cog):
                 embed.set_thumbnail(url=thumbnail)
                 embed.add_field(name='Attribute', value=str(attribute).capitalize(), inline=True)
                 embed.add_field(name='Event Type', value=str(eventType).capitalize(), inline=True)
+                event_active = await is_event_active(server, EventID)
+                embed.add_field(name='Active', value="Yes" if event_active else "No", inline=True)
                 if(currentTime > int(endTime)):
                     archiveAPI = await GetBestdoriEventArchivesAPI()
                     if str(EventID) in archiveAPI.keys():

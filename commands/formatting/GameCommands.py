@@ -41,7 +41,7 @@ async def get_chara_card_count(character, rarity):
                 chara_id = int(chara)
                 break 
     for card in card_api:
-        if chara_id == card_api[card]['characterId'] and rarity == card_api[card]['rarity'] and card_api[card]['type'] in ['permanent', 'limited']:
+        if chara_id == card_api[card]['characterId'] and rarity == card_api[card]['rarity'] and card_api[card]['type'] in ['permanent', 'limited','birthday']:
             count += 1
     return count
 

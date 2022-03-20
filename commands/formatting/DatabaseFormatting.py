@@ -81,7 +81,6 @@ async def get_roll_leaderboards_info(*character):
     # may need this later
     # r = c.execute(f"SELECT SUM(two_stars_count + three_stars_count + four_stars_count) AS cards_rolled FROM {table} INNER JOIN users ON users.discord_id = {table}.discord_id ORDER BY cards_rolled DESC LIMIT 20")
     return r.fetchall()
-
 #@ctime
 async def update_roll_album_db(roll_info):
     album_db = 'data/databases/albums.json'

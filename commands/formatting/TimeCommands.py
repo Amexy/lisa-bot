@@ -8,6 +8,8 @@ from datetime import datetime
 from datetime import timedelta
 from pytz import timezone
 
+from commands.formatting.EventCommands import is_event_active
+
 
 async def GetCurrentTime():
     currentTime = time.time()*1000.0
@@ -15,11 +17,11 @@ async def GetCurrentTime():
 
 async def GetEventTimeLeftSeconds(server: str, eventid: int):
     CurrentTime = await GetCurrentTime()
-    EventEndTime = await GetEventEndTime(server, eventid)
+    EventEndTime = await get_event_end_time(server, eventid)
     TimeLeftSeconds = (float(EventEndTime) - CurrentTime) / 1000
     return TimeLeftSeconds
 
-async def GetEventEndTime(server: str, eventid: int):
+async def get_event_end_time(server: str, eventid: int):
     from commands.apiFunctions import GetBestdoriEventAPI, GetServerAPIKey
     TimeKey = await GetServerAPIKey(server)
     api = await GetBestdoriEventAPI(eventid)  
@@ -33,8 +35,8 @@ async def GetEventStartTime(server: str, eventid: int):
     EventStartTime = api['startAt'][TimeKey]
     return float(EventStartTime)
 
-async def GetEventProgress(server: str, eventid: int):
-    EventEndTime = await GetEventEndTime(server, eventid)
+async def get_event_progress(server: str, eventid: int):
+    EventEndTime = await get_event_end_time(server, eventid)
     CurrentTime = await GetCurrentTime()
     StartTime = await GetEventStartTime(server, eventid)
     TimeLeft = EventEndTime - CurrentTime
@@ -48,54 +50,44 @@ async def GetEventProgress(server: str, eventid: int):
         EventProgressPercent = 100
     return EventProgressPercent
 
-async def GetTimeLeftCommandOutput(server: str, eventid: int):
-    TimeLeftSeconds = await GetEventTimeLeftSeconds(server, eventid)
-    if(TimeLeftSeconds < 0):
-        from commands.apiFunctions import GetBestdoriEventAPI
-        from commands.formatting.EventCommands import GetEventName
-        import aiohttp
-        try:
-            CurrentTime = time.time() * 1000
-            TimeTilNextEventStarts = (int(await GetEventStartTime(server, int(eventid) + 1)) - CurrentTime )/ 1000
-            Days = str(int(TimeTilNextEventStarts) // 86400)
-            Hours = str(int(TimeTilNextEventStarts) // 3600 % 24)
-            Minutes = str(int(TimeTilNextEventStarts) // 60 % 60)
-            StringTimeLeft = (Days + "d " + Hours + "h " + Minutes + "m")
-            OldEventName = await GetEventName(server, int(eventid))
-            UpcomingEventName = await GetEventName(server, int(eventid) + 1)
-            output = f"`{OldEventName}` is completed. `{UpcomingEventName}` starts in {StringTimeLeft}"
-        except aiohttp.client_exceptions.ContentTypeError: # This will typically happen on JP since Bestdori doesn't always have the next event's information available until ~24 hours before event start
-            output = 'The event is completed'
+async def get_time_to_next_event_formatted(server: str, eventid: int):
+    current_time = await GetCurrentTime()
+    event_start_time = await GetEventStartTime(server, eventid)
+    time_to_event = (event_start_time - current_time) / 1000
+    days = str(int(time_to_event // 86400))
+    hours = str(int(time_to_event // 3600 % 24))
+    minutes = str(int(time_to_event // 60 % 60))
+    return (days + "d " + hours + "h " + minutes + "m")
+     
+async def get_time_left_command_output(server: str, eventid: int):
+    from commands.formatting.EventCommands import get_event_name, get_event_attribute
+    from commands.apiFunctions import get_bestdori_banners_api
+    event_active = await is_event_active(server, eventid)
+    current_event_name = await get_event_name(server, eventid)
+    event_end_time = datetime.fromtimestamp(await get_event_end_time(server, eventid) / 1000).strftime("%Y-%m-%d %H:%M:%S %Z%z") + ' UTC'
+    event_progress = f"{await get_event_progress(server,eventid)}%" if event_active else "N/A"
+    banner_api = await get_bestdori_banners_api(eventid)
+    event_attribute = await get_event_attribute(eventid)
+    if(event_attribute == 'powerful'):
+        embed_color = 0x0ff345a
+    elif(event_attribute == 'cool'):
+        embed_color = 0x04057e3
+    elif(event_attribute == 'pure'):
+        embed_color = 0x044c527
     else:
-        EventEndTime = await GetEventEndTime(server, eventid) 
-        EndDate = datetime.fromtimestamp(EventEndTime / 1000).strftime("%Y-%m-%d %H:%M:%S %Z%z") + ' UTC'
-        EventProgress = await GetEventProgress(server,eventid)
-        from commands.formatting.EventCommands import GetEventName, GetEventAttribute
-        EventName = await GetEventName(server, eventid)
-        from commands.apiFunctions import GetBestdoriBannersAPI
-        BannerAPI = await GetBestdoriBannersAPI(eventid)
-        Attribute = await GetEventAttribute(eventid)
-        if(Attribute == 'powerful'):
-            EmbedColor = 0x0ff345a
-        elif(Attribute == 'cool'):
-            EmbedColor = 0x04057e3
-        elif(Attribute == 'pure'):
-            EmbedColor = 0x044c527
-        else:
-            EmbedColor = 0x0ff6600
-        BannerName = BannerAPI['assetBundleName']
-        EventUrl = 'https://bestdori.com/info/events/' + str(eventid)
-        Thumbnail = 'https://bestdori.com/assets/%s/event/%s/images_rip/logo.png'  %(server,BannerName)
-        EventProgress = str(EventProgress) + "%"
-        StringTimeLeft = await GetTimeLeftString(server,eventid)
+        embed_color = 0x0ff6600
+    banner_name = banner_api['assetBundleName']
+    event_url = 'https://bestdori.com/info/events/' + str(eventid)
+    thumbnail = 'https://bestdori.com/assets/%s/event/%s/images_rip/logo.png'  %(server,banner_name)
+    time_left = await GetTimeLeftString(server,eventid) if event_active else await get_time_to_next_event_formatted(server, eventid)
 
-        embed=discord.Embed(title=EventName, url=EventUrl, color=EmbedColor)
-        embed.set_thumbnail(url=Thumbnail)
-        embed.add_field(name='Time Left', value=StringTimeLeft, inline=True)
-        embed.add_field(name='Progress', value=EventProgress, inline=True)
-        embed.add_field(name='End Date', value=EndDate, inline=True)
-        output = embed
-
+    embed=discord.Embed(title=current_event_name, url=event_url, color=embed_color)
+    embed.set_thumbnail(url=thumbnail)
+    embed.add_field(name='Time Left' if event_active else 'Begins In', value=time_left, inline=True)
+    embed.add_field(name='Progress', value=event_progress, inline=True)
+    embed.add_field(name='End Date', value=event_end_time, inline=True)
+    embed.set_footer(text=f"\n\n\nFor more info, try .event {server} command\n{datetime.now(timezone('US/Eastern'))}")
+    output = embed
     return output
  
 async def GetEventLengthSeconds(server, eventid):
@@ -116,6 +108,3 @@ async def GetTimeLeftString(server: str, eventid):
         Minutes = str(int(TimeLeftSeconds // 60 % 60))
         StringTimeLeft = (Days + "d " + Hours + "h " + Minutes + "m")
     return StringTimeLeft
-
-
-

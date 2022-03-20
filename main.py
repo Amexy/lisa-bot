@@ -2,15 +2,16 @@ from discord.ext import commands
 from discord.utils import find, get
 from tinydb import TinyDB, where
 from commands.formatting.DatabaseFormatting import GetReactAssignmentList, CheckMessageForReactAssignment
+from tabulate import tabulate
+from pytz import timezone
+from datetime import datetime
 import json
-import requests
 import discord
+import requests
 import asyncio
 import time
 # checks prefix database for each message. could probably improve this
 default_prefix = "."
-
-
 def prefix(bot, message):
     prefixList = TinyDB('data/databases/tinydb/prefixdb.json')
     results = prefixList.search(where('id') == message.guild.id)
@@ -20,29 +21,27 @@ def prefix(bot, message):
         prefix = default_prefix
     return prefix
 
-
-bot = commands.Bot(command_prefix=prefix, case_insensitive=True)
+from discord import AutoShardedClient
+bot = commands.AutoShardedBot(command_prefix=prefix, case_insensitive=True)
 
 # read config information
 with open("config.json") as file:
     config_json = json.load(file)
     TOKEN = config_json["token"]
-    
 
 #################
 #   Bot Stuff   #
 #################
-# def ctime(func):
-#     from timeit import default_timer
-#     from functools import wraps
-#     @wraps(func)
-#     async def wrapper(*args, **kwargs):
-#         time = default_timer()
-#         ret = await func(*args,**kwargs)
-#         print(f'{func.__name__.capitalize()}: {round((default_timer() - time),2)}')
-#         return ret
-#     return wrapper
-
+def ctime(func):
+    from timeit import default_timer
+    from functools import wraps
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        time = default_timer()
+        ret = await func(*args,**kwargs)
+        print(f'{func.__name__.capitalize()}: {round((default_timer() - time),2)}')
+        return ret
+    return wrapper
 
 @bot.event
 async def on_ready():
@@ -53,47 +52,43 @@ async def on_ready():
     print('Current Server Count: ' + str(CurrentGuildCount))
     await bot.change_presence(activity=discord.Game(name='.help | discord.gg/wDu5CAA'))
 
-
-# Temporary thing for WSC
 @bot.event
-async def on_member_join(member):
-    from discord.member import Member
-    guild = member.guild
-    if guild.id == 542056038946439190:
-        user = member
-        role = get(user.guild.roles, name='Gatherer')
-        await Member.add_roles(user, role)
-
+async def on_command(ctx):
+    untracked_accounts = [699901466776829972,631047517907451926,557654769670553650,523337807847227402,562409515585110037,235088799074484224,235148962103951360,580021037157187584]
+    if ctx.message.author.id not in untracked_accounts:
+        fmt = "%Y-%m-%d %H:%M:%S %Z%z"
+        now_time = datetime.now(timezone('US/Central'))
+        channel = bot.get_channel(666793281522368533)
+        message = []
+        message.append(["Time", now_time.strftime(fmt)])
+        message.append(["ID", str(ctx.message.author.id)]) 
+        message.append(["User", str(ctx.message.author.name) + "#" + str(ctx.message.author.discriminator)]) 
+        message.append(["Server", str(ctx.message.guild.name)]) 
+        message.append(["Channel", str(ctx.message.channel.name)]) 
+        message.append(["Command", str(ctx.invoked_with)]) 
+        message.append(["Parameters", str(ctx.message.content)])
+        await channel.send("```" + tabulate(message,tablefmt="plain") + "```")
 
 @bot.event
 async def on_message(message):
     ctx = await bot.get_context(message)
     if ctx.author.bot is False:
-        await bot.invoke(ctx)    
- 
-async def on_command(ctx):
-    from tabulate import tabulate
-    from pytz import timezone
-    from datetime import datetime
-    fmt = "%Y-%m-%d %H:%M:%S %Z%z"
-    now_time = datetime.now(timezone('US/Central'))
-    channel = bot.get_channel(666793281522368533)
-    message = []
-    message.append(["Time", now_time.strftime(fmt)])
-    message.append(["ID", str(ctx.message.author.id)]) 
-    message.append(["User", str(ctx.message.author.name) + "#" + str(ctx.message.author.discriminator)]) 
-    message.append(["Server", str(ctx.message.guild.name)]) 
-    message.append(["Channel", str(ctx.message.channel.name)]) 
-    message.append(["Command", str(ctx.invoked_with)]) 
-    message.append(["Parameters", str(ctx.message.content)])
-    await channel.send("```" + tabulate(message,tablefmt="plain") + "```")
+        #this is for a personal server of mine, just ignore it
+        if 'rinboi' in ctx.message.content.lower():
+            await ctx.send("rin is a cute girl!")
+        if 'rin boi' in ctx.message.content.lower():
+            await ctx.send("rin is a cute girl!")
+        await bot.invoke(ctx)
 
 @bot.event
 async def on_guild_join(guild):
+    channel = bot.get_channel(846143175927398431)
+    guild_owner = await bot.fetch_user(guild.owner_id)
+    message = f'```Joined Server: {guild.name}\nOwner: {guild_owner.name}#{guild_owner.discriminator}\nMember Count: {str(guild.member_count)}\nDate Made: {str(guild.created_at)}```'
+    await channel.send(message)
     general = find(lambda x: x.name == 'general',  guild.text_channels)
     if general and general.permissions_for(guild.me).send_messages:
         await general.send("Thanks for inviting me! You can get started by typing .help to find the current command list and change the command prefix by typing .setprefix followed by the desired prefix e.g. !.\nSource Code: https://github.com/Amexy/lisa-bot\nSupport: https://ko-fi.com/lisabot\nIf you have any feedback or requests, please dm Josh#1373 or join discord.gg/wDu5CAA.")
-
 
 @bot.event
 async def on_raw_reaction_add(payload):

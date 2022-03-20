@@ -138,7 +138,7 @@ async def GetBestdoriAllCharactersAPI5():
 
 #@ctime
 @cachedRequest
-async def GetBestdoriBannersAPI(eventId: int):
+async def get_bestdori_banners_api(eventId: int):
     eventId = str(eventId)
     return 'https://bestdori.com/api/events/%s.json' % eventId
 

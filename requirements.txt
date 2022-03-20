@@ -1,10 +1,8 @@
 beautifulsoup4
 bs4
 discord.py
-google
 googletrans
 jsondiff
-Pillow
 pip-chill
 protobuf
 pyaes
@@ -19,4 +17,5 @@ google-auth-httplib2
 google-auth-oauthlib
 psutil
 sklearn
-pixivpy3
+pixivpy
+plotly

@@ -2,8 +2,8 @@ from discord.ext import commands
 from commands.formatting.GameCommands import GetCoastingOutput
 from commands.formatting.EventCommands import GetCutoffFormatting, GetCurrentEventID
 from commands.formatting.T10Commands import t10formatting, t10songsformatting, t10membersformatting, GetT10ArchiveFile
-from commands.formatting.TimeCommands import GetTimeLeftCommandOutput, GetEventProgress
-from commands.apiFunctions import GetBestdoriAllEventsAPI, GetBestdoriBannersAPI, GetBestdoriPlayerLeaderboardsAPI
+from commands.formatting.TimeCommands import get_time_left_command_output, get_event_progress
+from commands.apiFunctions import GetBestdoriAllEventsAPI, get_bestdori_banners_api, GetBestdoriPlayerLeaderboardsAPI
 from protodefs.ranks import t10ranks
 from startup.login import enICEObject, jpICEObject
 from bs4 import BeautifulSoup
@@ -185,7 +185,7 @@ class Event(commands.Cog):
         try:
             EventID = await GetCurrentEventID(server)
             if EventID:
-                timeLeftBotOutput = await GetTimeLeftCommandOutput(server, EventID)
+                timeLeftBotOutput = await get_time_left_command_output(server, EventID)
                 if isinstance(timeLeftBotOutput, str):
                     await ctx.send(timeLeftBotOutput)
                 else:
@@ -194,6 +194,8 @@ class Event(commands.Cog):
                 await ctx.send("The %s event hasn't started yet." %server)
         except TypeError:
             await ctx.send(f"```Details for the next event on {server} haven't been released yet```")
+        except Exception as e:
+            await ctx.send(f"Unknown error, please send the info below to Josh#1373\n\n```{e}```")
 
     @commands.command(name='coasting',
                 description="Given an input of server, ep gained per song, and beginning EP, the bot provides how much EP you'll have at the end of the event if you natural flame for the rest of the event",
@@ -224,14 +226,16 @@ class Event(commands.Cog):
             await ctx.send(f"Couldn't find cutoff history for server `{server}` tier `{tier}`")
 
     @commands.command(name='cutoff',
-                      aliases=['t100','t500','t1000', 't2000','t2500','t5000','t10000','t1k','t2k','t2.5k','t5k','t10k','co'],
+                      aliases=['t100','t50','t300','t500','t1000', 't2000','t2500','t5000','t10000','t1k','t2k','t2.5k','t5k','t10k','co'],
                       description="Cutoff estimate for t100, t1000, and t2000 (experimental support for t2500, t5000, and t10000). Input the tier and server (defaulted to en and 100). Add graph as an argument to see a graph",
                       help=".cutoff 100\n.cutoff 1000 en\n.cutoff 2000 jp graph\n.cutoff en t1000\n.t100\n.t100 jp graph")
     #@ctime
     async def cutoff(self, ctx, *args):
         valid_servers = {'jp', 'cn', 'en', 'tw', 'kr'}
         valid_servers_by_tier = {
+            50: ['en','cn'],
             100: ['en', 'jp', 'cn', 'tw', 'kr'],
+            300: ['en','cn'],
             500: ['tw'],
             1000: ['en', 'jp', 'cn'],
             2000: ['jp', 'cn'],
