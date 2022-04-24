@@ -13,6 +13,7 @@ data/img/graphs/*
 startup/login.py
 commands/cogs/seiyuu.py
 commands/cogs/admin.py
+commands/cogs/Admin.py
 commands/cogs/Servers.py
 commands/cogs/Music.py
 startup/google.py

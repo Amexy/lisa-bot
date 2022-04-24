@@ -220,6 +220,10 @@ class Fun(commands.Cog):
                                         characters.append('saya')
                                     elif x.lower() in ['josh', 'john']: #for you qwewqa
                                         characters.append('lisa')
+                                    elif x.lower() in ['masking', 'mask']:
+                                        characters.append('masuki')
+                                    elif x.lower() in ['layer']: 
+                                        characters.append('rei')
                                     else:
                                         characters.append(x)
                         from commands.formatting.GameCommands import check_album_ids, get_chara_card_count
@@ -359,6 +363,10 @@ class Fun(commands.Cog):
                                     characters.append('saya')
                                 elif x.lower() in ['josh', 'john']: #for you qwewqa
                                     characters.append('lisa')
+                                elif x.lower() in ['masking', 'mask']:
+                                    characters.append('masuki')
+                                elif x.lower() in ['layer']: 
+                                    characters.append('rei')
                                 else:
                                     characters.append(x)
                     for chara in characters:

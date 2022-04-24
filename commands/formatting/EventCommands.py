@@ -435,7 +435,7 @@ async def CreateGraph(Server, EventID, Tier, CurrentEPValues, CurrentTimes, Esti
 
 async def GetCutoffFormatting(server: str, tier: int, graph: bool):
     from commands.apiFunctions import GetBestdoriEventAPI, get_bestdori_banners_api, GetBestdoriCutoffAPI, GetBestdoriRateAPI, GetTierKey, GetServerAPIKey
-    from commands.formatting.TimeCommands import GetTimeLeftString, GetEventProgress, GetEventTimeLeftSeconds, GetEventLengthSeconds, GetEventStartTime
+    from commands.formatting.TimeCommands import GetTimeLeftString, get_event_progress, GetEventTimeLeftSeconds, GetEventLengthSeconds, GetEventStartTime
     import math, time, os
     EventID = await GetCurrentEventID(server)
     CutoffAPI = await GetBestdoriCutoffAPI(server, tier)
@@ -584,7 +584,7 @@ async def GetCutoffFormatting(server: str, tier: int, graph: bool):
     fmt = "%Y-%m-%d %H:%M:%S %Z%z"
     now_time = datetime.now(timezone('US/Eastern'))
     timeLeft = await GetTimeLeftString(server,EventID)
-    prog = await GetEventProgress(server,EventID) 
+    prog = await get_event_progress(server,EventID) 
     prog = str(prog) + '%'
     bannerAPI = await get_bestdori_banners_api(int(EventID))
     bannerName = bannerAPI['assetBundleName']
